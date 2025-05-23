@@ -24,12 +24,12 @@
   - [x] Create E2E tests for Docker functionality
   - [x] Test container build and deployment
 
-- [ ] **Core Playwright Service**
-  - [ ] Implement basic screenshot capture service
-  - [ ] Add support for different viewport sizes
-  - [ ] Configure WebP output format
-  - [ ] Add page load waiting strategies
-  - [ ] Implement error handling and retries
+- [x] **Core Playwright Service**
+  - [x] Implement basic screenshot capture service
+  - [x] Add support for different viewport sizes
+  - [x] Configure WebP output format
+  - [x] Add page load waiting strategies
+  - [x] Implement error handling and retries
 
 - [ ] **MCP Server Implementation**
   - [ ] Set up MCP protocol server with stdio transport
