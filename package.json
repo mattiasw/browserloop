@@ -1,0 +1,69 @@
+{
+  "name": "browserloop",
+  "version": "1.0.0",
+  "description": "A Model Context Protocol server for taking screenshots of web pages using Playwright",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "browserloop": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && node dist/index.js",
+    "start:ts": "node --experimental-strip-types src/index.ts",
+    "start:native": "node src/index.ts",
+    "dev": "tsc --watch",
+    "dev:ts": "node --experimental-strip-types --watch src/index.ts",
+    "check-node": "node check-node.js",
+    "test": "npm run build && npm run test:unit && npm run test:integration",
+    "test:unit": "node --test dist/tests/unit/test-utils.test.js",
+    "test:integration": "node --test dist/tests/integration/mcp-server.test.js",
+    "test:e2e": "node --test dist/tests/e2e/docker-integration.test.js",
+    "test:e2e:ts": "node --experimental-strip-types --test tests/e2e/docker-integration.test.ts",
+    "test:all": "npm run test && npm run test:e2e",
+    "test:watch": "tsc --watch &",
+    "test:ts": "npm run test:unit:ts && npm run test:integration:ts",
+    "test:unit:ts": "node --experimental-strip-types --test tests/unit/test-utils.test.ts",
+    "test:integration:ts": "node --experimental-strip-types --test tests/integration/mcp-server.test.ts",
+    "docker:build": "docker build -f docker/Dockerfile -t browserloop .",
+    "docker:run": "docker run --rm --network host browserloop",
+    "docker:dev": "cd docker && docker compose up -d",
+    "docker:dev:logs": "cd docker && docker compose logs -f",
+    "docker:dev:stop": "cd docker && docker compose down",
+    "docker:dev:shell": "docker exec -it browserloop-dev /bin/bash",
+    "docker:test": "cd docker && docker compose --profile testing up -d && docker compose logs test-server",
+    "docker:test:stop": "cd docker && docker compose --profile testing down",
+    "lint": "biome lint src/",
+    "format": "biome format --write src/",
+    "check": "biome check --write src/",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "playwright",
+    "screenshot",
+    "automation",
+    "ai-tools",
+    "development",
+    "testing",
+    "browser",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.6",
+    "playwright": "^1.48.2"
+  },
+  "devDependencies": {
+    "@biomejs/cli-linux-x64": "^1.9.4",
+    "@types/assert": "^1.5.11",
+    "@types/node": "^22.10.2",
+    "biome": "^0.3.3",
+    "typescript": "^5.7.2"
+  }
+}

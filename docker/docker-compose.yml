@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  browserloop:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: browserloop-dev
+    # Use host networking to access localhost services
+    network_mode: host
+    volumes:
+      # Mount source code for development
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
+      - ../package.json:/app/package.json:ro
+      - ../tsconfig.json:/app/tsconfig.json:ro
+      - ../biome.json:/app/biome.json:ro
+      # Mount cache directory for browsers (persistent across restarts)
+      - playwright-cache:/home/playwright/.cache
+    environment:
+      - NODE_ENV=development
+      - DEBUG=pw:api
+    # Keep container running for development
+    stdin_open: true
+    tty: true
+    # Override entrypoint for development
+    entrypoint: ["tail", "-f", "/dev/null"]
+
+  # Alternative service with port mapping (if host networking doesn't work)
+  browserloop-ports:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+    container_name: browserloop-ports
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../src:/app/src:ro
+      - ../tests:/app/tests:ro
+      - ../package.json:/app/package.json:ro
+      - ../tsconfig.json:/app/tsconfig.json:ro
+      - ../biome.json:/app/biome.json:ro
+      - playwright-cache:/home/playwright/.cache
+    environment:
+      - NODE_ENV=development
+      # Map localhost to host.docker.internal for accessing host services
+      - HOST_URL=http://host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true
+    entrypoint: ["tail", "-f", "/dev/null"]
+    profiles:
+      - alternative
+
+  # Test web server for testing screenshots
+  test-server:
+    image: nginx:alpine
+    container_name: browserloop-test-server
+    ports:
+      - "8080:80"
+    volumes:
+      - ../tests/fixtures:/usr/share/nginx/html:ro
+    profiles:
+      - testing
+
+volumes:
+  playwright-cache:
+    driver: local
