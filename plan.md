@@ -73,7 +73,7 @@
   - [x] Document MCP configuration for Cursor
   - [x] Add troubleshooting guide
   - [x] Create example usage scenarios
-  - [ ] Set up CI/CD pipeline (optional)
+  - [x] Set up CI/CD pipeline (optional)
 
 - [x] **Optimization & Polish**
   - [x] Optimize Docker image size

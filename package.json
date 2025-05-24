@@ -40,6 +40,7 @@
     "docker:test:stop": "cd docker && docker compose --profile testing down",
     "lint": "biome lint src/ tests/",
     "format": "biome format --write src/ tests/",
+    "format:check": "biome format src/ tests/",
     "check": "biome check --write src/",
     "clean": "rm -rf dist",
     "build:clean": "npm run clean && npm run build"

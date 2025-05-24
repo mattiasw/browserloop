@@ -1,5 +1,7 @@
 # BrowserLoop
 
+[![CI/CD Pipeline](https://github.com/[USERNAME]/browserloop/actions/workflows/ci.yml/badge.svg)](https://github.com/[USERNAME]/browserloop/actions/workflows/ci.yml)
+
 A Model Context Protocol (MCP) server for taking screenshots of web pages using Playwright. This tool allows AI agents to automatically capture and analyze screenshots for UI verification tasks.
 
 ## Features
