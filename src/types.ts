@@ -1,4 +1,26 @@
 /**
+ * Cookie object structure for browser context injection
+ */
+export interface Cookie {
+  /** Cookie name */
+  name: string;
+  /** Cookie value */
+  value: string;
+  /** Cookie domain (optional) */
+  domain?: string | undefined;
+  /** Cookie path (optional, defaults to '/') */
+  path?: string | undefined;
+  /** Whether cookie is HTTP-only (optional) */
+  httpOnly?: boolean | undefined;
+  /** Whether cookie is secure (optional) */
+  secure?: boolean | undefined;
+  /** Cookie expiration time (optional) */
+  expires?: number | undefined;
+  /** Cookie same-site policy (optional) */
+  sameSite?: 'Strict' | 'Lax' | 'None' | undefined;
+}
+
+/**
  * Configuration options for screenshot capture
  */
 export interface ScreenshotOptions {
@@ -20,6 +42,8 @@ export interface ScreenshotOptions {
   userAgent?: string;
   /** CSS selector for element screenshot (optional) */
   selector?: string;
+  /** Cookies for authentication (optional) */
+  cookies?: Cookie[] | string;
 }
 
 /**
@@ -101,6 +125,8 @@ export interface McpScreenshotRequest {
   fullPage?: boolean;
   /** CSS selector for element-specific screenshot */
   selector?: string;
+  /** Cookies for authentication (optional) */
+  cookies?: Cookie[] | string;
 }
 
 /**
@@ -142,6 +168,8 @@ export interface ImageProcessingConfig {
   selector?: string;
   /** Take full page screenshot instead of viewport */
   fullPage?: boolean;
+  /** Cookies for authentication (optional) */
+  cookies?: Cookie[] | string;
 }
 
 /**

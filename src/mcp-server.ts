@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { ScreenshotService } from './screenshot-service.js';
+import { CookieUtils } from './cookie-utils.js';
 import { config } from './config.js';
 import type { ScreenshotServiceConfig } from './types.js';
 
@@ -35,6 +36,23 @@ export class McpScreenshotServer {
       TIMEOUT: { MIN: 1000, MAX: 120000 }
     };
 
+    // Cookie validation schema
+    const CookieObjectSchema = z.object({
+      name: z.string().min(1),
+      value: z.string(),
+      domain: z.string().optional(),
+      path: z.string().optional(),
+      httpOnly: z.boolean().optional(),
+      secure: z.boolean().optional(),
+      expires: z.number().optional(),
+      sameSite: z.enum(['Strict', 'Lax', 'None']).optional()
+    });
+
+    const CookiesSchema = z.union([
+      z.array(CookieObjectSchema),
+      z.string().min(1)
+    ]).optional();
+
     // Register the screenshot tool
     this.server.tool(
       'screenshot',
@@ -60,7 +78,8 @@ export class McpScreenshotServer {
           .optional(),
         fullPage: z.boolean().optional(),
         userAgent: z.string().optional(),
-        selector: z.string().optional()
+        selector: z.string().optional(),
+        cookies: CookiesSchema
       },
       async (request, extra) => {
         const requestId = extra.requestId || 'unknown';
@@ -81,16 +100,33 @@ export class McpScreenshotServer {
           const options = userAgent ? { ...baseOptions, userAgent } : baseOptions;
 
           // Add selector if provided
-          const finalOptions = request.selector ? { ...options, selector: request.selector } : options;
+          let finalOptions = request.selector ? { ...options, selector: request.selector } : options;
+
+          // Add cookies if provided
+          if (request.cookies) {
+            try {
+              const { cookies } = CookieUtils.validateAndSanitize(request.cookies);
+              finalOptions = { ...finalOptions, cookies } as any;
+            } catch (cookieError) {
+              const cookieErrorMessage = cookieError instanceof Error ? cookieError.message : 'Cookie validation failed';
+              return {
+                content: [{
+                  type: 'text',
+                  text: `Cookie validation failed: ${cookieErrorMessage}`
+                }],
+                isError: true
+              };
+            }
+          }
 
           // Take screenshot using appropriate method
           let result;
           if (request.selector) {
-            result = await this.screenshotService.takeElementScreenshot(finalOptions);
+            result = await this.screenshotService.takeElementScreenshot(finalOptions as any);
           } else if (request.fullPage) {
-            result = await this.screenshotService.takeFullPageScreenshot(finalOptions);
+            result = await this.screenshotService.takeFullPageScreenshot(finalOptions as any);
           } else {
-            result = await this.screenshotService.takeScreenshot(finalOptions);
+            result = await this.screenshotService.takeScreenshot(finalOptions as any);
           }
 
           // Format response for MCP

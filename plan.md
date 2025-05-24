@@ -84,12 +84,12 @@
 
 ## Cookie-Based Authentication Implementation
 
-- [ ] **Cookie Parameter Support**
-  - [ ] Extend ScreenshotOptions interface with cookies parameter
-  - [ ] Add cookie validation using Zod schema (array of objects or JSON string)
-  - [ ] Update MCP tool schema to include cookies parameter
-  - [ ] Add cookie parsing utilities (JSON string to cookie object array)
-  - [ ] Implement cookie sanitization (never log cookie values)
+- [x] **Cookie Parameter Support**
+  - [x] Extend ScreenshotOptions interface with cookies parameter
+  - [x] Add cookie validation using Zod schema (array of objects or JSON string)
+  - [x] Update MCP tool schema to include cookies parameter
+  - [x] Add cookie parsing utilities (JSON string to cookie object array)
+  - [x] Implement cookie sanitization (never log cookie values)
 
 - [ ] **Browser Context Cookie Injection**
   - [ ] Modify ScreenshotService to accept cookies in options
