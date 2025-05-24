@@ -38,12 +38,16 @@
   - [x] Add base64 image encoding for responses
   - [x] Add parameter validation and defaults
 
-- [ ] **Configuration & Options**
-  - [ ] Add environment variable support
-  - [ ] Implement configurable quality settings
-  - [ ] Add timeout and retry configuration
-  - [ ] Support custom viewport dimensions
-  - [ ] Add user agent configuration
+- [x] **Configuration & Options**
+  - [x] Add environment variable support for all default settings
+  - [x] Implement configurable quality settings via BROWSERLOOP_DEFAULT_QUALITY
+  - [x] Add timeout and retry configuration (BROWSERLOOP_RETRY_COUNT, BROWSERLOOP_RETRY_DELAY)
+  - [x] Support custom viewport dimensions (BROWSERLOOP_DEFAULT_WIDTH, BROWSERLOOP_DEFAULT_HEIGHT)
+  - [x] Add user agent configuration (BROWSERLOOP_USER_AGENT)
+  - [x] Create comprehensive configuration validation with Zod
+  - [x] Add retry logic with configurable count and delay
+  - [x] Implement graceful fallbacks for invalid environment variables
+  - [x] Add configuration tests and documentation
 
 - [ ] **Advanced Features**
   - [ ] Full page screenshot support

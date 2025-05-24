@@ -70,6 +70,49 @@ Add to your MCP configuration file (usually `~/.cursor/mcp-config.json`):
 }
 ```
 
+### Configuration with Environment Variables
+
+To customize default settings, use the `env` property in your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "browserloop": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/browserloop/dist/src/index.js"
+      ],
+      "env": {
+        "BROWSERLOOP_DEFAULT_WIDTH": "1920",
+        "BROWSERLOOP_DEFAULT_HEIGHT": "1080",
+        "BROWSERLOOP_DEFAULT_FORMAT": "png",
+        "BROWSERLOOP_USER_AGENT": "Mozilla/5.0 (Custom Bot)",
+        "BROWSERLOOP_RETRY_COUNT": "5"
+      },
+      "description": "Screenshot capture server for web pages using Playwright"
+    }
+  }
+}
+```
+
+## Configuration
+
+Browserloop supports configuration through environment variables using the `env` property in your MCP configuration. All settings have sensible defaults and are optional.
+
+### Environment Variables
+
+| Variable | Description | Default | Valid Values |
+|----------|-------------|---------|--------------|
+| `BROWSERLOOP_DEFAULT_WIDTH` | Default viewport width | `1280` | 200-4000 |
+| `BROWSERLOOP_DEFAULT_HEIGHT` | Default viewport height | `720` | 200-4000 |
+| `BROWSERLOOP_DEFAULT_FORMAT` | Default image format | `webp` | `webp`, `png` |
+| `BROWSERLOOP_DEFAULT_QUALITY` | Default image quality | `80` | 1-100 |
+| `BROWSERLOOP_DEFAULT_TIMEOUT` | Default timeout (ms) | `30000` | 1000-120000 |
+| `BROWSERLOOP_DEFAULT_WAIT_NETWORK_IDLE` | Wait for network idle | `true` | `true`, `false`, `1`, `0`, `yes`, `no` |
+| `BROWSERLOOP_USER_AGENT` | Custom user agent string | (none) | Any valid user agent string |
+| `BROWSERLOOP_RETRY_COUNT` | Number of retries for failed screenshots | `3` | 0-10 |
+| `BROWSERLOOP_RETRY_DELAY` | Delay between retries (ms) | `1000` | 100-10000 |
+
 ## Usage in AI Tools
 
 Once configured, you can use natural language commands:

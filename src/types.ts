@@ -16,6 +16,46 @@ export interface ScreenshotOptions {
   waitForNetworkIdle?: boolean;
   /** Timeout in milliseconds */
   timeout?: number;
+  /** Custom user agent string */
+  userAgent?: string;
+}
+
+/**
+ * Screenshot capture configuration with retry options
+ */
+export interface ScreenshotServiceConfig {
+  /** Default viewport dimensions */
+  viewport: {
+    defaultWidth: number;
+    defaultHeight: number;
+  };
+  /** Default screenshot settings */
+  screenshot: {
+    defaultFormat: 'webp' | 'png';
+    defaultQuality: number;
+    defaultTimeout: number;
+    defaultWaitForNetworkIdle: boolean;
+  };
+  /** Browser configuration */
+  browser: {
+    userAgent?: string;
+    retryCount: number;
+    retryDelay: number;
+  };
+}
+
+/**
+ * Retry attempt information
+ */
+export interface RetryAttempt {
+  /** Attempt number (1-based) */
+  attempt: number;
+  /** Maximum number of attempts */
+  maxAttempts: number;
+  /** Error that caused the retry */
+  error: Error;
+  /** Delay before this attempt in milliseconds */
+  delay: number;
 }
 
 /**

@@ -1,30 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { screenshotService } from './screenshot-service.js';
-
-// Default parameter values
-const DEFAULT_VIEWPORT = {
-  WIDTH: 1280,
-  HEIGHT: 720
-};
-
-const DEFAULT_SETTINGS = {
-  FORMAT: 'webp' as const,
-  QUALITY: 80,
-  WAIT_FOR_NETWORK_IDLE: true,
-  TIMEOUT: 30000
-};
-
-const PARAMETER_LIMITS = {
-  WIDTH: { MIN: 200, MAX: 4000 },
-  HEIGHT: { MIN: 200, MAX: 4000 },
-  QUALITY: { MIN: 1, MAX: 100 },
-  TIMEOUT: { MIN: 1000, MAX: 120000 }
-};
+import { ScreenshotService } from './screenshot-service.js';
+import { config } from './config.js';
+import type { ScreenshotServiceConfig } from './types.js';
 
 export class McpScreenshotServer {
   private server: McpServer;
+  private screenshotService: ScreenshotService;
 
   constructor() {
     // Create the MCP server instance
@@ -33,10 +16,25 @@ export class McpScreenshotServer {
       version: '1.0.0'
     });
 
+    // Create screenshot service with configuration
+    this.screenshotService = new ScreenshotService(config.getConfig() as ScreenshotServiceConfig);
+
     this.setupScreenshotTool();
   }
 
   private setupScreenshotTool(): void {
+    const browserConfig = config.getBrowserConfig();
+    const viewportConfig = config.getViewportConfig();
+    const screenshotConfig = config.getScreenshotConfig();
+
+    // Parameter limits (keep existing validation)
+    const PARAMETER_LIMITS = {
+      WIDTH: { MIN: 200, MAX: 4000 },
+      HEIGHT: { MIN: 200, MAX: 4000 },
+      QUALITY: { MIN: 1, MAX: 100 },
+      TIMEOUT: { MIN: 1000, MAX: 120000 }
+    };
+
     // Register the screenshot tool
     this.server.tool(
       'screenshot',
@@ -60,26 +58,31 @@ export class McpScreenshotServer {
           .min(PARAMETER_LIMITS.TIMEOUT.MIN, `Timeout must be at least ${PARAMETER_LIMITS.TIMEOUT.MIN}ms`)
           .max(PARAMETER_LIMITS.TIMEOUT.MAX, `Timeout must be at most ${PARAMETER_LIMITS.TIMEOUT.MAX}ms`)
           .optional(),
-        fullPage: z.boolean().optional()
+        fullPage: z.boolean().optional(),
+        userAgent: z.string().optional()
       },
       async (request, extra) => {
-        const requestId = extra.requestId || 'unknown'; // Use extra.requestId if available, otherwise default to 'unknown'
+        const requestId = extra.requestId || 'unknown';
         try {
-          // Set defaults for optional parameters
-          const options = {
+          // Set defaults from configuration
+          const baseOptions = {
             url: request.url,
-            width: request.width ?? DEFAULT_VIEWPORT.WIDTH,
-            height: request.height ?? DEFAULT_VIEWPORT.HEIGHT,
-            format: request.format ?? DEFAULT_SETTINGS.FORMAT,
-            quality: request.quality ?? DEFAULT_SETTINGS.QUALITY,
-            waitForNetworkIdle: request.waitForNetworkIdle ?? DEFAULT_SETTINGS.WAIT_FOR_NETWORK_IDLE,
-            timeout: request.timeout ?? DEFAULT_SETTINGS.TIMEOUT
+            width: request.width ?? viewportConfig.defaultWidth,
+            height: request.height ?? viewportConfig.defaultHeight,
+            format: request.format ?? screenshotConfig.defaultFormat,
+            quality: request.quality ?? screenshotConfig.defaultQuality,
+            waitForNetworkIdle: request.waitForNetworkIdle ?? screenshotConfig.defaultWaitForNetworkIdle,
+            timeout: request.timeout ?? screenshotConfig.defaultTimeout
           };
+
+          // Only add userAgent if one is provided
+          const userAgent = request.userAgent ?? config.getBrowserConfig().userAgent;
+          const options = userAgent ? { ...baseOptions, userAgent } : baseOptions;
 
           // Take screenshot using appropriate method
           const result = request.fullPage
-            ? await screenshotService.takeFullPageScreenshot(options)
-            : await screenshotService.takeScreenshot(options);
+            ? await this.screenshotService.takeFullPageScreenshot(options)
+            : await this.screenshotService.takeScreenshot(options);
 
           // Format response for MCP
           return {
@@ -100,6 +103,10 @@ export class McpScreenshotServer {
                     viewport: {
                       width: options.width,
                       height: options.height
+                    },
+                    configuration: {
+                      retryCount: config.getBrowserConfig().retryCount,
+                      userAgent: ('userAgent' in options ? options.userAgent : undefined) || 'default'
                     }
                   }
                 }, null, 2)
@@ -128,7 +135,7 @@ export class McpScreenshotServer {
    */
   async start(): Promise<void> {
     try {
-      await screenshotService.initialize();
+      await this.screenshotService.initialize();
 
       const transport = new StdioServerTransport();
       await this.server.connect(transport);
@@ -142,7 +149,7 @@ export class McpScreenshotServer {
    * Initialize the server (for testing)
    */
   async initialize(): Promise<void> {
-    await screenshotService.initialize();
+    await this.screenshotService.initialize();
   }
 
   /**
@@ -150,7 +157,7 @@ export class McpScreenshotServer {
    */
   async cleanup(): Promise<void> {
     try {
-      await screenshotService.cleanup();
+      await this.screenshotService.cleanup();
     } catch (error) {
       // Silent cleanup - don't interfere with stdio
     }
