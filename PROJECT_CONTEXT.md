@@ -34,7 +34,7 @@ An **MCP (Model Context Protocol) server** that provides screenshot capabilities
 - ✅ **Browser Management**: Session reuse, crash recovery, resource cleanup
 
 ### Testing & CI/CD
-- ✅ **98 Tests Passing**: Unit, integration, E2E, and performance tests
+- ✅ **99 Tests Passing**: Unit, integration, E2E, and performance tests
 - ✅ **CI/CD Pipeline**: GitHub Actions with multi-version testing, security scanning
 - ✅ **Multi-platform**: amd64 and arm64 Docker builds
 - ✅ **Quality Gates**: Linting, formatting, security audits
@@ -54,7 +54,11 @@ An **MCP (Model Context Protocol) server** that provides screenshot capabilities
 - [x] Zod schema validation for cookie arrays and JSON strings
 - [x] Cookie sanitization (never logs sensitive values)
 - [x] Comprehensive testing (9 new cookie tests, 58 total tests passing)
-- [ ] Browser context cookie injection
+- [x] Browser context cookie injection
+- [x] Proper domain and path handling with auto-derivation from URL
+- [x] Timeout handling for cookie operations with network timeout
+- [x] Error categorization for cookie-specific failures
+- [x] Integration testing with 7 new cookie injection tests (65 total tests passing)
 - [ ] Documentation for cookie extraction
 - [ ] Testing with authenticated scenarios
 
@@ -154,6 +158,7 @@ browserloop/
 - Element-specific screenshot capture with CSS selectors
 - **Intelligent browser lifecycle management** with automatic cleanup
 - Advanced timeout handling for different operations
+- **Cookie injection for authentication** with domain auto-derivation and timeout handling
 
 **Performance & Caching** ✅:
 - **ScreenshotCache class** with LRU eviction and configurable TTL
@@ -190,15 +195,16 @@ browserloop/
 - Clean JSON-RPC communication (no console output interference)
 
 **Testing Infrastructure** ✅:
-- **98 total tests passing** across all suites
+- **99 tests passing** across all suites
 - **49 unit tests** (including Logger, ImageProcessor, ScreenshotService tests)
-- **32 integration tests** (including JPEG format support and error handling)
+- **39 integration tests** (including JPEG format support, error handling, and cookie injection)
 - **11 E2E tests** (format support, built server, full page, element screenshots)
 - **6 performance benchmark tests** (sequential, concurrent, format comparison)
 - Test fixtures with beautiful HTML pages
 - Screenshot validation utilities
 - Response format compliance testing
 - **Comprehensive performance measurement** and memory efficiency testing
+- **Cookie injection testing** with 7 comprehensive integration tests
 
 ### Configuration Cleanup ✅
 
@@ -231,7 +237,7 @@ The MCP screenshot server is now **complete** and ready for production use with 
 2. **Response Format**: Correct image content type with metadata
 3. **Advanced Error Handling**: Comprehensive logging, categorization, and recovery strategies
 4. **Clean Communication**: No console output interference (MCP stdio compatibility)
-5. **Extensive Testing**: **98 tests passing** across all suites with performance benchmarks
+5. **Extensive Testing**: **99 tests passing** across all suites with performance benchmarks
 6. **Multiple Format Support**: PNG, JPEG, and WebP with quality controls and performance optimization
 7. **Complete Documentation**: API reference, usage examples, configuration guides, and troubleshooting
 8. **Docker Optimization**: **58% image size reduction** (2.39GB → 1.01GB)
@@ -268,7 +274,7 @@ The MCP screenshot server is now **complete** and ready for production use with 
 | **Concurrent Performance** | 13.70 shots/sec | **170% improvement** |
 | **Memory Efficiency** | Negative growth (-1.58MB) | **Excellent** |
 | **Format Performance** | JPEG: 15.00, PNG: 13.95, WebP: 10.03 shots/sec | **Optimized** |
-| **Test Coverage** | 98 tests passing | **Comprehensive** |
+| **Test Coverage** | 99 tests passing | **Comprehensive** |
 
 ## Development Environment Setup
 

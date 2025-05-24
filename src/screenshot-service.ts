@@ -1,13 +1,15 @@
 import { chromium, type Browser, type Page } from 'playwright';
 import { ImageProcessor, type ImageConversionOptions } from './image-processor.js';
 import { Logger, categorizeError } from './logger.js';
+import { CookieUtils } from './cookie-utils.js';
 import type {
   ScreenshotOptions,
   ScreenshotResult,
   ScreenshotServiceConfig,
   RetryAttempt,
   HealthCheck,
-  BrowserloopError
+  BrowserloopError,
+  Cookie
 } from './types.js';
 
 export class ScreenshotService {
@@ -241,7 +243,8 @@ export class ScreenshotService {
       quality: options.quality ?? this.serviceConfig.screenshot.defaultQuality,
       waitForNetworkIdle: options.waitForNetworkIdle ?? this.serviceConfig.screenshot.defaultWaitForNetworkIdle,
       timeout: options.timeout ?? this.serviceConfig.screenshot.defaultTimeout,
-      userAgent: options.userAgent ?? this.serviceConfig.browser.userAgent
+      userAgent: options.userAgent ?? this.serviceConfig.browser.userAgent,
+      cookies: options.cookies
     };
   }
 
@@ -258,10 +261,99 @@ export class ScreenshotService {
   private async navigateToUrl(page: Page, config: ReturnType<typeof this.createScreenshotConfig>): Promise<void> {
     const navigationTimeout = Math.min(config.timeout, this.serviceConfig.timeouts.navigation);
 
+    // Inject cookies before navigation if provided
+    if (config.cookies) {
+      await this.injectCookies(page, config.cookies, config.url);
+    }
+
     await page.goto(config.url, {
       waitUntil: config.waitForNetworkIdle ? 'networkidle' : 'domcontentloaded',
       timeout: navigationTimeout
     });
+  }
+
+  /**
+   * Inject cookies into the browser context before navigation
+   */
+  private async injectCookies(page: Page, cookiesInput: Cookie[] | string, url: string): Promise<void> {
+    try {
+      // Parse and validate cookies using existing utilities
+      const { cookies, sanitizedForLogging } = CookieUtils.validateAndSanitize(cookiesInput);
+
+      if (cookies.length === 0) {
+        return;
+      }
+
+      this.logger.debug('Injecting cookies into browser context', {
+        url,
+        cookieCount: cookies.length,
+        cookies: sanitizedForLogging
+      });
+
+      // Derive domain from URL if not specified in cookies
+      const urlObj = new URL(url);
+      const defaultDomain = urlObj.hostname;
+
+      // Convert cookies to Playwright format with proper domain handling
+      const playwrightCookies = cookies.map(cookie => {
+        const playwrightCookie: any = {
+          name: cookie.name,
+          value: cookie.value,
+          domain: cookie.domain || defaultDomain,
+          path: cookie.path || '/'
+        };
+
+        // Only add optional properties if they are defined
+        if (cookie.httpOnly !== undefined) {
+          playwrightCookie.httpOnly = cookie.httpOnly;
+        }
+        if (cookie.secure !== undefined) {
+          playwrightCookie.secure = cookie.secure;
+        }
+        if (cookie.expires !== undefined) {
+          playwrightCookie.expires = cookie.expires;
+        }
+        if (cookie.sameSite !== undefined) {
+          playwrightCookie.sameSite = cookie.sameSite;
+        }
+
+        return playwrightCookie;
+      });
+
+      // Add cookies to the browser context with timeout
+      const context = page.context();
+      const cookieTimeout = this.serviceConfig.timeouts.network;
+
+      await Promise.race([
+        context.addCookies(playwrightCookies),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Cookie injection timeout after ${cookieTimeout}ms`)), cookieTimeout)
+        )
+      ]);
+
+      this.logger.debug('Cookies injected successfully', {
+        url,
+        cookieCount: playwrightCookies.length
+      });
+
+    } catch (error) {
+      // Categorize cookie-specific errors
+      let categorizedError;
+      if (error instanceof Error) {
+        if (error.message.includes('timeout')) {
+          categorizedError = categorizeError(error, { url });
+        } else if (error.message.includes('validation') || error.message.includes('parsing')) {
+          categorizedError = categorizeError(error, { url });
+        } else {
+          categorizedError = categorizeError(error, { url });
+        }
+      } else {
+        categorizedError = categorizeError(new Error('Unknown cookie injection error'), { url });
+      }
+
+      this.logger.error('Cookie injection failed', categorizedError);
+      throw new Error(`Cookie injection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private async captureScreenshot(

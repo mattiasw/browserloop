@@ -91,12 +91,12 @@
   - [x] Add cookie parsing utilities (JSON string to cookie object array)
   - [x] Implement cookie sanitization (never log cookie values)
 
-- [ ] **Browser Context Cookie Injection**
-  - [ ] Modify ScreenshotService to accept cookies in options
-  - [ ] Implement cookie injection before page navigation
-  - [ ] Add proper cookie domain and path handling
-  - [ ] Handle cookie format validation and error messages
-  - [ ] Add timeout handling for cookie-related operations
+- [x] **Browser Context Cookie Injection**
+  - [x] Modify ScreenshotService to accept cookies in options
+  - [x] Implement cookie injection before page navigation
+  - [x] Add proper cookie domain and path handling
+  - [x] Handle cookie format validation and error messages
+  - [x] Add timeout handling for cookie-related operations
 
 - [ ] **Security & Privacy**
   - [ ] Ensure cookie values are never logged or stored
