@@ -235,6 +235,12 @@ export class ScreenshotService {
   }
 
   private createScreenshotConfig(options: ScreenshotOptions) {
+    // Merge default cookies with request cookies
+    const mergedCookies = this.mergeCookies(
+      this.serviceConfig.authentication?.defaultCookies || [],
+      options.cookies
+    );
+
     return {
       url: options.url,
       width: options.width ?? this.serviceConfig.viewport.defaultWidth,
@@ -244,8 +250,98 @@ export class ScreenshotService {
       waitForNetworkIdle: options.waitForNetworkIdle ?? this.serviceConfig.screenshot.defaultWaitForNetworkIdle,
       timeout: options.timeout ?? this.serviceConfig.screenshot.defaultTimeout,
       userAgent: options.userAgent ?? this.serviceConfig.browser.userAgent,
-      cookies: options.cookies
+      cookies: mergedCookies
     };
+  }
+
+  /**
+   * Merge default cookies with request cookies
+   * Request cookies take priority over default cookies with the same name
+   */
+  private mergeCookies(defaultCookies: Cookie[], requestCookies?: Cookie[] | string): Cookie[] | string | undefined {
+    // Log debug information about cookie merging
+    if (this.serviceConfig.logging.debug) {
+      this.logger.debug('Cookie merging process', {
+        defaultCookieCount: defaultCookies?.length || 0,
+        defaultCookieNames: defaultCookies?.map(c => c.name) || [],
+        hasRequestCookies: !!requestCookies,
+        requestCookiesType: typeof requestCookies
+      });
+    }
+
+    // If no default cookies and no request cookies, return undefined
+    if ((!defaultCookies || defaultCookies.length === 0) && !requestCookies) {
+      this.logger.debug('No cookies to merge - using no cookies');
+      return undefined;
+    }
+
+    // If no default cookies, return request cookies as-is
+    if (!defaultCookies || defaultCookies.length === 0) {
+      this.logger.debug('No default cookies - using request cookies only');
+      return requestCookies;
+    }
+
+    // If no request cookies, return default cookies
+    if (!requestCookies) {
+      this.logger.debug('No request cookies - using default cookies only', {
+        defaultCookieCount: defaultCookies.length,
+        defaultCookieNames: defaultCookies.map(c => c.name)
+      });
+      return defaultCookies;
+    }
+
+    try {
+      // Parse request cookies if they're a string
+      const parsedRequestCookies = typeof requestCookies === 'string'
+        ? CookieUtils.parseCookies(requestCookies)
+        : requestCookies;
+
+      // Create a map of request cookies by name for fast lookup
+      const requestCookieMap = new Map<string, Cookie>();
+      parsedRequestCookies.forEach(cookie => {
+        requestCookieMap.set(cookie.name, cookie);
+      });
+
+      // Start with default cookies and override with request cookies
+      const mergedCookies: Cookie[] = [];
+      const overriddenCookies: string[] = [];
+      const addedDefaultCookies: string[] = [];
+
+      // Add default cookies that aren't overridden by request cookies
+      defaultCookies.forEach(defaultCookie => {
+        if (!requestCookieMap.has(defaultCookie.name)) {
+          mergedCookies.push(defaultCookie);
+          addedDefaultCookies.push(defaultCookie.name);
+        } else {
+          overriddenCookies.push(defaultCookie.name);
+        }
+      });
+
+      // Add all request cookies (these take priority)
+      parsedRequestCookies.forEach(requestCookie => {
+        mergedCookies.push(requestCookie);
+      });
+
+      // Log the merge results
+      if (this.serviceConfig.logging.debug) {
+        this.logger.debug('Cookie merge completed', {
+          totalMergedCookies: mergedCookies.length,
+          addedDefaultCookies,
+          overriddenCookies,
+          requestCookieNames: parsedRequestCookies.map(c => c.name),
+          finalCookieNames: mergedCookies.map(c => c.name)
+        });
+      }
+
+      return mergedCookies;
+    } catch (error) {
+      // If parsing fails, log warning and return request cookies only
+      this.logger.warn('Failed to merge default cookies with request cookies', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        fallbackBehavior: 'Using request cookies only'
+      });
+      return requestCookies;
+    }
   }
 
   private async createPage(config: ReturnType<typeof this.createScreenshotConfig>): Promise<Page> {
@@ -266,10 +362,32 @@ export class ScreenshotService {
       await this.injectCookies(page, config.cookies, config.url);
     }
 
+    // Debug: Listen for response headers if debug mode is enabled
+    if (this.serviceConfig.logging.debug && config.cookies) {
+      page.on('response', async (response) => {
+        if (response.url() === config.url) {
+          const headers = response.headers();
+          const setCookieHeaders = headers['set-cookie'];
+          if (setCookieHeaders) {
+            this.logger.debug('Server sent Set-Cookie headers (might override injected cookies)', {
+              url: config.url,
+              setCookieHeaders: Array.isArray(setCookieHeaders) ? setCookieHeaders : [setCookieHeaders],
+              status: response.status()
+            });
+          }
+        }
+      });
+    }
+
     await page.goto(config.url, {
       waitUntil: config.waitForNetworkIdle ? 'networkidle' : 'domcontentloaded',
       timeout: navigationTimeout
     });
+
+    // Debug: Dump actual cookies present in browser after navigation
+    if (this.serviceConfig.logging.debug && config.cookies) {
+      await this.dumpBrowserCookies(page, config.url);
+    }
   }
 
   /**
@@ -288,40 +406,83 @@ export class ScreenshotService {
         return;
       }
 
+      // Automatically enhance cookies if they appear to need it
+      this.logger.debug('About to enhance cookies if needed', { cookieCount: cookies.length });
+      try {
+        cookies = this.enhanceCookiesIfNeeded(cookies);
+      } catch (enhancementError) {
+        this.logger.warn('Cookie enhancement failed, using original cookies', {
+          error: enhancementError instanceof Error ? enhancementError.message : 'Unknown error'
+        });
+      }
+
       // Additional security validation to prevent injection attacks
       CookieUtils.validateCookieSecurity(cookies);
 
       this.logger.debug('Injecting cookies into browser context', {
         url,
         cookieCount: cookies.length,
-        cookies: sanitizedForLogging
+        cookies: sanitizedForLogging,
+        cookieTypes: {
+          hostPrefixed: cookies.filter(c => c.name.startsWith('__Host-')).length,
+          securePrefixed: cookies.filter(c => c.name.startsWith('__Secure-')).length,
+          regular: cookies.filter(c => !c.name.startsWith('__Host-') && !c.name.startsWith('__Secure-')).length
+        }
       });
 
       // Derive domain from URL if not specified in cookies
       const urlObj = new URL(url);
       const defaultDomain = urlObj.hostname;
 
-      // Validate domain to prevent cookie injection attacks
+      // Validate cookie domains according to RFC 6265 specification
+      // Supports parent domain cookies (e.g., .example.com for app.example.com)
       this.validateCookieDomains(cookies, urlObj);
 
-      // Convert cookies to Playwright format with proper domain handling
+      // Convert cookies to Playwright format with proper prefix handling
       playwrightCookies = cookies.map(cookie => {
         const playwrightCookie: any = {
           name: cookie.name,
-          value: cookie.value,
-          domain: cookie.domain || defaultDomain,
-          path: cookie.path || '/'
+          value: cookie.value
         };
 
-        // Only add optional properties if they are defined
+        // Handle __Host- prefix requirements (RFC 6265bis)
+        if (cookie.name.startsWith('__Host-')) {
+          // __Host- cookies MUST:
+          // 1. Have secure flag set
+          // 2. Have path="/"
+          // 3. NOT have a domain attribute (use host-only)
+          // For Playwright: use base URL (protocol + hostname only) instead of full URL
+          // Full URLs with paths cause "Invalid cookie fields" errors
+          playwrightCookie.secure = true;
+          const urlObj = new URL(url);
+          playwrightCookie.url = `${urlObj.protocol}//${urlObj.hostname}`;
+          // Don't set domain or path for __Host- cookies when using url
+          // Note: DO NOT add any other domain/path related fields
+        } else if (cookie.name.startsWith('__Secure-')) {
+          // __Secure- cookies MUST:
+          // 1. Have secure flag set
+          // 2. Can have domain and path as specified
+          playwrightCookie.secure = true;
+          playwrightCookie.domain = cookie.domain || defaultDomain;
+          playwrightCookie.path = cookie.path || '/';
+        } else {
+          // Regular cookies use the specified or default values
+          playwrightCookie.domain = cookie.domain || defaultDomain;
+          playwrightCookie.path = cookie.path || '/';
+        }
+
+        // Add other optional properties if they are defined
+        // Note: For __Host- and __Secure- cookies, we override secure above
         if (cookie.httpOnly !== undefined) {
           playwrightCookie.httpOnly = cookie.httpOnly;
         }
-        if (cookie.secure !== undefined) {
+        if (cookie.secure !== undefined && !cookie.name.startsWith('__Host-') && !cookie.name.startsWith('__Secure-')) {
+          // Only set user-defined secure for non-prefix cookies
           playwrightCookie.secure = cookie.secure;
         }
         if (cookie.expires !== undefined) {
-          playwrightCookie.expires = cookie.expires;
+          // Handle float timestamps from browser extensions (e.g., 1750704030.825311)
+          playwrightCookie.expires = Math.floor(cookie.expires);
         }
         if (cookie.sameSite !== undefined) {
           playwrightCookie.sameSite = cookie.sameSite;
@@ -330,9 +491,27 @@ export class ScreenshotService {
         return playwrightCookie;
       });
 
-      // Add cookies to the browser context with timeout
+      // Add all cookies in a single call (Playwright will handle URL vs domain/path internally)
       const context = page.context();
       const cookieTimeout = this.serviceConfig.timeouts.network;
+
+      // Log the exact cookies being sent to Playwright for debugging
+      if (this.serviceConfig.logging.debug) {
+        this.logger.debug('Playwright cookies being injected', {
+          url,
+          playwrightCookies: playwrightCookies.map(c => ({
+            name: c.name,
+            domain: c.domain,
+            path: c.path,
+            url: c.url,
+            secure: c.secure,
+            httpOnly: c.httpOnly,
+            sameSite: c.sameSite,
+            hasValue: !!c.value,
+            valueLength: c.value?.length || 0
+          }))
+        });
+      }
 
       await Promise.race([
         context.addCookies(playwrightCookies),
@@ -376,30 +555,152 @@ export class ScreenshotService {
   }
 
   /**
-   * Validate cookie domains to prevent cookie injection attacks
+   * Automatically enhance cookies with proper security attributes if they appear to need it
+   * Respects existing attributes from browser extension exports
    */
-  private validateCookieDomains(cookies: Cookie[], urlObj: URL): void {
-    const targetDomain = urlObj.hostname;
-    const allowedDomains = [targetDomain, `.${targetDomain}`];
+  private enhanceCookiesIfNeeded(cookies: Cookie[]): Cookie[] {
+    // Check if cookies need enhancement
+    const cookieAnalysis = cookies.map(cookie => ({
+      name: cookie.name,
+      missingExpires: cookie.expires === undefined,
+      missingSecure: cookie.secure === undefined,
+      isAuthCookie: cookie.name.startsWith('__Host-') ||
+                   cookie.name.startsWith('__Secure-') ||
+                   cookie.name.includes('auth') ||
+                   cookie.name.includes('session'),
+      needsEnhancement: false
+    }));
 
-    // Allow localhost variations for development
-    if (targetDomain === 'localhost' || targetDomain === '127.0.0.1') {
-      allowedDomains.push('localhost', '127.0.0.1', '.localhost');
+    // Update needs enhancement flag
+    cookieAnalysis.forEach(analysis => {
+      const missingSecurityFlags = analysis.missingSecure && analysis.isAuthCookie;
+      analysis.needsEnhancement = analysis.missingExpires || missingSecurityFlags;
+    });
+
+    const needsEnhancement = cookieAnalysis.some(analysis => analysis.needsEnhancement);
+
+    // Log detailed analysis
+    this.logger.debug('Cookie enhancement analysis', {
+      cookieAnalysis,
+      overallNeedsEnhancement: needsEnhancement
+    });
+
+    if (!needsEnhancement) {
+      this.logger.debug('Cookies already have proper attributes, no enhancement needed');
+      return cookies;
     }
 
+    this.logger.debug('Automatically enhancing cookies with security attributes and expiration dates');
+
+    return cookies.map(cookie => {
+      const enhanced = { ...cookie };
+
+      // Only add expiration date if missing and not a session cookie
+      // Respect existing expires values including -1 for session cookies
+      if (enhanced.expires === undefined) {
+        const expirationDate = new Date();
+        expirationDate.setDate(expirationDate.getDate() + 30);
+        enhanced.expires = Math.floor(expirationDate.getTime() / 1000);
+      }
+
+      // Set security attributes based on cookie prefix and type
+      // Only set attributes that are undefined - respect existing values
+      if (cookie.name.startsWith('__Host-')) {
+        if (enhanced.secure === undefined) enhanced.secure = true;
+        if (enhanced.httpOnly === undefined) enhanced.httpOnly = true;
+        if (enhanced.path === undefined) enhanced.path = '/';
+        delete enhanced.domain; // __Host- cookies must not have domain
+      } else if (cookie.name.startsWith('__Secure-')) {
+        if (enhanced.secure === undefined) enhanced.secure = true;
+        if (enhanced.httpOnly === undefined) enhanced.httpOnly = true;
+        if (enhanced.path === undefined) enhanced.path = enhanced.path || '/';
+      } else if (cookie.name.includes('auth') || cookie.name.includes('session')) {
+        // Authentication cookies
+        if (enhanced.secure === undefined) enhanced.secure = true;
+        if (enhanced.httpOnly === undefined) enhanced.httpOnly = true;
+        if (enhanced.path === undefined) enhanced.path = enhanced.path || '/';
+      } else if (cookie.name.includes('ajs_')) {
+        // Analytics cookies (don't set httpOnly so they can be accessed by JS)
+        if (enhanced.secure === undefined) enhanced.secure = true;
+        if (enhanced.path === undefined) enhanced.path = enhanced.path || '/';
+      } else {
+        // Other cookies - set secure but be conservative with httpOnly
+        if (enhanced.secure === undefined) enhanced.secure = true;
+        if (enhanced.path === undefined) enhanced.path = '/';
+      }
+
+      // Set SameSite for security if not already set
+      if (enhanced.sameSite === undefined) {
+        enhanced.sameSite = 'Lax';
+      }
+
+      return enhanced;
+    });
+  }
+
+  /**
+   * Validate cookie domains according to RFC 6265 specification
+   * Supports parent domain cookies (e.g., .example.com for app.example.com)
+   * Skips domain validation for __Host- cookies (which must not have domains)
+   */
+  private validateCookieDomains(cookies: Cookie[], urlObj: URL): void {
+    const targetDomain = urlObj.hostname.toLowerCase();
+
     for (const cookie of cookies) {
+      // Skip domain validation for __Host- cookies (they must not have domains)
+      if (cookie.name.startsWith('__Host-')) {
+        continue;
+      }
+
       if (cookie.domain) {
         const cookieDomain = cookie.domain.toLowerCase();
-        const isValidDomain = allowedDomains.some(allowed =>
-          cookieDomain === allowed.toLowerCase() ||
-          (allowed.startsWith('.') && cookieDomain.endsWith(allowed.toLowerCase()))
-        );
 
-        if (!isValidDomain) {
+        if (!this.isDomainValid(cookieDomain, targetDomain)) {
           throw new Error(`Cookie domain '${cookie.name}' domain mismatch: URL domain is '${targetDomain}'`);
         }
       }
     }
+  }
+
+  /**
+   * Check if a cookie domain is valid for a target domain according to RFC 6265
+   * @param cookieDomain - The domain specified in the cookie
+   * @param targetDomain - The domain from the URL
+   * @returns true if the cookie domain is valid for the target domain
+   */
+  private isDomainValid(cookieDomain: string, targetDomain: string): boolean {
+    // Exact match
+    if (cookieDomain === targetDomain) {
+      return true;
+    }
+
+    // Handle localhost and IP addresses specially
+    if (targetDomain === 'localhost' || targetDomain === '127.0.0.1') {
+      return cookieDomain === 'localhost' ||
+             cookieDomain === '127.0.0.1' ||
+             cookieDomain === '.localhost';
+    }
+
+    // Handle domain with leading dot (parent domain)
+    if (cookieDomain.startsWith('.')) {
+      const parentDomain = cookieDomain.slice(1); // Remove leading dot
+
+      // Cookie domain ".example.com" is valid for "app.example.com"
+      // but not for "example.com" itself (RFC 6265 requirement)
+      if (targetDomain === parentDomain) {
+        return false; // Parent domain cookie cannot be set on the parent domain itself
+      }
+
+      // Check if target domain is a subdomain of the cookie domain
+      return targetDomain.endsWith('.' + parentDomain);
+    }
+
+    // Handle subdomain cookie for exact domain match
+    if (targetDomain.startsWith('.')) {
+      return targetDomain === '.' + cookieDomain;
+    }
+
+    return false;
   }
 
   /**
@@ -714,6 +1015,73 @@ export class ScreenshotService {
     } catch (error) {
       // Silent cleanup - don't interfere with stdio
       this.logger.debug('Error closing page', { error: (error as Error).message });
+    }
+  }
+
+  /**
+   * Dump actual cookies present in browser for debugging
+   */
+  private async dumpBrowserCookies(page: Page, url: string): Promise<void> {
+    try {
+      const context = page.context();
+      const actualCookies = await context.cookies();
+
+      // Filter cookies relevant to the current URL
+      const urlObj = new URL(url);
+      const relevantCookies = actualCookies.filter(cookie => {
+        // Check if cookie applies to this URL
+        if (cookie.domain) {
+          const cookieDomain = cookie.domain.startsWith('.') ? cookie.domain.slice(1) : cookie.domain;
+          return urlObj.hostname === cookieDomain || urlObj.hostname.endsWith('.' + cookieDomain);
+        }
+        return true;
+      });
+
+      this.logger.debug('Browser cookies after navigation (actual state)', {
+        url,
+        totalCookiesInBrowser: actualCookies.length,
+        relevantCookiesCount: relevantCookies.length,
+        relevantCookies: relevantCookies.map(cookie => ({
+          name: cookie.name,
+          domain: cookie.domain,
+          path: cookie.path,
+          secure: cookie.secure,
+          httpOnly: cookie.httpOnly,
+          sameSite: cookie.sameSite,
+          valueLength: cookie.value?.length || 0,
+          hasValue: !!cookie.value,
+          expires: cookie.expires,
+          isHostPrefixed: cookie.name.startsWith('__Host-'),
+          isSecurePrefixed: cookie.name.startsWith('__Secure-')
+        })),
+        cookieAnalysis: {
+          hostPrefixed: relevantCookies.filter(c => c.name.startsWith('__Host-')).length,
+          securePrefixed: relevantCookies.filter(c => c.name.startsWith('__Secure-')).length,
+          withDomain: relevantCookies.filter(c => c.domain).length,
+          secure: relevantCookies.filter(c => c.secure).length,
+          httpOnly: relevantCookies.filter(c => c.httpOnly).length
+        }
+      });
+
+      // Check if our expected cookies are present
+      const expectedCookieNames = ['__Host-next-auth.csrf-token', '__Secure-next-auth.session-token', 'ajs_user_id'];
+      const missingCookies = expectedCookieNames.filter(expectedName =>
+        !relevantCookies.find(actualCookie => actualCookie.name === expectedName)
+      );
+
+      if (missingCookies.length > 0) {
+        this.logger.warn('Expected cookies missing from browser', {
+          url,
+          missingCookies,
+          presentCookieNames: relevantCookies.map(c => c.name)
+        });
+      }
+
+    } catch (error) {
+      this.logger.warn('Failed to dump browser cookies for debugging', {
+        url,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   }
 }

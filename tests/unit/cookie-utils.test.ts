@@ -137,4 +137,129 @@ describe('CookieUtils', () => {
       });
     });
   });
+
+  describe('CookieUtils - Modern Cookie Names', () => {
+    test('should support modern authentication cookie names', () => {
+      const modernCookies = [
+        {
+          name: '__Host-next-auth.csrf-token',
+          value: 'csrf-token-value',
+          domain: 'example.com'
+        },
+        {
+          name: '__Secure-next-auth.callback-url',
+          value: 'callback-url-value',
+          domain: 'example.com'
+        },
+        {
+          name: '__Secure-next-auth.session-token',
+          value: 'session-token-value',
+          domain: 'example.com'
+        },
+        {
+          name: 'ajs_user_id',
+          value: 'user-id-value',
+          domain: '.example.com'
+        },
+        {
+          name: 'simple-cookie',
+          value: 'simple-value',
+          domain: 'example.com'
+        }
+      ];
+
+      // Should not throw an error
+      const result = CookieUtils.parseCookies(modernCookies);
+
+      assert.strictEqual(result.length, 5, 'Should parse all 5 cookies');
+      assert.strictEqual(result[0]?.name, '__Host-next-auth.csrf-token', 'Should preserve __Host- prefix with dots');
+      assert.strictEqual(result[1]?.name, '__Secure-next-auth.callback-url', 'Should preserve __Secure- prefix with dots');
+      assert.strictEqual(result[2]?.name, '__Secure-next-auth.session-token', 'Should preserve session token name');
+      assert.strictEqual(result[3]?.name, 'ajs_user_id', 'Should preserve underscore names');
+      assert.strictEqual(result[4]?.name, 'simple-cookie', 'Should preserve hyphenated names');
+    });
+
+    test('should support cookie names with various valid RFC 6265 characters', () => {
+      const validCookieNames = [
+        'simple',
+        'with-hyphens',
+        'with_underscores',
+        'with.dots',
+        'with123numbers',
+        'MixedCASE',
+        '__prefix',
+        'suffix__',
+        'a!b#c$d%e&f',
+        "g'h*i+j",
+        'k^l`m|n~o'
+      ];
+
+      validCookieNames.forEach(name => {
+        const cookie = {
+          name: name,
+          value: 'test-value',
+          domain: 'example.com'
+        };
+
+        // Should not throw an error
+        const result = CookieUtils.parseCookies([cookie]);
+        assert.strictEqual(result.length, 1, `Should parse cookie with name: ${name}`);
+        assert.strictEqual(result[0]?.name, name, `Should preserve cookie name: ${name}`);
+      });
+    });
+
+    test('should reject cookie names with invalid characters', () => {
+      const invalidCookieNames = [
+        'with spaces',
+        'with"quotes',
+        'with,commas',
+        'with;semicolons',
+        'with=equals',
+        'with[brackets]',
+        'with{braces}',
+        'with(parens)',
+        'with<angle>',
+        'with\\backslash',
+        'with/slash'
+      ];
+
+      invalidCookieNames.forEach(name => {
+        const cookie = {
+          name: name,
+          value: 'test-value',
+          domain: 'example.com'
+        };
+
+        assert.throws(
+          () => CookieUtils.parseCookies([cookie]),
+          /Cookie name contains invalid characters/,
+          `Should reject cookie name: ${name}`
+        );
+      });
+    });
+
+    test('should validate and sanitize modern cookies for logging', () => {
+      const modernCookies = [
+        {
+          name: '__Host-next-auth.csrf-token',
+          value: 'very-long-csrf-token-value-here',
+          domain: 'example.com',
+          httpOnly: true,
+          secure: true
+        }
+      ];
+
+      const { cookies, sanitizedForLogging } = CookieUtils.validateAndSanitize(modernCookies);
+
+      assert.strictEqual(cookies.length, 1, 'Should validate modern cookie');
+      assert.strictEqual(cookies[0]?.name, '__Host-next-auth.csrf-token', 'Should preserve modern cookie name');
+
+      const sanitized = sanitizedForLogging[0] as any;
+      assert.ok(sanitized, 'Should have sanitized version');
+      assert.strictEqual(sanitized.name, '__Host-next-auth.csrf-token', 'Should preserve name in sanitized version');
+      assert.strictEqual(sanitized.valueLength, 31, 'Should include value length');
+      assert.strictEqual(sanitized.hasValue, true, 'Should indicate has value');
+      assert.ok(!('value' in sanitized), 'Should not include actual value in sanitized version');
+    });
+  });
 });

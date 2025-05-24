@@ -502,6 +502,8 @@ expect(screenshot.content[0].mimeType).toBe('image/png');
 
 BrowserLoop supports cookie-based authentication for capturing screenshots of login-protected pages. This feature enables you to capture authenticated content by injecting session cookies into the browser context.
 
+**📖 For comprehensive cookie extraction guides, browser extension recommendations, and step-by-step instructions for popular sites, see the [Cookie Authentication Guide](COOKIE_AUTHENTICATION.md).**
+
 ### Cookie Parameter
 
 The `cookies` parameter accepts either:
@@ -552,6 +554,8 @@ The `cookies` parameter accepts either:
   "cookies": "[{\"name\":\"session_id\",\"value\":\"abc123xyz789\",\"domain\":\"app.example.com\"}]"
 }
 ```
+
+**See the [Cookie Authentication Guide](COOKIE_AUTHENTICATION.md) for detailed extraction instructions and more examples.**
 
 ## 🔒 Security Considerations
 

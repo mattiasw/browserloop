@@ -113,17 +113,84 @@
   - [x] Add E2E tests with real authenticated scenarios
   - [x] Verify security measures (no cookie leakage in logs)
 
-- [ ] **Documentation & Examples**
-  - [ ] Document cookie extraction methods (dev tools, browser extensions)
-  - [ ] Add example cookie formats and usage scenarios
-  - [ ] Create step-by-step guides for popular sites (GitHub, Gmail)
-  - [ ] Document browser extension recommendations
-  - [ ] Add troubleshooting guide for authentication failures
-  - [ ] Update API documentation with cookie parameter details
+- [x] **Documentation & Examples**
+  - [x] Document cookie extraction methods (dev tools, browser extensions)
+  - [x] Add example cookie formats and usage scenarios
+  - [x] Create step-by-step guides for popular sites (GitHub, Gmail)
+  - [x] Document browser extension recommendations
+  - [x] Add troubleshooting guide for authentication failures
+  - [x] Update API documentation with cookie parameter details
 
-- [ ] **Error Handling & User Experience**
-  - [ ] Add helpful error messages for invalid cookies
-  - [ ] Implement authentication failure detection
-  - [ ] Add cookie expiration handling and user guidance
-  - [ ] Create user-friendly validation error messages
-  - [ ] Add parameter validation with clear feedback
+- [x] **Error Handling & User Experience**
+  - [x] Add helpful error messages for invalid cookies
+  - [x] Implement authentication failure detection
+  - [x] Add cookie expiration handling and user guidance
+  - [x] Create user-friendly validation error messages
+  - [x] Add parameter validation with clear feedback
+
+## Cookie Domain Validation & Modern Authentication Support
+
+- [x] **Default Cookie Environment Variable Support**
+  - [x] Implement BROWSERLOOP_DEFAULT_COOKIES environment variable
+  - [x] Support both JSON file paths and JSON string values
+  - [x] Add automatic file vs string detection (path contains .json or starts with /)
+  - [x] Create comprehensive error handling for file operations
+  - [x] Add detailed debug logging for cookie loading process
+
+- [x] **Cookie Merging System**
+  - [x] Implement cookie merging between default and request cookies
+  - [x] Request cookies override default cookies with same name
+  - [x] Add detailed debug logging for merge process
+  - [x] Sanitize sensitive values in all log outputs
+
+- [x] **Modern Cookie Name Support**
+  - [x] Fix overly restrictive cookie name validation regex
+  - [x] Support RFC 6265 compliant cookie names including dots
+  - [x] Add support for __Host- and __Secure- prefixed cookies
+  - [x] Test with real-world authentication patterns (Next.js, analytics)
+  - [x] Add comprehensive test suite for modern cookie names
+
+- [x] **Parent Domain Cookie Support (RFC 6265)**
+  - [x] Fix domain validation logic for parent domain cookies
+  - [x] Implement correct RFC 6265 domain matching rules
+  - [x] Support cookies with domain .example.com on subdomain.example.com
+  - [x] Add comprehensive domain validation tests
+  - [x] Document the fix and provide examples
+
+- [x] **__Host- Cookie URL Format Fix**
+  - [x] Fix __Host- cookie "Invalid cookie fields" error
+  - [x] Implement base URL extraction for __Host- cookies (protocol + hostname only)
+  - [x] Remove path components from URLs for __Host- cookies
+  - [x] Test with real-world Next.js authentication patterns
+  - [x] Ensure compatibility with mixed cookie types
+
+- [x] **Cookie Expiration & Security Attributes Fix**
+  - [x] Identify root cause of session cookie issue (missing expires, secure, httpOnly attributes)
+  - [x] Create cookie enhancement system to add proper security attributes
+  - [x] Implement automatic expiration date assignment (30 days for auth cookies)
+  - [x] Fix persistent vs session cookie authentication problems
+  - [x] Create cookie enhancement utility script for future updates
+  - [x] Verify authentication works with enhanced cookies containing proper attributes
+  - [x] **FINAL RESOLUTION**: All technical cookie issues resolved. Authentication failures are due to server-side session expiration (normal security behavior). Automatic cookie enhancement is working correctly but not needed since cookies are being properly injected. Users need to refresh expired authentication sessions.
+  - [x] **REMOVED**: Manual enhance-cookies.js script removed since automatic enhancement is built into ScreenshotService
+
+- [x] **Enhanced Debugging & Documentation**
+  - [x] Create comprehensive debugging guide for cookie issues
+  - [x] Document all common cookie problems and solutions
+  - [x] Add step-by-step troubleshooting instructions
+  - [x] Update API documentation with new cookie features
+  - [x] Create examples for MCP configuration with default cookies
+
+- [x] **Browser Extension Cookie Format Support**
+  - [x] Update cookie validation schema to accept session cookies (expires: -1)
+  - [x] Add support for float timestamps from browser extensions (e.g., 1750704030.825311)
+  - [x] Respect existing cookie attributes instead of overriding them
+  - [x] Ensure enhancement logic only adds missing attributes
+  - [x] Test compatibility with real browser extension exports
+  - [x] Document browser extension cookie support with examples
+  - [x] **COMPLETE**: Users can now directly use cookie files exported from browser extensions without any manual editing required
+
+- [x] **Repository Cleanup**
+  - [x] Clean up temporary test files with specific identifiers
+  - [x] Ensure all examples are suitable for public repository
+  - [x] **COMPLETE**: Repository now contains only generic examples suitable for open source distribution

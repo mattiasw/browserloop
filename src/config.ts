@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { readFileSync } from 'node:fs';
+import { CookieUtils } from './cookie-utils.js';
+import type { Cookie } from './types.js';
 
 /**
  * Configuration schema for the browser loop service
@@ -18,6 +21,18 @@ const ConfigSchema = z.object({
     userAgent: z.string().optional(),
     retryCount: z.number().min(0).max(10),
     retryDelay: z.number().min(100).max(10000)
+  }),
+  authentication: z.object({
+    defaultCookies: z.array(z.object({
+      name: z.string(),
+      value: z.string(),
+      domain: z.string().optional(),
+      path: z.string().optional(),
+      httpOnly: z.boolean().optional(),
+      secure: z.boolean().optional(),
+      expires: z.number().optional(),
+      sameSite: z.enum(['Strict', 'Lax', 'None']).optional()
+    }))
   }),
   logging: z.object({
     debug: z.boolean(),
@@ -75,6 +90,13 @@ export class ConfigManager {
   }
 
   /**
+   * Get authentication configuration
+   */
+  getAuthenticationConfig() {
+    return this.config.authentication;
+  }
+
+  /**
    * Get logging configuration
    */
   getLoggingConfig() {
@@ -104,6 +126,9 @@ export class ConfigManager {
         ...(process.env.BROWSERLOOP_USER_AGENT && { userAgent: process.env.BROWSERLOOP_USER_AGENT }),
         retryCount: this.parseNumber('BROWSERLOOP_RETRY_COUNT', 3),
         retryDelay: this.parseNumber('BROWSERLOOP_RETRY_DELAY', 1000)
+      },
+      authentication: {
+        defaultCookies: this.parseDefaultCookies('BROWSERLOOP_DEFAULT_COOKIES')
       },
       logging: {
         debug: this.parseBoolean('BROWSERLOOP_DEBUG', false),
@@ -153,6 +178,58 @@ export class ConfigManager {
     if (!value) return defaultValue;
 
     return validValues.includes(value) ? value : defaultValue;
+  }
+
+  private parseDefaultCookies(envVar: string): Cookie[] {
+    const value = process.env[envVar];
+    if (!value) {
+      if (this.parseBoolean('BROWSERLOOP_DEBUG', false) && !this.parseBoolean('BROWSERLOOP_SILENT', true)) {
+        console.debug('No default cookies configured');
+      }
+      return [];
+    }
+
+    try {
+      let cookies: Cookie[] = [];
+      let source: string = '';
+
+      // Check if value looks like a file path (starts with / or contains file extension)
+      if (value.startsWith('/') || value.includes('.json')) {
+        // Treat as file path - read the file
+        try {
+          const fileContent = readFileSync(value, 'utf-8');
+          cookies = CookieUtils.parseCookies(fileContent);
+          source = `file: ${value}`;
+
+          if (this.parseBoolean('BROWSERLOOP_DEBUG', false) && !this.parseBoolean('BROWSERLOOP_SILENT', true)) {
+            console.debug(`Loaded ${cookies.length} default cookies from ${source}`);
+            console.debug(`Cookie names: ${cookies.map(c => c.name).join(', ')}`);
+          }
+        } catch (fileError) {
+          if (!this.parseBoolean('BROWSERLOOP_SILENT', true)) {
+            console.warn(`Warning: Failed to read cookie file ${value}: ${fileError instanceof Error ? fileError.message : 'Unknown error'}. Using no default cookies.`);
+          }
+          return [];
+        }
+      } else {
+        // Treat as JSON string (backward compatibility)
+        cookies = CookieUtils.parseCookies(value);
+        source = 'environment variable JSON';
+
+        if (this.parseBoolean('BROWSERLOOP_DEBUG', false) && !this.parseBoolean('BROWSERLOOP_SILENT', true)) {
+          console.debug(`Loaded ${cookies.length} default cookies from ${source}`);
+          console.debug(`Cookie names: ${cookies.map(c => c.name).join(', ')}`);
+        }
+      }
+
+      return cookies;
+    } catch (error) {
+      // Log warning but don't fail configuration loading
+      if (!this.parseBoolean('BROWSERLOOP_SILENT', true)) {
+        console.warn(`Warning: Failed to parse ${envVar}: ${error instanceof Error ? error.message : 'Unknown error'}. Using no default cookies.`);
+      }
+      return [];
+    }
   }
 }
 

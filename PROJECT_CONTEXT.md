@@ -61,19 +61,29 @@ An **MCP (Model Context Protocol) server** that provides screenshot capabilities
 - [x] Integration testing with cookie injection scenarios
 - [x] **Security & Privacy Implementation**
   - [x] Memory cleanup: Cookie values automatically cleared after use
-  - [x] Error sanitization: Cookie values never exposed in error messages
-  - [x] Domain validation: Prevents cookie injection attacks
-  - [x] Input validation: Rejects suspicious patterns and oversized cookies
-  - [x] Comprehensive security testing (24 new security tests)
-  - [x] Security documentation with warnings and best practices
-- [x] **Testing & Validation Implementation**
-  - [x] Authentication test fixtures (auth-required.html, multi-domain-auth.html)
-  - [x] Comprehensive E2E authentication scenarios (10 tests)
-  - [x] Real-world authentication patterns (JWT, session-based, CSRF)
-  - [x] Domain validation and error scenario testing
-  - [x] Security measure verification (no cookie leakage in logs)
-- [ ] Documentation for cookie extraction
-- [ ] User experience improvements
+  - [x] Sanitized logging: Cookie values never appear in logs
+  - [x] Input validation: Prevents cookie injection attacks
+  - [x] Domain validation: Prevents cross-domain cookie attacks
+  - [x] Size limits: Prevents DoS via large cookie payloads
+- [x] **Documentation & Examples**
+  - [x] Comprehensive Cookie Authentication Guide (docs/COOKIE_AUTHENTICATION.md)
+  - [x] Step-by-step extraction guides for popular sites
+  - [x] Browser extension recommendations
+  - [x] Security best practices and troubleshooting
+  - [x] API documentation with detailed examples
+- [x] **Error Handling & User Experience**
+  - [x] Helpful error messages for invalid cookies
+  - [x] Authentication failure detection and guidance
+  - [x] Cookie expiration handling
+  - [x] User-friendly validation error messages
+  - [x] Parameter validation with clear feedback
+- [x] **Default Cookies Configuration** ⭐ NEW
+  - [x] BROWSERLOOP_DEFAULT_COOKIES environment variable support
+  - [x] JSON string parsing for MCP configuration
+  - [x] Cookie merging: Request cookies override defaults
+  - [x] Persistent authentication across all requests
+  - [x] Secure environment-based storage
+  - [x] Comprehensive testing and documentation
 
 ### Future Enhancements (Not Started)
 - Multiple browser engines (Firefox, Safari)
@@ -426,3 +436,46 @@ These features have been successfully implemented:
 - **CI/CD automation** with GitHub Actions for testing, security, and deployment
 
 This project is now **complete**, **production-ready**, and provides a comprehensive MCP screenshot server solution with enterprise-grade CI/CD automation.
+
+# Project Context: BrowserLoop MCP Screenshot Server
+
+## Current State: ✅ **PRODUCTION READY**
+
+BrowserLoop is a **complete and production-ready MCP (Model Context Protocol) server** that provides screenshot capabilities to AI development tools like Cursor. The project has successfully implemented comprehensive **cookie-based authentication** support with modern security standards.
+
+**✅ Repository is now clean and ready for open source distribution** - all non-generic identifiers have been replaced with generic examples suitable for public use.
+
+## 🎯 **Latest Major Achievement: Cookie Authentication System**
+
+**Status: ✅ COMPLETE AND WORKING**
+
+The cookie authentication system has been fully implemented and tested:
+
+### ✅ **Technical Implementation Complete**
+- **RFC 6265 compliant domain validation** - supports parent domain cookies (`.example.com` → `app.example.com`)
+- **Modern cookie prefix support** - `__Host-` and `__Secure-` prefixed cookies work correctly
+- **Automatic cookie enhancement** - built-in enhancement respects existing attributes and only adds missing ones
+- **Comprehensive security validation** - prevents injection attacks and sanitizes logging
+- **Environment variable support** - `BROWSERLOOP_DEFAULT_COOKIES` for persistent authentication
+- **Cookie merging system** - combines default and request cookies intelligently
+- **🎉 Browser extension format support** - direct import from Cookie Editor, EditThisCookie, etc. (no manual enhancement needed)
+
+### ✅ **Browser Extension Cookie Support**
+**NEW FEATURE**: Users can now directly use cookie files exported from browser extensions without editing!
+
+- ✅ **Session cookies** (`expires: -1`) supported
+- ✅ **Float timestamps** (like `1750704030.825311`) handled properly
+- ✅ **All security attributes** (`httpOnly`, `secure`, `sameSite`) respected
+- ✅ **Cookie prefixes** (`__Host-`, `__Secure-`) work with security enforcement
+- ✅ **No manual editing required** - use browser extension exports directly
+
+### 📋 **Authentication Usage**
+```bash
+# Set default cookies for automatic authentication
+export BROWSERLOOP_DEFAULT_COOKIES="/path/to/cookies.json"
+
+# Cookies are automatically injected for all requests
+# Supports modern authentication patterns (Next.js, analytics, etc.)
+```
+
+**Note**: Authentication failures are typically due to **expired server sessions** (normal security behavior), not technical issues. Users should refresh their authentication cookies when sessions expire.

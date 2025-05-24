@@ -266,5 +266,91 @@ describe('Cookie Injection Integration', () => {
         await service.cleanup();
       }
     });
+
+    test('should merge default cookies with request cookies', async () => {
+      // Create service config with default cookies
+      const serviceConfig = createTestScreenshotServiceConfig({
+        authentication: {
+          defaultCookies: [
+            { name: 'default_session', value: 'default_value', domain: 'localhost' },
+            { name: 'app_config', value: 'config_value', domain: 'localhost' }
+          ]
+        }
+      });
+
+      const service = new ScreenshotService(serviceConfig);
+
+      try {
+        await service.initialize();
+
+        // Test that request cookies override default cookies with same name
+        const requestCookies = [
+          { name: 'default_session', value: 'overridden_value' }, // Should override default
+          { name: 'request_only', value: 'request_value' } // Should be added
+        ];
+
+        // Use a mock page to verify cookie injection without network calls
+        const mockPage = {
+          context: () => ({
+            addCookies: (cookies: any[]) => {
+              // Verify merged cookies
+              const cookieNames = cookies.map(c => c.name);
+              const cookieValues = new Map(cookies.map(c => [c.name, c.value]));
+
+              // Should have all three cookies
+              assert.ok(cookieNames.includes('default_session'), 'Should include default_session');
+              assert.ok(cookieNames.includes('app_config'), 'Should include app_config');
+              assert.ok(cookieNames.includes('request_only'), 'Should include request_only');
+
+              // Request cookie should override default
+              assert.strictEqual(cookieValues.get('default_session'), 'overridden_value',
+                'Request cookie should override default cookie');
+              assert.strictEqual(cookieValues.get('app_config'), 'config_value',
+                'Default cookie should be preserved when not overridden');
+              assert.strictEqual(cookieValues.get('request_only'), 'request_value',
+                'Request-only cookie should be included');
+
+              return Promise.resolve();
+            }
+          }),
+          setViewportSize: () => Promise.resolve(),
+          setDefaultTimeout: () => {},
+          goto: () => Promise.resolve(),
+          screenshot: () => {
+            // Return a minimal valid PNG buffer (1x1 pixel transparent PNG)
+            const pngBuffer = Buffer.from([
+              0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+              0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4,
+              0x89, 0x00, 0x00, 0x00, 0x0B, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+              0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,
+              0x42, 0x60, 0x82
+            ]);
+            return Promise.resolve(pngBuffer);
+          },
+          isClosed: () => false,
+          close: () => Promise.resolve()
+        };
+
+        // Mock the createPage method to return our mock page
+        const originalCreatePage = (service as any).createPage;
+        (service as any).createPage = () => Promise.resolve(mockPage);
+
+        try {
+          await service.takeScreenshot({
+            url: 'http://localhost:3000',
+            cookies: requestCookies
+          });
+
+          // If we get here, the test passed (cookie merging worked)
+          assert.ok(true, 'Cookie merging completed successfully');
+        } finally {
+          // Restore original method
+          (service as any).createPage = originalCreatePage;
+        }
+
+      } finally {
+        await service.cleanup();
+      }
+    });
   });
 });

@@ -4,12 +4,13 @@ import type { Cookie } from './types.js';
 /**
  * Zod schema for validating cookie objects
  * Enhanced with security validation to prevent injection attacks
+ * Supports browser extension cookie export format
  */
 const CookieSchema = z.object({
   name: z.string()
     .min(1, 'Cookie name cannot be empty')
     .max(255, 'Cookie name too long')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Cookie name contains invalid characters'),
+    .regex(/^[!#$%&'*+\-.0-9A-Z^_`a-z|~]+$/, 'Cookie name contains invalid characters'),
   value: z.string()
     .max(4096, 'Cookie value too long'), // RFC limit
   domain: z.string()
@@ -22,7 +23,7 @@ const CookieSchema = z.object({
   httpOnly: z.boolean().optional(),
   secure: z.boolean().optional(),
   expires: z.number()
-    .min(0, 'Cookie expires must be non-negative')
+    .min(-1, 'Cookie expires must be -1 (session) or positive timestamp') // Allow -1 for session cookies
     .max(2147483647, 'Cookie expires timestamp too large') // 32-bit timestamp limit
     .optional(),
   sameSite: z.enum(['Strict', 'Lax', 'None']).optional()

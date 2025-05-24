@@ -68,6 +68,10 @@ export interface ScreenshotServiceConfig {
     retryCount: number;
     retryDelay: number;
   };
+  /** Authentication configuration */
+  authentication: {
+    defaultCookies: Cookie[];
+  };
   /** Logging configuration */
   logging: LoggingConfig;
   /** Timeout configuration */

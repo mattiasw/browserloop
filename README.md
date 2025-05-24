@@ -70,10 +70,31 @@ Take a full page screenshot of https://example.com
 Take a screenshot of http://localhost:3000 to verify the UI changes
 ```
 
+### 🔐 Cookie Authentication
+
+BrowserLoop supports cookie-based authentication for capturing screenshots of login-protected pages during development:
+
+```
+Take a screenshot of http://localhost:3000/admin/dashboard using these cookies: [{"name":"connect.sid","value":"s:session-id.signature","domain":"localhost"}]
+```
+
+**📖 For cookie extraction methods and development workflows, see:**
+
+**📖 [Cookie Authentication Guide](docs/COOKIE_AUTHENTICATION.md)**
+
+Common development use cases:
+- Local development servers with authentication
+- Staging environment testing
+- API documentation tools (Swagger, GraphQL Playground)
+- Custom web applications during development
+- Admin panels and protected routes
+
 ## Documentation
 
-- **[Complete API Reference](docs/API.md)** - Detailed parameter documentation, examples, and response formats
-- **[Project Context](PROJECT_CONTEXT.md)** - Architecture decisions and technical details
+- **[🔐 Cookie Authentication Guide](docs/COOKIE_AUTHENTICATION.md)** - Complete guide for authenticated screenshots
+- **[🐛 Debugging Guide](docs/DEBUGGING.md)** - Troubleshooting cookie issues and general debugging
+- **[📚 Complete API Reference](docs/API.md)** - Detailed parameter documentation, examples, and response formats
+- **[🔧 Project Context](PROJECT_CONTEXT.md)** - Architecture decisions and technical details
 
 ### Key API Parameters
 
@@ -91,74 +112,89 @@ Take a screenshot of http://localhost:3000 to verify the UI changes
 
 ## Configuration
 
-### Environment Variables
+BrowserLoop can be configured using environment variables:
 
-Configure defaults using environment variables in your MCP configuration:
+### Basic Configuration
 
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROWSERLOOP_DEFAULT_WIDTH` | `1280` | Default viewport width (200-4000) |
+| `BROWSERLOOP_DEFAULT_HEIGHT` | `720` | Default viewport height (200-4000) |
+| `BROWSERLOOP_DEFAULT_FORMAT` | `webp` | Default image format (`webp`, `png`, `jpeg`) |
+| `BROWSERLOOP_DEFAULT_QUALITY` | `80` | Default image quality (0-100) |
+| `BROWSERLOOP_DEFAULT_TIMEOUT` | `30000` | Default timeout in milliseconds |
+| `BROWSERLOOP_USER_AGENT` | - | Custom user agent string |
+
+### Authentication Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROWSERLOOP_DEFAULT_COOKIES` | - | Default cookies as file path or JSON string (see [Cookie Authentication Guide](docs/COOKIE_AUTHENTICATION.md)) |
+
+### Performance & Reliability
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROWSERLOOP_RETRY_COUNT` | `3` | Number of retry attempts for failed operations |
+| `BROWSERLOOP_RETRY_DELAY` | `1000` | Delay between retries in milliseconds |
+
+### Logging & Debugging
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROWSERLOOP_DEBUG` | `false` | Enable debug logging |
+| `BROWSERLOOP_SILENT` | `true` | Disable console output in production |
+| `BROWSERLOOP_ENABLE_METRICS` | `true` | Enable error metrics collection |
+
+### Example MCP Configuration with Default Cookies
+
+#### Method 1: JSON File (Recommended)
+
+Create a cookies file:
+```json
+// ~/.config/browserloop/cookies.json
+[
+  {
+    "name": "connect.sid",
+    "value": "s:your-dev-session.signature",
+    "domain": "localhost"
+  }
+]
+```
+
+Reference in MCP config:
 ```json
 {
   "mcpServers": {
     "browserloop": {
       "command": "node",
-      "args": ["/path/to/browserloop/dist/src/index.js"],
+      "args": ["dist/src/mcp-server.js"],
       "env": {
-        "BROWSERLOOP_DEFAULT_WIDTH": "1920",
-        "BROWSERLOOP_DEFAULT_HEIGHT": "1080",
-        "BROWSERLOOP_DEFAULT_FORMAT": "png",
-        "BROWSERLOOP_DEFAULT_QUALITY": "90",
-        "BROWSERLOOP_USER_AGENT": "BrowserLoop Bot 1.0"
+        "BROWSERLOOP_DEFAULT_COOKIES": "/home/username/.config/browserloop/cookies.json",
+        "BROWSERLOOP_DEFAULT_FORMAT": "webp",
+        "BROWSERLOOP_DEFAULT_QUALITY": "85"
       }
     }
   }
 }
 ```
 
-**📖 See [docs/API.md#configuration](docs/API.md#configuration) for all configuration options.**
+#### Method 2: JSON String (Legacy)
 
-## Development
-
-### Common Commands
-
-```bash
-# Start the server
-npm start
-
-# Run all tests
-npm test
-
-# Format and lint code
-npm run check
-
-# Clean build
-npm run build:clean
-
-# Docker development
-npm run docker:dev
-```
-
-### Testing
-
-```bash
-# Run specific test suites
-npm run test:unit        # Unit tests
-npm run test:integration # Integration tests
-npm run test:e2e         # End-to-end tests
-
-# Check Node.js version compatibility
-npm run check-node
-```
-
-### Docker Support
-
-```bash
-# Build and run with Docker
-npm run docker:build
-npm run docker:run
-
-# Development with Docker
-npm run docker:dev
-npm run docker:dev:logs
-npm run docker:dev:stop
+```json
+{
+  "mcpServers": {
+    "browserloop": {
+      "command": "node",
+      "args": ["dist/src/mcp-server.js"],
+      "env": {
+        "BROWSERLOOP_DEFAULT_COOKIES": "[{\"name\":\"session_id\",\"value\":\"your_session_value\",\"domain\":\"example.com\"},{\"name\":\"auth_token\",\"value\":\"your_auth_token\"}]",
+        "BROWSERLOOP_DEFAULT_FORMAT": "webp",
+        "BROWSERLOOP_DEFAULT_QUALITY": "85"
+      }
+    }
+  }
+}
 ```
 
 ## Troubleshooting
@@ -176,47 +212,9 @@ npm run docker:dev:stop
 - Ensure the path to `dist/src/index.js` is correct in your MCP config
 - Check that the project is built with `npm run build`
 
+### Cookie Issues
+- Can't pass cookies via MCP protocol? Use default cookies configuration
+- Screenshots show login pages? Check cookie expiration and domain settings
+- Need to debug cookie loading? Enable debug logging
+
 **📖 See [docs/API.md#error-handling](docs/API.md#error-handling) for detailed error troubleshooting.**
-
-## Project Structure
-
-```
-├── src/                  # Source code
-│   ├── index.ts         # Main entry point
-│   ├── mcp-server.ts    # MCP server implementation
-│   ├── screenshot-service.ts # Playwright screenshot service
-│   ├── config.ts        # Configuration management
-│   ├── types.ts         # TypeScript definitions
-│   └── test-utils.ts    # Test utilities
-├── tests/               # Test files
-│   ├── e2e/            # End-to-end tests
-│   ├── unit/           # Unit tests
-│   ├── integration/    # Integration tests
-│   └── fixtures/       # Test fixtures
-├── docs/               # Documentation
-│   └── API.md          # Complete API reference
-├── docker/             # Docker configuration
-├── dist/               # Build output
-└── plan.md             # Development plan
-```
-
-## Contributing
-
-1. **Formatting**: Uses Biome for linting and formatting
-2. **Testing**: Add tests for new features, ensure all tests pass
-3. **Documentation**: Update docs for API changes
-
-```bash
-# Before submitting changes
-npm run check           # Lint and format
-npm test               # Run all tests
-npm run build          # Verify build
-```
-
-## License
-
-MIT
-
----
-
-**🚀 Ready to start? Check out the [Complete API Reference](docs/API.md) for detailed usage examples!**

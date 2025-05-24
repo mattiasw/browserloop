@@ -33,6 +33,10 @@ export function createTestScreenshotServiceConfig(overrides: Partial<ScreenshotS
       retryDelay: 1000,
       ...overrides.browser
     },
+    authentication: {
+      defaultCookies: [],
+      ...overrides.authentication
+    },
     logging: {
       debug: false,
       enableMetrics: false,
