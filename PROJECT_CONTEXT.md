@@ -1,66 +1,108 @@
-# Project Context & Architecture
+# BrowserLoop - MCP Screenshot Server
 
-## Project Goals
+## What This Is
+An **MCP (Model Context Protocol) server** that provides screenshot capabilities for AI agents using Playwright. Allows AI tools to capture and analyze web page screenshots, especially useful for verifying UI changes on localhost development servers.
 
-**Primary Goal**: Create an MCP (Model Context Protocol) server for taking screenshots of web pages using Playwright, allowing AI agents to automatically verify UI tasks by analyzing screenshots.
+**Current Status**: ✅ **PRODUCTION READY** with comprehensive CI/CD automation
 
-**Key Use Cases**:
+## Key Use Cases
 - AI agent verification of localhost development servers
 - Automated UI testing and validation
 - Screenshot capture for web development workflows
-- Integration with AI development tools for enhanced capabilities
+- Integration with AI development tools (Cursor, Claude Desktop, etc.)
 
-**Why This Matters**: AI agents need to be able to "see" the results of UI changes they make. Screenshots provide visual feedback for AI-driven development tasks.
+## Technical Stack
+- **Node.js 20+ with TypeScript**
+- **Playwright** for browser automation
+- **Sharp** for image processing (PNG, JPEG, WebP)
+- **Docker** for containerized deployment
+- **MCP Protocol** for AI tool integration
 
-## Technical Architecture Decisions
+## What's Complete ✅
 
-### Core Technology Stack
-- **Node.js 20+ with TypeScript**: Modern JavaScript runtime with strong typing
-- **Playwright**: Browser automation for reliable screenshot capture
-- **Sharp**: High-performance image processing for format conversion
-- **Docker**: Containerized deployment for consistency across environments
-- **MCP Protocol**: Standard protocol for AI tool integration
+### Core Features
+- ✅ **MCP Server**: Full protocol compliance with stdio transport
+- ✅ **Screenshot Service**: Playwright-based with page pooling and browser session reuse
+- ✅ **Multiple Formats**: PNG, JPEG, WebP with quality controls
+- ✅ **Advanced Features**: Full page, viewport, element-specific screenshots
+- ✅ **Docker**: Optimized production container (1.01GB, 58% size reduction)
 
-### Key Technical Decisions Made
+### Performance & Reliability
+- ✅ **Performance**: 13.70 concurrent shots/sec (2x improvement)
+- ✅ **Caching**: LRU cache with TTL for repeated requests
+- ✅ **Error Handling**: Comprehensive logging with categorization and recovery
+- ✅ **Browser Management**: Session reuse, crash recovery, resource cleanup
 
-**1. Docker-First Approach**
-- **Why**: Ensures consistent browser environment across different systems
-- **Benefits**: Eliminates "works on my machine" issues with Playwright browsers
-- **Implementation**: Multi-stage Dockerfile with full Playwright dependencies
+### Testing & CI/CD
+- ✅ **98 Tests Passing**: Unit, integration, E2E, and performance tests
+- ✅ **CI/CD Pipeline**: GitHub Actions with multi-version testing, security scanning
+- ✅ **Multi-platform**: amd64 and arm64 Docker builds
+- ✅ **Quality Gates**: Linting, formatting, security audits
 
-**2. Biome over ESLint + Prettier**
-- **Why**: User preference for faster tooling
-- **Configuration**: Comprehensive linting and formatting rules in `biome.json`
+### Documentation
+- ✅ **Complete API Docs**: Parameter reference, examples, troubleshooting
+- ✅ **Setup Guides**: README with MCP configuration for AI tools
+- ✅ **Architecture Docs**: Technical decisions and implementation details
 
-**3. Multiple Image Format Support (PNG, JPEG, WebP)**
-- **Why**: Flexibility for different use cases and performance requirements
-- **PNG**: Lossless quality for UI screenshots with text and sharp edges
-- **JPEG**: Efficient compression for photographic content and gradients
-- **WebP**: Best compression with good quality for modern browsers
-- **Implementation**: Sharp-based image processing with quality-first capture strategy
+## What's Next (Optional Enhancements)
 
-**4. Node.js Built-in Test Runner**
-- **Why**: No external test dependencies, modern Node.js feature
-- **Benefits**: Faster setup, fewer dependencies to manage
+### Authentication Support 🚧
+**Currently Adding**: Cookie-based authentication for login-protected pages
 
-**5. Host Networking in Docker**
-- **Why**: Direct access to localhost development servers
-- **Fallback**: Port mapping configuration for environments where host networking doesn't work
+- [ ] Cookie parameter support in MCP tool
+- [ ] Browser context cookie injection
+- [ ] Security measures (no cookie logging)
+- [ ] Documentation for cookie extraction
+- [ ] Testing with authenticated scenarios
 
-**6. Non-root Container Security**
-- **Implementation**: Dedicated 'playwright' user in container
-- **Benefits**: Security best practices, proper file permissions
+### Future Enhancements (Not Started)
+- Multiple browser engines (Firefox, Safari)
+- Mobile device emulation
+- Video recording capabilities
+- Batch screenshot operations
+- Enterprise features (auth, rate limiting)
 
-**7. Quality-First Image Processing**
-- **Strategy**: Always capture as PNG (highest quality), then convert to requested format
-- **Benefits**: Maintains maximum image quality while supporting all formats
-- **Implementation**: Sharp library for reliable cross-platform image conversion
+## Quick Start
 
-## Current Implementation State
+### Prerequisites
+- Node.js 20+
+- Docker with compose support
 
-### Completed Components ✅
+### Installation
+```bash
+git clone <repo>
+cd browserloop
+npm install
+npm run build
+```
 
-**Project Structure**:
+### MCP Configuration
+Add to your AI tool's MCP settings:
+```json
+{
+  "mcpServers": {
+    "browserloop": {
+      "command": "node",
+      "args": ["/path/to/browserloop/dist/src/index.js"]
+    }
+  }
+}
+```
+
+### Usage
+```bash
+# Start MCP server
+npm start
+
+# Run tests
+npm test
+
+# Docker development
+npm run docker:dev
+```
+
+## Project Structure
+
 ```
 browserloop/
 ├── src/

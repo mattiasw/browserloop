@@ -81,3 +81,49 @@
   - [x] Implement caching strategies
   - [x] Performance testing and tuning
   - [x] Final code review and cleanup
+
+## Cookie-Based Authentication Implementation
+
+- [ ] **Cookie Parameter Support**
+  - [ ] Extend ScreenshotOptions interface with cookies parameter
+  - [ ] Add cookie validation using Zod schema (array of objects or JSON string)
+  - [ ] Update MCP tool schema to include cookies parameter
+  - [ ] Add cookie parsing utilities (JSON string to cookie object array)
+  - [ ] Implement cookie sanitization (never log cookie values)
+
+- [ ] **Browser Context Cookie Injection**
+  - [ ] Modify ScreenshotService to accept cookies in options
+  - [ ] Implement cookie injection before page navigation
+  - [ ] Add proper cookie domain and path handling
+  - [ ] Handle cookie format validation and error messages
+  - [ ] Add timeout handling for cookie-related operations
+
+- [ ] **Security & Privacy**
+  - [ ] Ensure cookie values are never logged or stored
+  - [ ] Clear sensitive data from memory after use
+  - [ ] Add security warnings to documentation
+  - [ ] Implement proper error messages without exposing cookie data
+  - [ ] Add input validation to prevent cookie injection attacks
+
+- [ ] **Testing & Validation**
+  - [ ] Create test fixtures with authentication requirements
+  - [ ] Add unit tests for cookie parsing and validation
+  - [ ] Create integration tests with mock authentication
+  - [ ] Test cookie injection with different domain configurations
+  - [ ] Add E2E tests with real authenticated scenarios
+  - [ ] Verify security measures (no cookie leakage in logs)
+
+- [ ] **Documentation & Examples**
+  - [ ] Document cookie extraction methods (dev tools, browser extensions)
+  - [ ] Add example cookie formats and usage scenarios
+  - [ ] Create step-by-step guides for popular sites (GitHub, Gmail)
+  - [ ] Document browser extension recommendations
+  - [ ] Add troubleshooting guide for authentication failures
+  - [ ] Update API documentation with cookie parameter details
+
+- [ ] **Error Handling & User Experience**
+  - [ ] Add helpful error messages for invalid cookies
+  - [ ] Implement authentication failure detection
+  - [ ] Add cookie expiration handling and user guidance
+  - [ ] Create user-friendly validation error messages
+  - [ ] Add parameter validation with clear feedback
