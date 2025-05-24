@@ -55,13 +55,14 @@
 ```
 browserloop/
 ├── src/
-│   ├── index.ts (placeholder)
+│   ├── index.ts (screenshot service demo)
+│   ├── screenshot-service.ts (Core Playwright Service) ✅
 │   ├── types.ts (screenshot interfaces)
 │   └── test-utils.ts (testing utilities)
 ├── tests/
-│   ├── unit/ (test utilities)
+│   ├── unit/ (test utilities + screenshot service tests) ✅
 │   ├── integration/ (MCP server tests - placeholder)
-│   ├── e2e/ (Docker integration tests)
+│   ├── e2e/ (Docker integration tests) ✅
 │   └── fixtures/ (HTML test pages)
 ├── docker/
 │   ├── Dockerfile (production)
@@ -77,26 +78,39 @@ browserloop/
 - Production image: Node.js 20 + Playwright + Chromium browser
 - Development: Live code mounting, persistent browser cache
 - Security: Non-root playwright user
-- E2E tests: 3 passing integration tests
+- E2E tests: 3 passing integration tests ✅
+
+**Core Playwright Service** ✅:
+- ScreenshotService class with full functionality
+- Support for different viewport sizes (configurable width/height)
+- WebP and PNG format support with automatic conversion
+- Configurable page load strategies (networkidle/domcontentloaded)
+- Comprehensive error handling and resource cleanup
+- Full page and viewport screenshot capabilities
+- Browser session management with proper initialization
+- Timeout handling and retry logic
 
 **Testing Infrastructure**:
-- 10 unit tests (test utilities) ✅
+- 14 unit tests (test utilities + screenshot service) ✅
 - 8 integration test placeholders
 - 3 E2E Docker tests ✅
 - Test fixtures with beautiful HTML pages
+- Screenshot validation utilities
 
 ### Not Yet Implemented ❌
 
-**Core Functionality**:
-- Actual screenshot service (Playwright automation)
-- MCP server implementation
-- Base64 image encoding
-- Error handling and retry logic
+**MCP Server Implementation**:
+- MCP protocol server setup
+- Tool registration and schema definition
+- Request/response handling
+- Parameter validation for MCP tools
 
-**Configuration**:
+**Configuration & Advanced Features**:
 - Environment variable support
-- Parameter validation
-- Default settings management
+- Configurable quality settings for different formats
+- Element-specific screenshot capture
+- Batch screenshot operations
+- Screenshot comparison utilities
 
 ## Development Environment Setup
 
@@ -151,21 +165,21 @@ npm run docker:dev:shell
 - Consistent indentation and spacing
 - Clean import organization
 
-## Next Phase: Playwright Service Implementation
+## Next Phase: MCP Server Implementation
 
 ### Immediate Tasks
-1. Implement core screenshot service with Playwright
-2. Add support for different viewport sizes
-3. Configure WebP output with quality settings
-4. Add error handling for browser operations
-5. Implement page load waiting strategies
+1. Set up MCP protocol server with stdio transport
+2. Define screenshot tool schema and parameters
+3. Implement tool handler for screenshot requests
+4. Add base64 image encoding for MCP responses
+5. Add parameter validation and defaults
 
 ### Technical Considerations
-- Browser session management (reuse vs new instances)
-- Memory usage optimization
-- Timeout handling
-- Network error recovery
-- Screenshot quality vs file size balance
+- MCP protocol compliance and message handling
+- Tool registration and capability advertisement
+- Request validation and error responses
+- Integration with existing ScreenshotService
+- Configuration management for AI development tools
 
 ## Environment Notes
 
@@ -178,7 +192,9 @@ npm run docker:dev:shell
 
 ### Key Files to Understand
 - `src/types.ts`: Screenshot interfaces and type definitions
+- `src/screenshot-service.ts`: Core Playwright Service implementation
 - `src/test-utils.ts`: Testing utilities with base64 validation
+- `tests/unit/screenshot-service.test.ts`: Screenshot service unit tests
 - `tests/fixtures/simple-page.html`: Beautiful test page for screenshots
 - `docker/Dockerfile`: Production container with Playwright
 - `docker/docker-compose.yml`: Development environment
