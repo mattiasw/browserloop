@@ -1,11 +1,11 @@
-import { describe, it, before, after } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ScreenshotService } from '../../src/screenshot-service.js';
-import { isValidBase64Image } from '../../src/test-utils.js';
+import { createTestScreenshotServiceConfig, isValidBase64Image } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,26 +14,18 @@ const __dirname = dirname(__filename);
 describe('Full Page Screenshots E2E', () => {
   let server: any;
   let screenshotService: ScreenshotService;
-  const port = 3456;
+  const port = 3001;
   const baseUrl = `http://localhost:${port}`;
 
   function createTestConfig(): ScreenshotServiceConfig {
-    return {
-      viewport: {
-        defaultWidth: 800,
-        defaultHeight: 600
-      },
+    return createTestScreenshotServiceConfig({
       screenshot: {
         defaultFormat: 'png',
         defaultQuality: 80,
-        defaultTimeout: 15000,
+        defaultTimeout: 30000,
         defaultWaitForNetworkIdle: false
-      },
-      browser: {
-        retryCount: 2,
-        retryDelay: 500
       }
-    };
+    });
   }
 
   before(async () => {
@@ -80,7 +72,7 @@ describe('Full Page Screenshots E2E', () => {
   });
 
   describe('Viewport vs Full Page Comparison', () => {
-    it('should demonstrate different screenshot methods with actual page dimensions', async () => {
+    test('should demonstrate different screenshot methods with actual page dimensions', async () => {
       const url = `${baseUrl}/long-page.html`;
       const options = {
         url,
@@ -149,7 +141,7 @@ describe('Full Page Screenshots E2E', () => {
         'Both screenshot methods should return valid data (whether same or different)');
     });
 
-    it('should handle simple page with minimal content', async () => {
+    test('should handle simple page with minimal content', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const options = {
         url,
@@ -173,7 +165,7 @@ describe('Full Page Screenshots E2E', () => {
   });
 
   describe('Full Page Screenshot Quality', () => {
-    it('should maintain image quality in full page mode', async () => {
+    test('should maintain image quality in full page mode', async () => {
       const url = `${baseUrl}/long-page.html`;
 
       const lowQualityOptions = {
@@ -205,7 +197,7 @@ describe('Full Page Screenshots E2E', () => {
       assert.ok(highQualityResult.data.length > 1000, 'High quality screenshot has reasonable data size');
     });
 
-    it('should handle different formats in full page mode', async () => {
+    test('should handle different formats in full page mode', async () => {
       const url = `${baseUrl}/long-page.html`;
       const baseOptions = {
         url,
@@ -236,7 +228,7 @@ describe('Full Page Screenshots E2E', () => {
   });
 
   describe('Full Page Error Handling', () => {
-    it('should handle invalid URLs gracefully in full page mode', async () => {
+    test('should handle invalid URLs gracefully in full page mode', async () => {
       const invalidOptions = {
         url: 'http://localhost:99999/nonexistent',
         width: 800,
@@ -253,7 +245,7 @@ describe('Full Page Screenshots E2E', () => {
       }
     });
 
-    it('should handle timeouts in full page mode', async () => {
+    test('should handle timeouts in full page mode', async () => {
       const timeoutOptions = {
         url: `${baseUrl}/long-page.html`,
         width: 800,
@@ -272,7 +264,7 @@ describe('Full Page Screenshots E2E', () => {
   });
 
   describe('Performance and Resource Management', () => {
-    it('should handle multiple full page screenshots efficiently', async () => {
+    test('should handle multiple full page screenshots efficiently', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const options = {
         url,

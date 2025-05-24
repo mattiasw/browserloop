@@ -1,40 +1,42 @@
-import { describe, it, before, after } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
 import { createServer } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ScreenshotService } from '../../src/screenshot-service.js';
-import { isValidBase64Image } from '../../src/test-utils.js';
+import { createTestScreenshotServiceConfig, isValidBase64Image } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 
-describe('Format Support E2E', () => {
-  let service: ScreenshotService;
-  let httpServer: any;
-  let serverUrl: string;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-  before(async () => {
-    // Create test configuration
-    const config: ScreenshotServiceConfig = {
-      viewport: {
-        defaultWidth: 800,
-        defaultHeight: 600
-      },
+describe('Format Support E2E', () => {
+  let server: any;
+  let screenshotService: ScreenshotService;
+  const port = 3002;
+  const baseUrl = `http://localhost:${port}`;
+
+  function createTestConfig(): ScreenshotServiceConfig {
+    return createTestScreenshotServiceConfig({
       screenshot: {
         defaultFormat: 'webp',
         defaultQuality: 80,
-        defaultTimeout: 10000,
+        defaultTimeout: 30000,
         defaultWaitForNetworkIdle: true
-      },
-      browser: {
-        retryCount: 2,
-        retryDelay: 500
       }
-    };
+    });
+  }
 
-    service = new ScreenshotService(config);
-    await service.initialize();
+  before(async () => {
+    // Create test configuration
+    const config = createTestConfig();
+
+    screenshotService = new ScreenshotService(config);
+    await screenshotService.initialize();
 
     // Start HTTP server for testing
-    const port = 3001;
-    httpServer = createServer((req, res) => {
+    server = createServer((req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(`
         <!DOCTYPE html>
@@ -69,25 +71,24 @@ describe('Format Support E2E', () => {
     });
 
     await new Promise<void>((resolve) => {
-      httpServer.listen(port, () => {
-        serverUrl = `http://localhost:${port}`;
+      server.listen(port, () => {
         resolve();
       });
     });
   });
 
   after(async () => {
-    if (service) {
-      await service.cleanup();
+    if (screenshotService) {
+      await screenshotService.cleanup();
     }
-    if (httpServer) {
-      httpServer.close();
+    if (server) {
+      server.close();
     }
   });
 
-  it('should capture PNG format screenshots', async () => {
-    const result = await service.takeScreenshot({
-      url: serverUrl,
+  test('should capture PNG format screenshots', async () => {
+    const result = await screenshotService.takeScreenshot({
+      url: baseUrl,
       format: 'png',
       width: 800,
       height: 600
@@ -100,9 +101,9 @@ describe('Format Support E2E', () => {
     assert.strictEqual(result.height, 600, 'Height should match request');
   });
 
-  it('should capture JPEG format screenshots', async () => {
-    const result = await service.takeScreenshot({
-      url: serverUrl,
+  test('should capture JPEG format screenshots', async () => {
+    const result = await screenshotService.takeScreenshot({
+      url: baseUrl,
       format: 'jpeg',
       quality: 85,
       width: 800,
@@ -116,9 +117,9 @@ describe('Format Support E2E', () => {
     assert.strictEqual(result.height, 600, 'Height should match request');
   });
 
-  it('should capture WebP format screenshots', async () => {
-    const result = await service.takeScreenshot({
-      url: serverUrl,
+  test('should capture WebP format screenshots', async () => {
+    const result = await screenshotService.takeScreenshot({
+      url: baseUrl,
       format: 'webp',
       quality: 80,
       width: 800,
@@ -132,17 +133,17 @@ describe('Format Support E2E', () => {
     assert.strictEqual(result.height, 600, 'Height should match request');
   });
 
-  it('should handle different quality settings for JPEG', async () => {
-    const lowQuality = await service.takeScreenshot({
-      url: serverUrl,
+  test('should handle different quality settings for JPEG', async () => {
+    const lowQuality = await screenshotService.takeScreenshot({
+      url: baseUrl,
       format: 'jpeg',
       quality: 30,
       width: 400,
       height: 300
     });
 
-    const highQuality = await service.takeScreenshot({
-      url: serverUrl,
+    const highQuality = await screenshotService.takeScreenshot({
+      url: baseUrl,
       format: 'jpeg',
       quality: 95,
       width: 400,
@@ -164,17 +165,17 @@ describe('Format Support E2E', () => {
       'High quality JPEG should not be significantly smaller than low quality');
   });
 
-  it('should handle different quality settings for WebP', async () => {
-    const lowQuality = await service.takeScreenshot({
-      url: serverUrl,
+  test('should handle different quality settings for WebP', async () => {
+    const lowQuality = await screenshotService.takeScreenshot({
+      url: baseUrl,
       format: 'webp',
       quality: 40,
       width: 400,
       height: 300
     });
 
-    const highQuality = await service.takeScreenshot({
-      url: serverUrl,
+    const highQuality = await screenshotService.takeScreenshot({
+      url: baseUrl,
       format: 'webp',
       quality: 90,
       width: 400,
@@ -187,12 +188,12 @@ describe('Format Support E2E', () => {
     assert.strictEqual(highQuality.mimeType, 'image/webp', 'High quality should be WebP');
   });
 
-  it('should support all formats for full page screenshots', async () => {
+  test('should support all formats for full page screenshots', async () => {
     const formats: Array<'png' | 'jpeg' | 'webp'> = ['png', 'jpeg', 'webp'];
 
     for (const format of formats) {
-      const result = await service.takeFullPageScreenshot({
-        url: serverUrl,
+      const result = await screenshotService.takeFullPageScreenshot({
+        url: baseUrl,
         format,
         quality: 80,
         width: 600,
@@ -205,12 +206,12 @@ describe('Format Support E2E', () => {
     }
   });
 
-  it('should support all formats for element screenshots', async () => {
+  test('should support all formats for element screenshots', async () => {
     const formats: Array<'png' | 'jpeg' | 'webp'> = ['png', 'jpeg', 'webp'];
 
     for (const format of formats) {
-      const result = await service.takeElementScreenshot({
-        url: serverUrl,
+      const result = await screenshotService.takeElementScreenshot({
+        url: baseUrl,
         format,
         quality: 80,
         width: 600,

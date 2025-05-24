@@ -44,6 +44,10 @@ export interface ScreenshotServiceConfig {
     retryCount: number;
     retryDelay: number;
   };
+  /** Logging configuration */
+  logging: LoggingConfig;
+  /** Timeout configuration */
+  timeouts: TimeoutConfig;
 }
 
 /**
@@ -138,4 +142,96 @@ export interface ImageProcessingConfig {
   selector?: string;
   /** Take full page screenshot instead of viewport */
   fullPage?: boolean;
+}
+
+/**
+ * Error severity levels for logging and handling
+ */
+export type ErrorSeverity = 'low' | 'medium' | 'high' | 'critical';
+
+/**
+ * Error categories for better error handling and recovery
+ */
+export type ErrorCategory =
+  | 'network'
+  | 'timeout'
+  | 'browser_crash'
+  | 'invalid_input'
+  | 'element_not_found'
+  | 'docker'
+  | 'resource'
+  | 'unknown';
+
+/**
+ * Structured error information for logging and handling
+ */
+export interface BrowserloopError {
+  /** Original error */
+  originalError: Error;
+  /** Error category for recovery strategy */
+  category: ErrorCategory;
+  /** Severity level */
+  severity: ErrorSeverity;
+  /** Whether this error type is recoverable */
+  isRecoverable: boolean;
+  /** Context information */
+  context?: {
+    url?: string;
+    attempt?: number;
+    requestId?: string;
+    timestamp: number;
+  };
+}
+
+/**
+ * Health check result
+ */
+export interface HealthCheck {
+  /** Overall health status */
+  healthy: boolean;
+  /** Browser status */
+  browser: {
+    initialized: boolean;
+    connected: boolean;
+    lastError?: string;
+  };
+  /** System resources */
+  resources: {
+    memoryUsage: number;
+    uptime: number;
+  };
+  /** Last successful operation timestamp */
+  lastSuccessfulOperation?: number;
+  /** Error count in last hour */
+  recentErrorCount: number;
+}
+
+/**
+ * Logging configuration
+ */
+export interface LoggingConfig {
+  /** Enable debug logging */
+  debug: boolean;
+  /** Log file path (optional, for debugging only) */
+  logFile?: string;
+  /** Enable error metrics collection */
+  enableMetrics: boolean;
+  /** Silent mode (no console output in production) */
+  silent: boolean;
+}
+
+/**
+ * Timeout configuration for different operations
+ */
+export interface TimeoutConfig {
+  /** Browser initialization timeout */
+  browserInit: number;
+  /** Page navigation timeout */
+  navigation: number;
+  /** Element waiting timeout */
+  elementWait: number;
+  /** Screenshot capture timeout */
+  screenshot: number;
+  /** Network request timeout */
+  network: number;
 }

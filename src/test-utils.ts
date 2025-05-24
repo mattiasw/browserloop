@@ -2,6 +2,47 @@
  * Test utilities for the browserloop project
  */
 
+import type { ScreenshotServiceConfig } from './types.js';
+
+/**
+ * Creates a test configuration for ScreenshotService
+ */
+export function createTestScreenshotServiceConfig(overrides: Partial<ScreenshotServiceConfig> = {}): ScreenshotServiceConfig {
+  return {
+    viewport: {
+      defaultWidth: 1280,
+      defaultHeight: 720,
+      ...overrides.viewport
+    },
+    screenshot: {
+      defaultFormat: 'webp',
+      defaultQuality: 80,
+      defaultTimeout: 30000,
+      defaultWaitForNetworkIdle: true,
+      ...overrides.screenshot
+    },
+    browser: {
+      retryCount: 3,
+      retryDelay: 1000,
+      ...overrides.browser
+    },
+    logging: {
+      debug: false,
+      enableMetrics: false,
+      silent: true,
+      ...overrides.logging
+    },
+    timeouts: {
+      browserInit: 30000,
+      navigation: 30000,
+      elementWait: 5000,
+      screenshot: 10000,
+      network: 5000,
+      ...overrides.timeouts
+    }
+  };
+}
+
 /**
  * Creates a simple test server for testing purposes
  */

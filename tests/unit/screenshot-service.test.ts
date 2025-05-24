@@ -1,29 +1,14 @@
 import { test, mock, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import { ScreenshotService } from '../../src/screenshot-service.js';
-import { isValidBase64Image } from '../../src/test-utils.js';
+import { isValidBase64Image, createTestScreenshotServiceConfig } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 
 describe('ScreenshotService', () => {
   let serviceInstances: ScreenshotService[] = [];
 
   function createTestConfig(): ScreenshotServiceConfig {
-    return {
-      viewport: {
-        defaultWidth: 1280,
-        defaultHeight: 720
-      },
-      screenshot: {
-        defaultFormat: 'webp',
-        defaultQuality: 80,
-        defaultTimeout: 30000,
-        defaultWaitForNetworkIdle: true
-      },
-      browser: {
-        retryCount: 3,
-        retryDelay: 1000
-      }
-    };
+    return createTestScreenshotServiceConfig();
   }
 
   function createService(): ScreenshotService {

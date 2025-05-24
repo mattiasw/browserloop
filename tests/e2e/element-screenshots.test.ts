@@ -1,11 +1,11 @@
-import { describe, it, before, after } from 'node:test';
+import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
-import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createServer, type Server } from 'node:http';
 import { ScreenshotService } from '../../src/screenshot-service.js';
-import { isValidBase64Image } from '../../src/test-utils.js';
+import { createTestScreenshotServiceConfig, isValidBase64Image } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,26 +14,18 @@ const __dirname = dirname(__filename);
 describe('Element Screenshots E2E', () => {
   let server: any;
   let screenshotService: ScreenshotService;
-  const port = 3457;
+  const port = 3003;
   const baseUrl = `http://localhost:${port}`;
 
   function createTestConfig(): ScreenshotServiceConfig {
-    return {
-      viewport: {
-        defaultWidth: 1280,
-        defaultHeight: 720
-      },
+    return createTestScreenshotServiceConfig({
       screenshot: {
         defaultFormat: 'png',
         defaultQuality: 80,
-        defaultTimeout: 15000,
+        defaultTimeout: 30000,
         defaultWaitForNetworkIdle: false
-      },
-      browser: {
-        retryCount: 2,
-        retryDelay: 500
       }
-    };
+    });
   }
 
   before(async () => {
@@ -80,7 +72,7 @@ describe('Element Screenshots E2E', () => {
   });
 
   describe('Element Selection and Capture', () => {
-    it('should capture screenshot of element by class selector', async () => {
+    test('should capture screenshot of element by class selector', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const options = {
         url,
@@ -100,7 +92,7 @@ describe('Element Screenshots E2E', () => {
       console.log(`Container element dimensions: ${result.width}x${result.height}`);
     });
 
-    it('should capture screenshot of h1 element', async () => {
+    test('should capture screenshot of h1 element', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const options = {
         url,
@@ -118,7 +110,7 @@ describe('Element Screenshots E2E', () => {
       console.log(`H1 element dimensions: ${result.width}x${result.height}`);
     });
 
-    it('should capture screenshot of test element', async () => {
+    test('should capture screenshot of test element', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const options = {
         url,
@@ -136,7 +128,7 @@ describe('Element Screenshots E2E', () => {
       console.log(`Test element dimensions: ${result.width}x${result.height}`);
     });
 
-    it('should capture screenshot by ID selector', async () => {
+    test('should capture screenshot by ID selector', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const options = {
         url,
@@ -155,7 +147,7 @@ describe('Element Screenshots E2E', () => {
   });
 
   describe('Element Screenshot vs Other Methods', () => {
-    it('should produce different results than viewport screenshot', async () => {
+    test('should produce different results than viewport screenshot', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const baseOptions = {
         url,
@@ -187,7 +179,7 @@ describe('Element Screenshots E2E', () => {
       console.log(`Element: ${elementResult.width}x${elementResult.height}`);
     });
 
-    it('should handle small and large elements differently', async () => {
+    test('should handle small and large elements differently', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const baseOptions = {
         url,
@@ -219,7 +211,7 @@ describe('Element Screenshots E2E', () => {
   });
 
   describe('Element Screenshot Error Handling', () => {
-    it('should throw error for non-existent element', async () => {
+    test('should throw error for non-existent element', async () => {
       const options = {
         url: `${baseUrl}/simple-page.html`,
         selector: '#non-existent-element',
@@ -237,7 +229,7 @@ describe('Element Screenshots E2E', () => {
       }
     });
 
-    it('should throw error when selector is missing', async () => {
+    test('should throw error when selector is missing', async () => {
       const options = {
         url: `${baseUrl}/simple-page.html`,
         format: 'png' as const,
@@ -253,7 +245,7 @@ describe('Element Screenshots E2E', () => {
       }
     });
 
-    it('should handle invalid CSS selectors gracefully', async () => {
+    test('should handle invalid CSS selectors gracefully', async () => {
       const options = {
         url: `${baseUrl}/simple-page.html`,
         selector: ':::invalid-selector',
@@ -272,7 +264,7 @@ describe('Element Screenshots E2E', () => {
   });
 
   describe('Element Screenshot Quality and Formats', () => {
-    it('should handle different image formats for element screenshots', async () => {
+    test('should handle different image formats for element screenshots', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const baseOptions = {
         url,
@@ -302,7 +294,7 @@ describe('Element Screenshots E2E', () => {
   });
 
   describe('Performance and Resource Management', () => {
-    it('should handle multiple element screenshots efficiently', async () => {
+    test('should handle multiple element screenshots efficiently', async () => {
       const url = `${baseUrl}/simple-page.html`;
       const selectors = ['.container', 'h1', '.test-element'];
 

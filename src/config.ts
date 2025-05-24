@@ -1,23 +1,36 @@
 import { z } from 'zod';
 
 /**
- * Configuration schema for environment variables
+ * Configuration schema for the browser loop service
  */
 const ConfigSchema = z.object({
   viewport: z.object({
-    defaultWidth: z.number().min(200).max(4000).default(1280),
-    defaultHeight: z.number().min(200).max(4000).default(720)
+    defaultWidth: z.number().min(200).max(4000),
+    defaultHeight: z.number().min(200).max(4000)
   }),
   screenshot: z.object({
-    defaultFormat: z.enum(['webp', 'png', 'jpeg']).default('webp'),
-    defaultQuality: z.number().min(1).max(100).default(80),
-    defaultTimeout: z.number().min(1000).max(120000).default(30000),
-    defaultWaitForNetworkIdle: z.boolean().default(true)
+    defaultFormat: z.enum(['webp', 'png', 'jpeg']),
+    defaultQuality: z.number().min(0).max(100),
+    defaultTimeout: z.number().min(1000).max(120000),
+    defaultWaitForNetworkIdle: z.boolean()
   }),
   browser: z.object({
     userAgent: z.string().optional(),
-    retryCount: z.number().min(0).max(10).default(3),
-    retryDelay: z.number().min(100).max(10000).default(1000)
+    retryCount: z.number().min(0).max(10),
+    retryDelay: z.number().min(100).max(10000)
+  }),
+  logging: z.object({
+    debug: z.boolean(),
+    logFile: z.string().optional(),
+    enableMetrics: z.boolean(),
+    silent: z.boolean()
+  }),
+  timeouts: z.object({
+    browserInit: z.number().min(5000).max(60000),
+    navigation: z.number().min(1000).max(120000),
+    elementWait: z.number().min(100).max(30000),
+    screenshot: z.number().min(1000).max(60000),
+    network: z.number().min(1000).max(30000)
   })
 });
 
@@ -34,7 +47,7 @@ export class ConfigManager {
   }
 
   /**
-   * Get the current configuration
+   * Get the complete configuration
    */
   getConfig(): BrowserloopConfig {
     return this.config;
@@ -61,6 +74,20 @@ export class ConfigManager {
     return this.config.browser;
   }
 
+  /**
+   * Get logging configuration
+   */
+  getLoggingConfig() {
+    return this.config.logging;
+  }
+
+  /**
+   * Get timeout configuration
+   */
+  getTimeoutConfig() {
+    return this.config.timeouts;
+  }
+
   private loadConfig(): BrowserloopConfig {
     const envConfig = {
       viewport: {
@@ -77,6 +104,19 @@ export class ConfigManager {
         ...(process.env.BROWSERLOOP_USER_AGENT && { userAgent: process.env.BROWSERLOOP_USER_AGENT }),
         retryCount: this.parseNumber('BROWSERLOOP_RETRY_COUNT', 3),
         retryDelay: this.parseNumber('BROWSERLOOP_RETRY_DELAY', 1000)
+      },
+      logging: {
+        debug: this.parseBoolean('BROWSERLOOP_DEBUG', false),
+        ...(process.env.BROWSERLOOP_LOG_FILE && { logFile: process.env.BROWSERLOOP_LOG_FILE }),
+        enableMetrics: this.parseBoolean('BROWSERLOOP_ENABLE_METRICS', true),
+        silent: this.parseBoolean('BROWSERLOOP_SILENT', true)
+      },
+      timeouts: {
+        browserInit: this.parseNumber('BROWSERLOOP_TIMEOUT_BROWSER_INIT', 30000),
+        navigation: this.parseNumber('BROWSERLOOP_TIMEOUT_NAVIGATION', 30000),
+        elementWait: this.parseNumber('BROWSERLOOP_TIMEOUT_ELEMENT_WAIT', 5000),
+        screenshot: this.parseNumber('BROWSERLOOP_TIMEOUT_SCREENSHOT', 10000),
+        network: this.parseNumber('BROWSERLOOP_TIMEOUT_NETWORK', 5000)
       }
     };
 
@@ -102,17 +142,13 @@ export class ConfigManager {
   }
 
   private parseBoolean(envVar: string, defaultValue: boolean): boolean {
-    const value = process.env[envVar]?.toLowerCase();
+    const value = process.env[envVar];
     if (!value) return defaultValue;
 
-    return value === 'true' || value === '1' || value === 'yes';
+    return value.toLowerCase() === 'true';
   }
 
-  private parseEnum<T extends string>(
-    envVar: string,
-    validValues: readonly T[],
-    defaultValue: T
-  ): T {
+  private parseEnum<T extends string>(envVar: string, validValues: readonly T[], defaultValue: T): T {
     const value = process.env[envVar] as T;
     if (!value) return defaultValue;
 

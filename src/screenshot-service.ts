@@ -1,105 +1,218 @@
 import { chromium, type Browser, type Page } from 'playwright';
 import { ImageProcessor, type ImageConversionOptions } from './image-processor.js';
-import type { ScreenshotOptions, ScreenshotResult, ScreenshotServiceConfig, RetryAttempt } from './types.js';
+import { Logger, categorizeError } from './logger.js';
+import type {
+  ScreenshotOptions,
+  ScreenshotResult,
+  ScreenshotServiceConfig,
+  RetryAttempt,
+  HealthCheck,
+  BrowserloopError
+} from './types.js';
 
 export class ScreenshotService {
   private browser: Browser | null = null;
   private isInitialized = false;
   private serviceConfig: ScreenshotServiceConfig;
+  private logger: Logger;
+  private lastSuccessfulOperation?: number;
+  private initializationInProgress = false;
+  private pagePool: Page[] = [];
+  private maxPoolSize = 3;
+  private activePages = new Set<Page>();
 
   constructor(config: ScreenshotServiceConfig) {
     this.serviceConfig = config;
+    this.logger = new Logger(config.logging);
   }
 
   /**
-   * Initialize the browser instance
+   * Initialize the browser instance with timeout handling
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) {
       return;
     }
 
-    this.browser = await chromium.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
+    if (this.initializationInProgress) {
+      // Wait for ongoing initialization
+      while (this.initializationInProgress && !this.isInitialized) {
+        await this.delay(100);
+      }
+      return;
+    }
 
-    this.isInitialized = true;
+    this.initializationInProgress = true;
+    this.logger.debug('Initializing browser', { timeout: this.serviceConfig.timeouts.browserInit });
+
+    try {
+      const initTimeout = setTimeout(() => {
+        throw new Error(`Browser initialization timeout after ${this.serviceConfig.timeouts.browserInit}ms`);
+      }, this.serviceConfig.timeouts.browserInit);
+
+      this.browser = await chromium.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        timeout: this.serviceConfig.timeouts.browserInit
+      });
+
+      clearTimeout(initTimeout);
+      this.isInitialized = true;
+      this.logger.info('Browser initialized successfully');
+    } catch (error) {
+      const categorizedError = categorizeError(error as Error);
+      this.logger.error('Browser initialization failed', categorizedError);
+      throw error;
+    } finally {
+      this.initializationInProgress = false;
+    }
   }
 
   /**
-   * Take a screenshot of the specified URL with retry logic
+   * Take a screenshot of the specified URL with enhanced error handling
    */
   async takeScreenshot(options: ScreenshotOptions): Promise<ScreenshotResult> {
     return await this.executeWithRetry(async () => {
       await this.ensureInitialized();
 
       const config = this.createScreenshotConfig(options);
-      const page = await this.createPage(config);
+      const page = await this.getPage(config);
 
       try {
         await this.navigateToUrl(page, config);
         const screenshotBuffer = await this.captureScreenshot(page, config, false);
-        return this.createResult(screenshotBuffer, config);
+        const result = this.createResult(screenshotBuffer, config);
+
+        this.lastSuccessfulOperation = Date.now();
+        this.logger.debug('Screenshot captured successfully', {
+          url: options.url,
+          format: config.format,
+          size: screenshotBuffer.length
+        });
+
+        return result;
       } finally {
-        await this.closePage(page);
+        await this.returnPage(page);
       }
-    });
+    }, options.url);
   }
 
   /**
-   * Take a full page screenshot with retry logic
+   * Take a full page screenshot with enhanced error handling
    */
   async takeFullPageScreenshot(options: ScreenshotOptions): Promise<ScreenshotResult> {
     return await this.executeWithRetry(async () => {
       await this.ensureInitialized();
 
       const config = this.createScreenshotConfig(options);
-      const page = await this.createPage(config);
+      const page = await this.getPage(config);
 
       try {
         await this.navigateToUrl(page, config);
         const pageSize = await this.getPageDimensions(page);
         const screenshotBuffer = await this.captureScreenshot(page, config, true);
-        return this.createResult(screenshotBuffer, config, pageSize);
+        const result = this.createResult(screenshotBuffer, config, pageSize);
+
+        this.lastSuccessfulOperation = Date.now();
+        this.logger.debug('Full page screenshot captured successfully', {
+          url: options.url,
+          format: config.format,
+          pageSize,
+          size: screenshotBuffer.length
+        });
+
+        return result;
       } finally {
-        await this.closePage(page);
+        await this.returnPage(page);
       }
-    });
+    }, options.url);
   }
 
   /**
-   * Take a screenshot of a specific element using CSS selector
+   * Take a screenshot of a specific element with enhanced error handling
    */
   async takeElementScreenshot(options: ScreenshotOptions): Promise<ScreenshotResult> {
     if (!options.selector) {
-      throw new Error('Selector is required for element screenshot');
+      const error = new Error('Selector is required for element screenshot');
+      const categorizedError = categorizeError(error, { url: options.url });
+      this.logger.error('Element screenshot failed', categorizedError);
+      throw error;
     }
 
     return await this.executeWithRetry(async () => {
       await this.ensureInitialized();
 
       const config = this.createScreenshotConfig(options);
-      const page = await this.createPage(config);
+      const page = await this.getPage(config);
 
       try {
         await this.navigateToUrl(page, config);
         const element = await this.findElement(page, options.selector!);
         const screenshotBuffer = await this.captureElementScreenshot(page, element, config);
         const elementSize = await this.getElementDimensions(element);
-        return this.createResult(screenshotBuffer, config, elementSize);
+        const result = this.createResult(screenshotBuffer, config, elementSize);
+
+        this.lastSuccessfulOperation = Date.now();
+        this.logger.debug('Element screenshot captured successfully', {
+          url: options.url,
+          selector: options.selector,
+          format: config.format,
+          elementSize,
+          size: screenshotBuffer.length
+        });
+
+        return result;
       } finally {
-        await this.closePage(page);
+        await this.returnPage(page);
       }
-    });
+    }, options.url);
+  }
+
+  /**
+   * Get health status of the service
+   */
+  getHealthCheck(): HealthCheck {
+    const metrics = this.logger.getMetrics();
+    const memoryUsage = process.memoryUsage();
+
+    return {
+      healthy: this.isInitialized && this.browser !== null && !this.initializationInProgress,
+      browser: {
+        initialized: this.isInitialized,
+        connected: this.browser !== null && this.browser.isConnected(),
+        ...(metrics.lastError?.message && { lastError: metrics.lastError.message })
+      },
+      resources: {
+        memoryUsage: memoryUsage.heapUsed,
+        uptime: this.logger.getUptime()
+      },
+      ...(this.lastSuccessfulOperation && { lastSuccessfulOperation: this.lastSuccessfulOperation }),
+      recentErrorCount: metrics.lastHourErrors
+    };
   }
 
   /**
    * Clean up resources
    */
   async cleanup(): Promise<void> {
+    this.logger.debug('Cleaning up browser resources');
+
+    // Close all pages in pool
+    await Promise.all([
+      ...this.pagePool.map(page => this.safeClosePage(page)),
+      ...Array.from(this.activePages).map(page => this.safeClosePage(page))
+    ]);
+
+    this.pagePool = [];
+    this.activePages.clear();
+
     if (this.browser) {
-      await this.browser.close();
+      try {
+        await this.browser.close();
+        this.logger.debug('Browser closed successfully');
+      } catch (error) {
+        this.logger.warn('Error during browser cleanup', { error: (error as Error).message });
+      }
       this.browser = null;
       this.isInitialized = false;
     }
@@ -109,11 +222,12 @@ export class ScreenshotService {
    * Check if service is healthy
    */
   isHealthy(): boolean {
-    return this.isInitialized && this.browser !== null;
+    return this.isInitialized && this.browser !== null && !this.initializationInProgress;
   }
 
   private async ensureInitialized(): Promise<void> {
-    if (!this.isInitialized || !this.browser) {
+    if (!this.isInitialized || !this.browser || !this.browser.isConnected()) {
+      this.logger.debug('Re-initializing browser due to disconnection');
       await this.initialize();
     }
   }
@@ -134,16 +248,19 @@ export class ScreenshotService {
   private async createPage(config: ReturnType<typeof this.createScreenshotConfig>): Promise<Page> {
     const pageOptions = config.userAgent ? { userAgent: config.userAgent } : {};
     const page = await this.browser!.newPage(pageOptions);
-    await page.setViewportSize({ width: config.width, height: config.height });
 
-    page.setDefaultTimeout(config.timeout);
+    await page.setViewportSize({ width: config.width, height: config.height });
+    page.setDefaultTimeout(this.serviceConfig.timeouts.navigation);
+
     return page;
   }
 
   private async navigateToUrl(page: Page, config: ReturnType<typeof this.createScreenshotConfig>): Promise<void> {
+    const navigationTimeout = Math.min(config.timeout, this.serviceConfig.timeouts.navigation);
+
     await page.goto(config.url, {
       waitUntil: config.waitForNetworkIdle ? 'networkidle' : 'domcontentloaded',
-      timeout: config.timeout
+      timeout: navigationTimeout
     });
   }
 
@@ -154,9 +271,12 @@ export class ScreenshotService {
   ): Promise<Buffer> {
     // Always capture as PNG for best quality, then convert if needed
     const playwrightFormat = 'png';
+    const screenshotTimeout = this.serviceConfig.timeouts.screenshot;
+
     const screenshotOptions = {
       type: playwrightFormat as 'png',
-      fullPage
+      fullPage,
+      timeout: screenshotTimeout
     };
 
     const rawBuffer = await page.screenshot(screenshotOptions);
@@ -240,18 +360,10 @@ export class ScreenshotService {
     };
   }
 
-  private async closePage(page: Page): Promise<void> {
-    try {
-      await page.close();
-    } catch (error) {
-      // Silent cleanup - don't interfere with stdio
-    }
-  }
-
   /**
    * Execute a function with retry logic
    */
-  private async executeWithRetry<T>(fn: () => Promise<T>): Promise<T> {
+  private async executeWithRetry<T>(fn: () => Promise<T>, url: string): Promise<T> {
     const maxAttempts = this.serviceConfig.browser.retryCount + 1; // +1 for initial attempt
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -259,29 +371,38 @@ export class ScreenshotService {
         return await fn();
       } catch (error) {
         const isLastAttempt = attempt === maxAttempts;
+        const typedError = error instanceof Error ? error : new Error(String(error));
 
         if (isLastAttempt) {
+          const categorizedError = categorizeError(typedError, { url });
+          this.logger.error('All retry attempts failed', categorizedError, {
+            attempts: maxAttempts,
+            url
+          });
           throw error;
         }
 
-        // Create retry attempt info for potential logging
+        // Create retry attempt info
         const retryInfo: RetryAttempt = {
           attempt,
           maxAttempts,
-          error: error instanceof Error ? error : new Error(String(error)),
+          error: typedError,
           delay: this.serviceConfig.browser.retryDelay
         };
 
-        // Log retry attempt (only if not in test environment)
-        if (process.env.NODE_ENV !== 'test') {
-          // Silent logging - don't interfere with stdio in production
-        }
+        // Log retry attempt using the logger
+        this.logger.retry(attempt, maxAttempts, typedError, { url });
 
         // Wait before retry
         await this.delay(retryInfo.delay);
 
-        // Reset browser if it might be in a bad state
+        // Reset browser if error indicates it's in a bad state
         if (this.isErrorRecoverable(error)) {
+          this.logger.browserReset('Error recovery', {
+            error: typedError.message,
+            attempt,
+            url
+          });
           await this.resetBrowser();
         }
       }
@@ -301,7 +422,9 @@ export class ScreenshotService {
       'browser disconnected',
       'target closed',
       'page crashed',
-      'navigation failed'
+      'navigation failed',
+      'protocol error',
+      'connection closed'
     ];
 
     return recoverableErrors.some(msg =>
@@ -313,16 +436,21 @@ export class ScreenshotService {
    * Reset browser instance for error recovery
    */
   private async resetBrowser(): Promise<void> {
+    this.logger.debug('Resetting browser instance');
+
     try {
       if (this.browser) {
         await this.browser.close();
       }
-    } catch {
-      // Ignore errors during cleanup
+    } catch (error) {
+      this.logger.warn('Error during browser reset', {
+        error: (error as Error).message
+      });
     }
 
     this.browser = null;
     this.isInitialized = false;
+    this.initializationInProgress = false;
   }
 
   /**
@@ -330,5 +458,79 @@ export class ScreenshotService {
    */
   private async delay(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Get a page from the pool or create a new one
+   */
+  private async getPage(config: ReturnType<typeof this.createScreenshotConfig>): Promise<Page> {
+    // Try to get a page from the pool
+    let page = this.pagePool.pop();
+
+    if (page && !page.isClosed()) {
+      this.activePages.add(page);
+      await this.configurePage(page, config);
+      return page;
+    }
+
+    // Create a new page if pool is empty or page was closed
+    page = await this.createPage(config);
+    this.activePages.add(page);
+    return page;
+  }
+
+  /**
+   * Return a page to the pool for reuse
+   */
+  private async returnPage(page: Page): Promise<void> {
+    if (page.isClosed() || this.pagePool.length >= this.maxPoolSize) {
+      await this.safeClosePage(page);
+      this.activePages.delete(page);
+      return;
+    }
+
+    try {
+      // Reset page state for reuse
+      await page.evaluate(() => {
+        // Clear any JavaScript state
+        if ((globalThis as any).localStorage) {
+          (globalThis as any).localStorage.clear();
+        }
+        if ((globalThis as any).sessionStorage) {
+          (globalThis as any).sessionStorage.clear();
+        }
+      });
+
+      this.activePages.delete(page);
+      this.pagePool.push(page);
+
+      this.logger.debug('Page returned to pool', { poolSize: this.pagePool.length });
+    } catch (error) {
+      // If page cleanup fails, close it instead of reusing
+      await this.safeClosePage(page);
+      this.activePages.delete(page);
+    }
+  }
+
+  /**
+   * Configure page settings
+   */
+  private async configurePage(page: Page, config: ReturnType<typeof this.createScreenshotConfig>): Promise<void> {
+    await page.setViewportSize({ width: config.width, height: config.height });
+    page.setDefaultTimeout(this.serviceConfig.timeouts.navigation);
+  }
+
+  /**
+   * Safely close a page without throwing errors
+   */
+  private async safeClosePage(page: Page): Promise<void> {
+    try {
+      if (!page.isClosed()) {
+        await page.close();
+      }
+    } catch (error) {
+      // Silent cleanup - don't interfere with stdio
+      this.logger.debug('Error closing page', { error: (error as Error).message });
+    }
   }
 }
