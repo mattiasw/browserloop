@@ -2,7 +2,14 @@
  * Test utilities for the browserloop project
  */
 
+import { createServer, IncomingMessage, ServerResponse } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { ScreenshotServiceConfig } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 /**
  * Creates a test configuration for ScreenshotService
@@ -46,13 +53,81 @@ export function createTestScreenshotServiceConfig(overrides: Partial<ScreenshotS
 /**
  * Creates a simple test server for testing purposes
  */
-export function createTestServer(port = 3000) {
-  // TODO: Implement simple HTTP server for testing
+export function createTestServer(port = 0) {
+  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
+    try {
+      const url = req.url || '/';
+
+      // Handle specific routes
+      if (url === '/simple.html' || url === '/') {
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(`
+          <!DOCTYPE html>
+          <html>
+          <head><title>Simple Test Page</title></head>
+          <body>
+            <h1>Test Page</h1>
+            <p>This is a simple test page for BrowserLoop</p>
+          </body>
+          </html>
+        `);
+        return;
+      }
+
+      // Try to serve fixture files
+      if (url.endsWith('.html')) {
+        const fixturePath = join(__dirname, '..', 'tests', 'fixtures', url.slice(1));
+        try {
+          const content = await readFile(fixturePath, 'utf-8');
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(content);
+          return;
+        } catch (error) {
+          // File not found, continue to 404
+        }
+      }
+
+      // 404 for other routes
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not Found');
+    } catch (error) {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Internal Server Error');
+    }
+  });
+
+  let actualPort: number;
+
   return {
-    port,
-    url: `http://localhost:${port}`,
-    start: () => Promise.resolve(),
-    stop: () => Promise.resolve(),
+    get port() {
+      return actualPort;
+    },
+    get url() {
+      return `http://localhost:${actualPort}`;
+    },
+    async start() {
+      return new Promise<void>((resolve, reject) => {
+        server.listen(port, 'localhost', () => {
+          const address = server.address();
+          if (address && typeof address === 'object') {
+            actualPort = address.port;
+            resolve();
+          } else {
+            reject(new Error('Failed to get server address'));
+          }
+        });
+
+        server.on('error', reject);
+      });
+    },
+    async stop() {
+      return new Promise<void>((resolve, reject) => {
+        server.close((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    }
   };
 }
 

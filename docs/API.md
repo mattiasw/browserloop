@@ -66,6 +66,32 @@ The `screenshot` tool captures screenshots of web pages and returns them as base
       "selector": {
         "type": "string",
         "description": "CSS selector for element-specific screenshot (optional)"
+      },
+      "cookies": {
+        "description": "Cookies for authentication (optional)",
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": { "type": "string" },
+                "value": { "type": "string" },
+                "domain": { "type": "string" },
+                "path": { "type": "string" },
+                "httpOnly": { "type": "boolean" },
+                "secure": { "type": "boolean" },
+                "expires": { "type": "number" },
+                "sameSite": { "type": "string", "enum": ["Strict", "Lax", "None"] }
+              },
+              "required": ["name", "value"]
+            }
+          },
+          {
+            "type": "string",
+            "description": "JSON string containing cookie array"
+          }
+        ]
       }
     },
     "required": ["url"]
@@ -143,6 +169,12 @@ The `screenshot` tool captures screenshots of web pages and returns them as base
   - `".hero-section"`
   - `"[data-testid='component']"`
 - **Note**: Takes precedence over `fullPage` parameter
+
+#### `cookies` (array or string)
+- **Description**: Cookies for authentication
+- **Details**:
+  - **Array of cookie objects**: Direct JavaScript/JSON objects
+  - **JSON string**: Stringified array of cookie objects
 
 ## Response Format
 
@@ -465,3 +497,146 @@ const screenshot = await mcpClient.callTool('screenshot', {
 expect(screenshot.isError).toBe(false);
 expect(screenshot.content[0].mimeType).toBe('image/png');
 ```
+
+## Cookie Authentication
+
+BrowserLoop supports cookie-based authentication for capturing screenshots of login-protected pages. This feature enables you to capture authenticated content by injecting session cookies into the browser context.
+
+### Cookie Parameter
+
+The `cookies` parameter accepts either:
+1. **Array of cookie objects**: Direct JavaScript/JSON objects
+2. **JSON string**: Stringified array of cookie objects
+
+#### Cookie Object Properties
+
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `name` | string | ✅ | Cookie name |
+| `value` | string | ✅ | Cookie value |
+| `domain` | string | ❌ | Cookie domain (auto-derived from URL if not provided) |
+| `path` | string | ❌ | Cookie path (defaults to '/') |
+| `httpOnly` | boolean | ❌ | HTTP-only flag |
+| `secure` | boolean | ❌ | Secure flag |
+| `expires` | number | ❌ | Expiration timestamp |
+| `sameSite` | string | ❌ | SameSite policy ('Strict', 'Lax', 'None') |
+
+### Example Usage
+
+#### Array Format
+```javascript
+{
+  "url": "https://app.example.com/dashboard",
+  "cookies": [
+    {
+      "name": "session_id",
+      "value": "abc123xyz789",
+      "domain": "app.example.com",
+      "path": "/",
+      "httpOnly": true,
+      "secure": true
+    },
+    {
+      "name": "auth_token",
+      "value": "eyJhbGciOiJIUzI1NiIs...",
+      "httpOnly": true
+    }
+  ]
+}
+```
+
+#### JSON String Format
+```javascript
+{
+  "url": "https://app.example.com/dashboard",
+  "cookies": "[{\"name\":\"session_id\",\"value\":\"abc123xyz789\",\"domain\":\"app.example.com\"}]"
+}
+```
+
+## 🔒 Security Considerations
+
+### Cookie Security
+
+**⚠️ CRITICAL SECURITY WARNINGS:**
+
+1. **Sensitive Data Exposure**: Cookie values contain authentication tokens and session IDs. Never log, store, or expose these values in error messages or debugging output.
+
+2. **Memory Safety**: BrowserLoop automatically clears cookie values from memory after use, but you should also ensure your AI tool/application doesn't persist sensitive cookie data.
+
+3. **Domain Validation**: Cookies are validated against the target URL domain to prevent cookie injection attacks. Only cookies matching the target domain are accepted.
+
+4. **Transport Security**: Always use HTTPS URLs when dealing with authentication cookies to prevent interception.
+
+### Security Features
+
+BrowserLoop implements multiple security measures:
+
+#### Input Validation
+- **Cookie limits**: Maximum 50 cookies per request
+- **Size limits**: Cookie values limited to 4KB (RFC compliance)
+- **Character validation**: Cookie names and domains restricted to safe characters
+- **Pattern detection**: Automatic rejection of suspicious patterns (script tags, JavaScript URLs, etc.)
+
+#### Memory Protection
+- **Automatic cleanup**: Cookie values are overwritten in memory after use
+- **Error sanitization**: Error messages never expose actual cookie values
+- **Secure logging**: Only metadata (lengths, counts) are logged, never actual values
+
+#### Domain Security
+- **Domain matching**: Cookies are validated against target URL domain
+- **Subdomain support**: Allows `.domain.com` patterns for legitimate use cases
+- **localhost handling**: Special handling for development environments (localhost, 127.0.0.1)
+
+### Best Practices
+
+#### 1. Cookie Extraction
+Use browser developer tools or browser extensions to extract cookies:
+
+```javascript
+// In browser console (for manual extraction)
+document.cookie.split(';').map(c => {
+  const [name, value] = c.trim().split('=');
+  return { name, value };
+});
+```
+
+#### 2. Secure Storage
+- **Never commit**: Don't store cookies in version control
+- **Environment variables**: Use secure environment storage for sensitive tokens
+- **Temporary use**: Delete or rotate authentication cookies regularly
+
+#### 3. Error Handling
+```javascript
+// Good: Handle authentication failures gracefully
+try {
+  const result = await screenshot({ url, cookies });
+} catch (error) {
+  if (error.message.includes('Cookie injection failed')) {
+    // Handle authentication error without exposing cookie values
+    console.log('Authentication failed - check cookie validity');
+  }
+}
+```
+
+#### 4. Development vs Production
+```javascript
+// Development: More lenient domain validation
+cookies: [{ name: 'dev_session', value: 'xxx', domain: 'localhost' }]
+
+// Production: Strict domain matching
+cookies: [{ name: 'session', value: 'xxx', domain: 'app.example.com', secure: true }]
+```
+
+### Security Limitations
+
+#### What BrowserLoop CANNOT Protect Against:
+- **AI tool data persistence**: If your AI tool stores cookie data, BrowserLoop cannot control that
+- **Network interception**: Use HTTPS to prevent cookie interception
+- **Client-side vulnerabilities**: Ensure your extraction method is secure
+- **Cookie lifetime**: BrowserLoop doesn't manage cookie expiration
+
+#### Recommended Additional Security:
+- **Token rotation**: Regularly refresh authentication tokens
+- **Minimal permissions**: Use cookies with least-privilege access
+- **Session monitoring**: Monitor for unauthorized access to authenticated accounts
+- **Audit logging**: Log authentication attempts (without cookie values)

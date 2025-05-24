@@ -98,20 +98,20 @@
   - [x] Handle cookie format validation and error messages
   - [x] Add timeout handling for cookie-related operations
 
-- [ ] **Security & Privacy**
-  - [ ] Ensure cookie values are never logged or stored
-  - [ ] Clear sensitive data from memory after use
-  - [ ] Add security warnings to documentation
-  - [ ] Implement proper error messages without exposing cookie data
-  - [ ] Add input validation to prevent cookie injection attacks
+- [x] **Security & Privacy**
+  - [x] Ensure cookie values are never logged or stored
+  - [x] Clear sensitive data from memory after use
+  - [x] Add security warnings to documentation
+  - [x] Implement proper error messages without exposing cookie data
+  - [x] Add input validation to prevent cookie injection attacks
 
-- [ ] **Testing & Validation**
-  - [ ] Create test fixtures with authentication requirements
-  - [ ] Add unit tests for cookie parsing and validation
-  - [ ] Create integration tests with mock authentication
-  - [ ] Test cookie injection with different domain configurations
-  - [ ] Add E2E tests with real authenticated scenarios
-  - [ ] Verify security measures (no cookie leakage in logs)
+- [x] **Testing & Validation**
+  - [x] Create test fixtures with authentication requirements
+  - [x] Add unit tests for cookie parsing and validation
+  - [x] Create integration tests with mock authentication
+  - [x] Test cookie injection with different domain configurations
+  - [x] Add E2E tests with real authenticated scenarios
+  - [x] Verify security measures (no cookie leakage in logs)
 
 - [ ] **Documentation & Examples**
   - [ ] Document cookie extraction methods (dev tools, browser extensions)

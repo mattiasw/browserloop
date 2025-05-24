@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Domain Authentication Test - BrowserLoop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        .domain-section {
+            background: rgba(255, 255, 255, 0.2);
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .cookie-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .cookie-table th,
+        .cookie-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .cookie-table th {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-valid {
+            background: #4CAF50;
+        }
+        .status-invalid {
+            background: #f44336;
+        }
+        .status-warning {
+            background: #ff9800;
+        }
+        .test-results {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Multi-Domain Authentication Test</h1>
+        <p>This page tests cookie authentication across different domain scenarios.</p>
+
+        <div class="domain-section">
+            <h2>Current Domain Information</h2>
+            <p><strong>Current Domain:</strong> <span id="current-domain"></span></p>
+            <p><strong>Current Protocol:</strong> <span id="current-protocol"></span></p>
+            <p><strong>Current Port:</strong> <span id="current-port"></span></p>
+        </div>
+
+        <div class="domain-section">
+            <h2>Cookie Analysis</h2>
+            <table class="cookie-table">
+                <thead>
+                    <tr>
+                        <th>Cookie Name</th>
+                        <th>Value (Masked)</th>
+                        <th>Domain</th>
+                        <th>Path</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="cookie-table-body">
+                    <tr>
+                        <td colspan="5">No cookies found</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="domain-section">
+            <h2>Domain Validation Tests</h2>
+            <div id="domain-tests" class="test-results">
+                Running domain validation tests...
+            </div>
+        </div>
+
+        <div class="domain-section">
+            <h2>Expected Authentication Cookies</h2>
+            <ul>
+                <li><strong>session_id:</strong> Main session identifier</li>
+                <li><strong>auth_token:</strong> Authentication token</li>
+                <li><strong>user_role:</strong> User role/permissions</li>
+                <li><strong>csrf_token:</strong> CSRF protection token</li>
+                <li><strong>remember_me:</strong> Persistent login token</li>
+            </ul>
+        </div>
+
+        <p>Test executed at: <span id="timestamp"></span></p>
+    </div>
+
+    <script>
+        function maskValue(value) {
+            if (!value || value.length <= 8) return value;
+            return value.substring(0, 4) + '***' + value.substring(value.length - 4);
+        }
+
+        function getDomainInfo() {
+            document.getElementById('current-domain').textContent = window.location.hostname;
+            document.getElementById('current-protocol').textContent = window.location.protocol;
+            document.getElementById('current-port').textContent = window.location.port || 'default';
+        }
+
+        function parseCookies() {
+            const cookies = document.cookie.split(';').map(cookie => {
+                const [name, ...valueParts] = cookie.trim().split('=');
+                return {
+                    name: name.trim(),
+                    value: valueParts.join('=').trim()
+                };
+            }).filter(cookie => cookie.name);
+
+            return cookies;
+        }
+
+        function validateCookieDomain(cookieName, currentDomain) {
+            // Simulate domain validation logic
+            const validDomains = [
+                'localhost',
+                '127.0.0.1',
+                'example.com',
+                '.example.com',
+                'test.example.com'
+            ];
+
+            // Check if current domain is valid for this cookie
+            if (currentDomain === 'localhost' || currentDomain === '127.0.0.1') {
+                return { valid: true, reason: 'Development domain' };
+            }
+
+            if (validDomains.includes(currentDomain)) {
+                return { valid: true, reason: 'Authorized domain' };
+            }
+
+            return { valid: false, reason: 'Unauthorized domain' };
+        }
+
+        function displayCookies() {
+            const cookies = parseCookies();
+            const tableBody = document.getElementById('cookie-table-body');
+            const currentDomain = window.location.hostname;
+
+            if (cookies.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5">No cookies found</td></tr>';
+                return;
+            }
+
+            tableBody.innerHTML = cookies.map(cookie => {
+                const validation = validateCookieDomain(cookie.name, currentDomain);
+                const statusClass = validation.valid ? 'status-valid' : 'status-invalid';
+                const statusText = validation.valid ? '✅ Valid' : '❌ Invalid';
+
+                return `
+                    <tr>
+                        <td>${cookie.name}</td>
+                        <td>${maskValue(cookie.value)}</td>
+                        <td>${currentDomain}</td>
+                        <td>/</td>
+                        <td>
+                            <span class="status-indicator ${statusClass}"></span>
+                            ${statusText}
+                            <br><small>${validation.reason}</small>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function runDomainTests() {
+            const currentDomain = window.location.hostname;
+            const cookies = parseCookies();
+            const testResults = document.getElementById('domain-tests');
+
+            const tests = [
+                {
+                    name: 'Localhost Development Test',
+                    test: () => currentDomain === 'localhost' || currentDomain === '127.0.0.1',
+                    description: 'Checks if running on development domain'
+                },
+                {
+                    name: 'Cookie Count Test',
+                    test: () => cookies.length > 0,
+                    description: 'Verifies that cookies are present'
+                },
+                {
+                    name: 'Authentication Cookie Test',
+                    test: () => cookies.some(c => ['session_id', 'auth_token'].includes(c.name)),
+                    description: 'Checks for required authentication cookies'
+                },
+                {
+                    name: 'Security Cookie Test',
+                    test: () => cookies.some(c => c.name === 'csrf_token'),
+                    description: 'Verifies CSRF protection cookie'
+                },
+                {
+                    name: 'Domain Validation Test',
+                    test: () => {
+                        return cookies.every(cookie => {
+                            const validation = validateCookieDomain(cookie.name, currentDomain);
+                            return validation.valid;
+                        });
+                    },
+                    description: 'Ensures all cookies are valid for current domain'
+                }
+            ];
+
+            const results = tests.map(test => {
+                const passed = test.test();
+                const status = passed ? '✅ PASS' : '❌ FAIL';
+                return `${status} ${test.name}: ${test.description}`;
+            });
+
+            testResults.innerHTML = results.join('\n');
+        }
+
+        function initialize() {
+            document.getElementById('timestamp').textContent = new Date().toISOString();
+            getDomainInfo();
+            displayCookies();
+            runDomainTests();
+        }
+
+        // Initialize the page
+        initialize();
+
+        // Refresh every 5 seconds to catch any cookie changes
+        setInterval(() => {
+            displayCookies();
+            runDomainTests();
+        }, 5000);
+    </script>
+</body>
+</html>

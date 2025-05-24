@@ -8,20 +8,51 @@ import {
 
 describe('Test Utils', () => {
   describe('createTestServer', () => {
-    it('should create a test server with default port', () => {
+    it('should create a test server and start it', async () => {
       const server = createTestServer();
 
-      assert.strictEqual(server.port, 3000);
-      assert.strictEqual(server.url, 'http://localhost:3000');
+      // Should have methods before starting
       assert.strictEqual(typeof server.start, 'function');
       assert.strictEqual(typeof server.stop, 'function');
+
+      // Start the server
+      await server.start();
+
+      // Should have port and URL after starting
+      assert.strictEqual(typeof server.port, 'number');
+      assert.ok(server.port > 0, 'Port should be positive number');
+      assert.strictEqual(server.url, `http://localhost:${server.port}`);
+
+      // Clean up
+      await server.stop();
     });
 
-    it('should create a test server with custom port', () => {
+    it('should create a test server with custom port', async () => {
       const server = createTestServer(8080);
 
+      await server.start();
+
+      // When custom port is specified, it should be used
       assert.strictEqual(server.port, 8080);
       assert.strictEqual(server.url, 'http://localhost:8080');
+
+      await server.stop();
+    });
+
+    it('should serve basic HTML content', async () => {
+      const server = createTestServer();
+      await server.start();
+
+      try {
+        // Test that we can make a request to the server
+        const response = await fetch(`${server.url}/`);
+        assert.strictEqual(response.status, 200);
+
+        const content = await response.text();
+        assert.ok(content.includes('Test Page'), 'Should serve HTML content');
+      } finally {
+        await server.stop();
+      }
     });
   });
 

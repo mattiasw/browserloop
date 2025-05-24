@@ -276,13 +276,20 @@ export class ScreenshotService {
    * Inject cookies into the browser context before navigation
    */
   private async injectCookies(page: Page, cookiesInput: Cookie[] | string, url: string): Promise<void> {
+    let cookies: Cookie[] = [];
+    let playwrightCookies: any[] = [];
+
     try {
       // Parse and validate cookies using existing utilities
-      const { cookies, sanitizedForLogging } = CookieUtils.validateAndSanitize(cookiesInput);
+      const { cookies: parsedCookies, sanitizedForLogging } = CookieUtils.validateAndSanitize(cookiesInput);
+      cookies = parsedCookies;
 
       if (cookies.length === 0) {
         return;
       }
+
+      // Additional security validation to prevent injection attacks
+      CookieUtils.validateCookieSecurity(cookies);
 
       this.logger.debug('Injecting cookies into browser context', {
         url,
@@ -294,8 +301,11 @@ export class ScreenshotService {
       const urlObj = new URL(url);
       const defaultDomain = urlObj.hostname;
 
+      // Validate domain to prevent cookie injection attacks
+      this.validateCookieDomains(cookies, urlObj);
+
       // Convert cookies to Playwright format with proper domain handling
-      const playwrightCookies = cookies.map(cookie => {
+      playwrightCookies = cookies.map(cookie => {
         const playwrightCookie: any = {
           name: cookie.name,
           value: cookie.value,
@@ -337,7 +347,10 @@ export class ScreenshotService {
       });
 
     } catch (error) {
-      // Categorize cookie-specific errors
+      // Clear sensitive data from memory before throwing
+      this.clearCookieMemory(cookies, playwrightCookies);
+
+      // Categorize cookie-specific errors without exposing cookie values
       let categorizedError;
       if (error instanceof Error) {
         if (error.message.includes('timeout')) {
@@ -352,8 +365,86 @@ export class ScreenshotService {
       }
 
       this.logger.error('Cookie injection failed', categorizedError);
-      throw new Error(`Cookie injection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+
+      // Sanitize error message to prevent cookie value exposure
+      const sanitizedErrorMessage = this.sanitizeErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+      throw new Error(`Cookie injection failed: ${sanitizedErrorMessage}`);
+    } finally {
+      // Always clear sensitive data from memory after use
+      this.clearCookieMemory(cookies, playwrightCookies);
     }
+  }
+
+  /**
+   * Validate cookie domains to prevent cookie injection attacks
+   */
+  private validateCookieDomains(cookies: Cookie[], urlObj: URL): void {
+    const targetDomain = urlObj.hostname;
+    const allowedDomains = [targetDomain, `.${targetDomain}`];
+
+    // Allow localhost variations for development
+    if (targetDomain === 'localhost' || targetDomain === '127.0.0.1') {
+      allowedDomains.push('localhost', '127.0.0.1', '.localhost');
+    }
+
+    for (const cookie of cookies) {
+      if (cookie.domain) {
+        const cookieDomain = cookie.domain.toLowerCase();
+        const isValidDomain = allowedDomains.some(allowed =>
+          cookieDomain === allowed.toLowerCase() ||
+          (allowed.startsWith('.') && cookieDomain.endsWith(allowed.toLowerCase()))
+        );
+
+        if (!isValidDomain) {
+          throw new Error(`Cookie domain '${cookie.name}' domain mismatch: URL domain is '${targetDomain}'`);
+        }
+      }
+    }
+  }
+
+  /**
+   * Clear sensitive cookie data from memory
+   */
+  private clearCookieMemory(cookies: Cookie[], playwrightCookies: any[]): void {
+    // Clear cookie values from original array
+    if (cookies && Array.isArray(cookies)) {
+      cookies.forEach(cookie => {
+        if (cookie && typeof cookie === 'object') {
+          // Overwrite sensitive fields with empty strings
+          (cookie as any).value = '';
+          if ((cookie as any).expires) {
+            (cookie as any).expires = 0;
+          }
+        }
+      });
+    }
+
+    // Clear playwright cookies array
+    if (playwrightCookies && Array.isArray(playwrightCookies)) {
+      playwrightCookies.forEach(cookie => {
+        if (cookie && typeof cookie === 'object') {
+          // Overwrite sensitive fields with empty strings
+          (cookie as any).value = '';
+          if ((cookie as any).expires) {
+            (cookie as any).expires = 0;
+          }
+        }
+      });
+      // Clear the array
+      playwrightCookies.length = 0;
+    }
+  }
+
+  /**
+   * Sanitize error messages to prevent cookie value exposure
+   */
+  private sanitizeErrorMessage(message: string): string {
+    // Remove any potential cookie value patterns from error messages
+    // This regex matches common cookie value patterns
+    return message
+      .replace(/value["\s]*[:=]["\s]*[^"\s;,}]+/gi, 'value: [REDACTED]')
+      .replace(/["\s]*:["\s]*[^"\s;,}]{10,}/g, ': [REDACTED]')
+      .replace(/Cookie[^:]*:\s*[^;,}\s]{8,}/gi, 'Cookie: [REDACTED]');
   }
 
   private async captureScreenshot(

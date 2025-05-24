@@ -13,7 +13,8 @@ describe('Cookie Injection Integration', () => {
       await service.initialize();
 
       try {
-        const testServer = await createTestServer();
+        const testServer = createTestServer();
+        await testServer.start();
         const port = testServer.port;
 
         // Create test cookies
@@ -62,7 +63,8 @@ describe('Cookie Injection Integration', () => {
       await service.initialize();
 
       try {
-        const testServer = await createTestServer();
+        const testServer = createTestServer();
+        await testServer.start();
         const port = testServer.port;
 
         // Create test cookies as JSON string
@@ -100,7 +102,8 @@ describe('Cookie Injection Integration', () => {
       await service.initialize();
 
       try {
-        const testServer = await createTestServer();
+        const testServer = createTestServer();
+        await testServer.start();
         const port = testServer.port;
 
         const options = createTestScreenshotOptions({
@@ -127,7 +130,8 @@ describe('Cookie Injection Integration', () => {
       await service.initialize();
 
       try {
-        const testServer = await createTestServer();
+        const testServer = createTestServer();
+        await testServer.start();
         const port = testServer.port;
 
         // Cookie without domain - should auto-derive from URL
@@ -163,7 +167,8 @@ describe('Cookie Injection Integration', () => {
       await service.initialize();
 
       try {
-        const testServer = await createTestServer();
+        const testServer = createTestServer();
+        await testServer.start();
         const port = testServer.port;
 
         const options = createTestScreenshotOptions({
@@ -191,20 +196,23 @@ describe('Cookie Injection Integration', () => {
       await service.initialize();
 
       try {
-        const testServer = await createTestServer();
+        const testServer = createTestServer();
+        await testServer.start();
         const port = testServer.port;
 
         const cookies: Cookie[] = [
           {
             name: 'fullpage_cookie',
             value: 'fullpage_value',
-            domain: 'localhost'
+            domain: 'localhost',
+            path: '/'
           }
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          cookies
+          cookies,
+          fullPage: true
         });
 
         // Take full page screenshot with cookies - should not throw
@@ -227,21 +235,23 @@ describe('Cookie Injection Integration', () => {
       await service.initialize();
 
       try {
-        const testServer = await createTestServer();
+        const testServer = createTestServer();
+        await testServer.start();
         const port = testServer.port;
 
         const cookies: Cookie[] = [
           {
             name: 'element_cookie',
             value: 'element_value',
-            domain: 'localhost'
+            domain: 'localhost',
+            path: '/'
           }
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          selector: 'body',
-          cookies
+          cookies,
+          selector: 'h1'
         });
 
         // Take element screenshot with cookies - should not throw
