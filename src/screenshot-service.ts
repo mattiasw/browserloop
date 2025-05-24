@@ -13,13 +13,12 @@ export class ScreenshotService {
       return;
     }
 
-    try {
-      this.browser = await this.launchBrowser();
-      this.isInitialized = true;
-      console.log('Screenshot service initialized successfully');
-    } catch (error) {
-      throw new Error(`Failed to initialize browser: ${error}`);
-    }
+    this.browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+
+    this.isInitialized = true;
   }
 
   /**
@@ -67,7 +66,6 @@ export class ScreenshotService {
       await this.browser.close();
       this.browser = null;
       this.isInitialized = false;
-      console.log('Screenshot service cleaned up');
     }
   }
 
@@ -76,19 +74,6 @@ export class ScreenshotService {
    */
   isHealthy(): boolean {
     return this.isInitialized && this.browser !== null;
-  }
-
-  private async launchBrowser(): Promise<Browser> {
-    return await chromium.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ]
-    });
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -117,7 +102,6 @@ export class ScreenshotService {
   }
 
   private async navigateToUrl(page: Page, config: ReturnType<typeof this.createScreenshotConfig>): Promise<void> {
-    console.log(`Taking screenshot of: ${config.url}`);
     await page.goto(config.url, {
       waitUntil: config.waitForNetworkIdle ? 'networkidle' : 'domcontentloaded',
       timeout: config.timeout
@@ -166,7 +150,7 @@ export class ScreenshotService {
     try {
       await page.close();
     } catch (error) {
-      console.warn('Error closing page:', error);
+      // Silent cleanup - don't interfere with stdio
     }
   }
 }

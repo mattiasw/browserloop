@@ -31,12 +31,12 @@
   - [x] Add page load waiting strategies
   - [x] Implement error handling and retries
 
-- [ ] **MCP Server Implementation**
-  - [ ] Set up MCP protocol server with stdio transport
-  - [ ] Define screenshot tool schema and parameters
-  - [ ] Implement tool handler for screenshot requests
-  - [ ] Add base64 image encoding for responses
-  - [ ] Add parameter validation and defaults
+- [x] **MCP Server Implementation**
+  - [x] Set up MCP protocol server with stdio transport
+  - [x] Define screenshot tool schema and parameters
+  - [x] Implement tool handler for screenshot requests
+  - [x] Add base64 image encoding for responses
+  - [x] Add parameter validation and defaults
 
 - [ ] **Configuration & Options**
   - [ ] Add environment variable support

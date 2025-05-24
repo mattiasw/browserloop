@@ -7,20 +7,18 @@ A Model Context Protocol (MCP) server for taking screenshots of web pages using 
 - 📸 High-quality screenshot capture using Playwright
 - 🌐 Support for localhost and remote URLs
 - 🐳 Docker containerization for consistent environments
-- ⚡ WebP compression for efficient image transfer
+- ⚡ WebP and PNG format support with configurable quality
 - 🛡️ Secure non-root container execution
 - 🤖 Full MCP protocol integration with AI development tools
-- 🖼️ WebP format support for efficient image transfer
 - 🔧 Configurable viewport sizes and capture options
 - ⚡ TypeScript with Biome for fast development
-- 🚀 Ready for Node.js native TypeScript support
 - 🧪 Comprehensive testing with Node.js built-in test runner
 
 ## Installation
 
 ### Prerequisites
 
-- Node.js 18+ (22.6+ recommended for native TypeScript support)
+- Node.js 20+
 - Docker (for browser environment)
 
 ### Setup
@@ -33,16 +31,71 @@ cd browserloop
 # Install dependencies
 npm install
 
-# Build the project (current approach)
+# Build the project
 npm run build
 ```
 
+## MCP Configuration
+
+Add to your MCP configuration file (usually `~/.cursor/mcp-config.json`):
+
+```json
+{
+  "mcpServers": {
+    "browserloop": {
+      "command": "node",
+      "args": [
+        "/absolute/path/to/browserloop/dist/src/index.js"
+      ],
+      "description": "Screenshot capture server for web pages using Playwright"
+    }
+  }
+}
+```
+
+**Replace `/absolute/path/to/browserloop/` with your actual project path.**
+
+### Alternative: NPM Command Configuration
+
+```json
+{
+  "mcpServers": {
+    "browserloop": {
+      "command": "npm",
+      "args": ["start"],
+      "cwd": "/absolute/path/to/browserloop",
+      "description": "Screenshot capture server for web pages using Playwright"
+    }
+  }
+}
+```
+
+## Usage in AI Tools
+
+Once configured, you can use natural language commands:
+
+```
+Take a screenshot of https://example.com
+Take a screenshot of https://example.com with width 1920 and height 1080
+Take a full page screenshot of https://example.com
+Take a screenshot of http://localhost:3000 to verify the UI changes
+```
+
+### Tool Parameters
+
+- **url** (required): Target URL to capture
+- **width** (optional): Viewport width (default: 1280)
+- **height** (optional): Viewport height (default: 720)
+- **format** (optional): Image format - 'webp' or 'png' (default: 'webp')
+- **quality** (optional): Image quality 1-100 for WebP (default: 80)
+- **waitForNetworkIdle** (optional): Wait for network idle (default: true)
+- **timeout** (optional): Timeout in milliseconds (default: 30000)
+- **fullPage** (optional): Take full page screenshot (default: false)
+
 ## Development
 
-### Current Node.js versions (v18-v22.5)
-
 ```bash
-# Start with build step
+# Start the server
 npm start
 
 # Watch mode for development
@@ -50,103 +103,61 @@ npm run dev
 
 # Format and lint code
 npm run check
+
+# Clean build
+npm run build:clean
 ```
-
-### Node.js v22.6+ (Native TypeScript Support)
-
-```bash
-# Direct TypeScript execution (requires --experimental-strip-types)
-npm run start:ts
-
-# Watch mode with direct TypeScript execution
-npm run dev:ts
-```
-
-### Node.js v23.6+ (Default TypeScript Support)
-
-```bash
-# Direct TypeScript execution (no flags needed)
-npm run start:native
-```
-
-Based on the [Node.js TypeScript documentation](https://nodejs.org/en/learn/typescript/run-natively), future versions will support TypeScript natively without compilation.
 
 ## Testing
 
-The project uses Node.js's built-in test runner for fast, dependency-free testing.
-
-### Running Tests
-
 ```bash
-# Run all tests (builds first)
+# Run all tests
 npm test
 
-# Run only unit tests
+# Run specific test suites
 npm run test:unit
-
-# Run only integration tests
 npm run test:integration
+npm run test:e2e
 
 # Check Node.js version compatibility
 npm run check-node
 ```
 
-### Direct TypeScript Testing (Node.js 22.6+)
+## Docker Support
 
 ```bash
-# Run tests directly from TypeScript source
-npm run test:ts
-npm run test:unit:ts
-npm run test:integration:ts
+# Build and run with Docker
+npm run docker:build
+npm run docker:run
+
+# Development with Docker
+npm run docker:dev
+npm run docker:dev:logs
+npm run docker:dev:stop
 ```
 
-### Test Structure
+## Troubleshooting
 
-```
-tests/
-├── unit/                    # Unit tests
-│   └── test-utils.test.ts  # Test utility functions
-├── integration/            # Integration tests
-│   └── mcp-server.test.ts  # MCP server integration
-└── fixtures/               # Test fixtures
-    └── simple-page.html    # Simple HTML page for testing
-```
+### Server Not Starting
+1. Check Node.js version: `node --version` (requires 20+)
+2. Verify build: `npm run build`
+3. Test manually: `npm start`
 
-## Usage
+### Network Issues
+- For localhost screenshots, ensure the development server is running
+- Check Docker networking if using containers
 
-### With AI Development Tools
-
-Add to your MCP configuration:
-
-```json
-{
-  "mcpServers": {
-    "browserloop": {
-      "command": "npx",
-      "args": ["browserloop"],
-      "env": {}
-    }
-  }
-}
-```
-
-### Script Reference
-
-| Script | Description | Node.js Version |
-|--------|-------------|-----------------|
-| `npm start` | Build and run (current default) | 18+ |
-| `npm run start:ts` | Direct TS execution with flag | 22.6+ |
-| `npm run start:native` | Direct TS execution (no flag) | 23.6+ |
-| `npm run dev` | Watch mode with build | 18+ |
-| `npm run dev:ts` | Watch mode direct TS | 22.6+ |
-| `npm test` | Run all tests | 18+ |
-| `npm run test:ts` | Run tests from TS source | 22.6+ |
+### Configuration Issues
+- Ensure the path to `dist/src/index.js` is correct in your MCP config
+- Check that the project is built with `npm run build`
 
 ## Project Structure
 
 ```
 ├── src/                  # Source code
 │   ├── index.ts         # Main entry point
+│   ├── mcp-server.ts    # MCP server implementation
+│   ├── screenshot-service.ts # Playwright screenshot service
 │   ├── types.ts         # TypeScript definitions
 │   └── test-utils.ts    # Test utilities
 ├── tests/               # Test files
@@ -155,13 +166,9 @@ Add to your MCP configuration:
 │   ├── integration/    # Integration tests
 │   └── fixtures/       # Test fixtures
 ├── docker/             # Docker configuration
-├── dist/               # Build output (current approach)
+├── dist/               # Build output
 └── plan.md             # Development plan
 ```
-
-## TODO
-
-See `plan.md` for the complete implementation roadmap.
 
 ## License
 

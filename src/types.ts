@@ -32,3 +32,45 @@ export interface ScreenshotResult {
   /** Timestamp when screenshot was taken */
   timestamp: number;
 }
+
+/**
+ * MCP Tool request parameters for screenshot capture
+ */
+export interface McpScreenshotRequest {
+  /** Target URL to capture */
+  url: string;
+  /** Viewport width (default: 1280) */
+  width?: number;
+  /** Viewport height (default: 720) */
+  height?: number;
+  /** Image format (default: webp) */
+  format?: 'webp' | 'png';
+  /** Image quality 0-100 for WebP (default: 80) */
+  quality?: number;
+  /** Wait for network idle before capturing (default: true) */
+  waitForNetworkIdle?: boolean;
+  /** Timeout in milliseconds (default: 30000) */
+  timeout?: number;
+  /** Take full page screenshot instead of viewport (default: false) */
+  fullPage?: boolean;
+}
+
+/**
+ * MCP Tool response for screenshot capture
+ */
+export interface McpScreenshotResponse {
+  /** Base64 encoded image data with data URL prefix */
+  image: string;
+  /** Image metadata */
+  metadata: {
+    mimeType: string;
+    width: number;
+    height: number;
+    timestamp: number;
+    url: string;
+    viewport: {
+      width: number;
+      height: number;
+    };
+  };
+}

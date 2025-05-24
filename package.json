@@ -2,23 +2,24 @@
   "name": "browserloop",
   "version": "1.0.0",
   "description": "A Model Context Protocol server for taking screenshots of web pages using Playwright",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "type": "module",
   "bin": {
-    "browserloop": "dist/index.js"
+    "browserloop": "dist/src/index.js"
   },
   "scripts": {
     "build": "tsc",
-    "start": "npm run build && node dist/index.js",
+    "start": "npm run build && node dist/src/index.js",
     "start:ts": "node --experimental-strip-types src/index.ts",
     "start:native": "node src/index.ts",
     "dev": "tsc --watch",
     "dev:ts": "node --experimental-strip-types --watch src/index.ts",
     "check-node": "node check-node.js",
-    "test": "npm run build && npm run test:unit && npm run test:integration",
+    "test": "npm run build && npm run test:unit && npm run test:integration && npm run test:e2e:built",
     "test:unit": "node --test dist/tests/unit/test-utils.test.js dist/tests/unit/screenshot-service.test.js",
     "test:integration": "node --test dist/tests/integration/mcp-server.test.js",
     "test:e2e": "node --test dist/tests/e2e/docker-integration.test.js",
+    "test:e2e:built": "node --test dist/tests/e2e/built-server.test.js",
     "test:e2e:ts": "node --experimental-strip-types --test tests/e2e/docker-integration.test.ts",
     "test:all": "npm run test && npm run test:e2e",
     "test:watch": "tsc --watch &",
@@ -36,7 +37,8 @@
     "lint": "biome lint src/",
     "format": "biome format --write src/",
     "check": "biome check --write src/",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "build:clean": "npm run clean && npm run build"
   },
   "keywords": [
     "mcp",
@@ -57,7 +59,8 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.6",
-    "playwright": "^1.48.2"
+    "playwright": "^1.48.2",
+    "zod": "^3.25.28"
   },
   "devDependencies": {
     "@biomejs/cli-linux-x64": "^1.9.4",
