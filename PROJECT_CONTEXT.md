@@ -49,9 +49,12 @@ An **MCP (Model Context Protocol) server** that provides screenshot capabilities
 ### Authentication Support 🚧
 **Currently Adding**: Cookie-based authentication for login-protected pages
 
-- [ ] Cookie parameter support in MCP tool
+- [x] Cookie parameter support in MCP tool
+- [x] Cookie validation and parsing utilities with security measures
+- [x] Zod schema validation for cookie arrays and JSON strings
+- [x] Cookie sanitization (never logs sensitive values)
+- [x] Comprehensive testing (9 new cookie tests, 58 total tests passing)
 - [ ] Browser context cookie injection
-- [ ] Security measures (no cookie logging)
 - [ ] Documentation for cookie extraction
 - [ ] Testing with authenticated scenarios
 
