@@ -90,22 +90,35 @@ jobs:
             --network host \
             browserloop:test
 
-          # Wait for container to be ready
-          sleep 10
-
-          # Check if container is still running
-          if ! docker ps | grep browserloop-test; then
-            echo "Container failed to start"
-            docker logs browserloop-test
-            exit 1
-          fi
-
-          # Clean up
-          docker stop browserloop-test
-          docker rm browserloop-test
+          # Wait for container to be ready with retries
+          for i in {1..30}; do
+            if docker ps | grep browserloop-test; then
+              echo "Container is running"
+              # Test if the service is responsive
+              sleep 2
+              if docker exec browserloop-test ps aux | grep -v grep | grep node; then
+                echo "Service is running in container"
+                break
+              fi
+            fi
+            if [ $i -eq 30 ]; then
+              echo "Container failed to start properly"
+              docker logs browserloop-test
+              exit 1
+            fi
+            sleep 1
+          done
 
       - name: Run E2E tests with Docker
-        run: npm run test:e2e
+        run: |
+          # Run E2E tests that connect to the Docker container
+          npm run test:e2e:ts
+
+      - name: Clean up Docker container
+        if: always()
+        run: |
+          docker stop browserloop-test || true
+          docker rm browserloop-test || true
 
   docker-build:
     name: Docker Build & Scan
@@ -218,14 +231,10 @@ jobs:
             dist/ package.json README.md docs/
 
       - name: Upload release assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./browserloop-${{ github.ref_name }}.tar.gz
-          asset_name: browserloop-${{ github.ref_name }}.tar.gz
-          asset_content_type: application/gzip
+          files: browserloop-${{ github.ref_name }}.tar.gz
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   performance-benchmark:
     name: Performance Benchmark
@@ -264,16 +273,30 @@ jobs:
         with:
           script: |
             const fs = require('fs');
+
+            // Check if performance results file exists
+            if (!fs.existsSync('performance-results.txt')) {
+              console.log('Performance results file not found');
+              return;
+            }
+
             const results = fs.readFileSync('performance-results.txt', 'utf8');
 
             // Extract key metrics from performance results
             const metrics = results.match(/Performance Summary[\s\S]*?(?=\n\n|\n$|$)/);
 
-            if (metrics) {
+            if (metrics && metrics[0]) {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 body: `## 📊 Performance Benchmark Results\n\n\`\`\`\n${metrics[0]}\n\`\`\``
+              });
+            } else {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 📊 Performance Benchmark Results\n\nPerformance tests completed but no summary found. Check the uploaded artifacts for detailed results.`
               });
             }
