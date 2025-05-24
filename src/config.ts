@@ -9,7 +9,7 @@ const ConfigSchema = z.object({
     defaultHeight: z.number().min(200).max(4000).default(720)
   }),
   screenshot: z.object({
-    defaultFormat: z.enum(['webp', 'png']).default('webp'),
+    defaultFormat: z.enum(['webp', 'png', 'jpeg']).default('webp'),
     defaultQuality: z.number().min(1).max(100).default(80),
     defaultTimeout: z.number().min(1000).max(120000).default(30000),
     defaultWaitForNetworkIdle: z.boolean().default(true)
@@ -68,7 +68,7 @@ export class ConfigManager {
         defaultHeight: this.parseNumber('BROWSERLOOP_DEFAULT_HEIGHT', 720)
       },
       screenshot: {
-        defaultFormat: this.parseEnum('BROWSERLOOP_DEFAULT_FORMAT', ['webp', 'png'], 'webp'),
+        defaultFormat: this.parseEnum('BROWSERLOOP_DEFAULT_FORMAT', ['webp', 'png', 'jpeg'], 'webp'),
         defaultQuality: this.parseNumber('BROWSERLOOP_DEFAULT_QUALITY', 80),
         defaultTimeout: this.parseNumber('BROWSERLOOP_DEFAULT_TIMEOUT', 30000),
         defaultWaitForNetworkIdle: this.parseBoolean('BROWSERLOOP_DEFAULT_WAIT_NETWORK_IDLE', true)

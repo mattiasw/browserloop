@@ -7,10 +7,11 @@ A Model Context Protocol (MCP) server for taking screenshots of web pages using 
 - 📸 High-quality screenshot capture using Playwright
 - 🌐 Support for localhost and remote URLs
 - 🐳 Docker containerization for consistent environments
-- ⚡ WebP and PNG format support with configurable quality
+- ⚡ PNG, JPEG, and WebP format support with configurable quality
 - 🛡️ Secure non-root container execution
 - 🤖 Full MCP protocol integration with AI development tools
 - 🔧 Configurable viewport sizes and capture options
+- 📱 Full page and element-specific screenshot capture
 - ⚡ TypeScript with Biome for fast development
 - 🧪 Comprehensive testing with Node.js built-in test runner
 
@@ -105,7 +106,7 @@ Browserloop supports configuration through environment variables using the `env`
 |----------|-------------|---------|--------------|
 | `BROWSERLOOP_DEFAULT_WIDTH` | Default viewport width | `1280` | 200-4000 |
 | `BROWSERLOOP_DEFAULT_HEIGHT` | Default viewport height | `720` | 200-4000 |
-| `BROWSERLOOP_DEFAULT_FORMAT` | Default image format | `webp` | `webp`, `png` |
+| `BROWSERLOOP_DEFAULT_FORMAT` | Default image format | `webp` | `webp`, `png`, `jpeg` |
 | `BROWSERLOOP_DEFAULT_QUALITY` | Default image quality | `80` | 1-100 |
 | `BROWSERLOOP_DEFAULT_TIMEOUT` | Default timeout (ms) | `30000` | 1000-120000 |
 | `BROWSERLOOP_DEFAULT_WAIT_NETWORK_IDLE` | Wait for network idle | `true` | `true`, `false`, `1`, `0`, `yes`, `no` |
@@ -120,6 +121,7 @@ Once configured, you can use natural language commands:
 ```
 Take a screenshot of https://example.com
 Take a screenshot of https://example.com with width 1920 and height 1080
+Take a screenshot of https://example.com in JPEG format with 95% quality
 Take a full page screenshot of https://example.com
 Take a screenshot of http://localhost:3000 to verify the UI changes
 ```
@@ -129,11 +131,15 @@ Take a screenshot of http://localhost:3000 to verify the UI changes
 - **url** (required): Target URL to capture
 - **width** (optional): Viewport width (default: 1280)
 - **height** (optional): Viewport height (default: 720)
-- **format** (optional): Image format - 'webp' or 'png' (default: 'webp')
-- **quality** (optional): Image quality 1-100 for WebP (default: 80)
+- **format** (optional): Image format - 'webp', 'png', or 'jpeg' (default: 'webp')
+  - **PNG**: Lossless quality, best for UI screenshots with text and sharp edges
+  - **JPEG**: Efficient compression, best for photographic content and gradients
+  - **WebP**: Best compression with good quality, supported by modern browsers
+- **quality** (optional): Image quality 1-100 for WebP and JPEG (default: 80)
 - **waitForNetworkIdle** (optional): Wait for network idle (default: true)
 - **timeout** (optional): Timeout in milliseconds (default: 30000)
 - **fullPage** (optional): Take full page screenshot (default: false)
+- **selector** (optional): CSS selector for element-specific screenshot
 
 ## Development
 

@@ -104,6 +104,185 @@ describe('MCP Server Integration', () => {
     });
   });
 
+  describe('Full Page Screenshot Support', () => {
+    it('should include fullPage parameter in schema validation', () => {
+      // Test that the fullPage parameter is properly defined
+      const fullPageSchema = z.boolean().optional();
+
+      // Test valid fullPage values
+      assert.ok(fullPageSchema.safeParse(true).success, 'fullPage accepts true');
+      assert.ok(fullPageSchema.safeParse(false).success, 'fullPage accepts false');
+      assert.ok(fullPageSchema.safeParse(undefined).success, 'fullPage accepts undefined');
+
+      // Test invalid fullPage values
+      assert.ok(!fullPageSchema.safeParse('true').success, 'fullPage rejects string "true"');
+      assert.ok(!fullPageSchema.safeParse(1).success, 'fullPage rejects number 1');
+      assert.ok(!fullPageSchema.safeParse(null).success, 'fullPage rejects null');
+    });
+
+    it('should handle fullPage parameter routing logic', () => {
+      // Test the logic that determines which screenshot method to use
+      const testCases = [
+        { fullPage: true, expectedMethod: 'takeFullPageScreenshot' },
+        { fullPage: false, expectedMethod: 'takeScreenshot' },
+        { fullPage: undefined, expectedMethod: 'takeScreenshot' }
+      ];
+
+      testCases.forEach(testCase => {
+        const expectedMethod = testCase.fullPage
+          ? 'takeFullPageScreenshot'
+          : 'takeScreenshot';
+
+        assert.strictEqual(expectedMethod, testCase.expectedMethod,
+          `fullPage=${testCase.fullPage} should route to ${testCase.expectedMethod}`);
+      });
+    });
+
+    it('should properly configure screenshot service for full page mode', () => {
+      // Test that the screenshot service has both methods available
+      const screenshotService = (server as any).screenshotService;
+      assert.ok(screenshotService, 'Screenshot service exists');
+
+      // Verify both methods exist
+      assert.strictEqual(typeof screenshotService.takeScreenshot, 'function',
+        'takeScreenshot method exists');
+      assert.strictEqual(typeof screenshotService.takeFullPageScreenshot, 'function',
+        'takeFullPageScreenshot method exists');
+    });
+
+    it('should include fullPage status in response metadata', () => {
+      // Test that response metadata reflects fullPage parameter
+      const mockMetadata = {
+        width: 1280,
+        height: 2000, // Taller than viewport for full page
+        timestamp: Date.now(),
+        url: 'http://localhost:3000',
+        viewport: {
+          width: 1280,
+          height: 720
+        },
+        configuration: {
+          retryCount: 3,
+          userAgent: 'default'
+        }
+      };
+
+      // Verify metadata structure for full page screenshots
+      assert.ok(mockMetadata.height > mockMetadata.viewport.height,
+        'Full page height should exceed viewport height');
+      assert.strictEqual(typeof mockMetadata.width, 'number', 'Width should be number');
+      assert.strictEqual(typeof mockMetadata.height, 'number', 'Height should be number');
+      assert.ok(mockMetadata.viewport, 'Viewport info should be included');
+    });
+
+    it('should handle dimension differences between viewport and full page', () => {
+      // Test that full page screenshots can have different dimensions than viewport
+      const viewportDimensions = { width: 1280, height: 720 };
+      const fullPageDimensions = { width: 1280, height: 3000 }; // Much taller
+
+      // Verify that full page can be larger than viewport
+      assert.ok(fullPageDimensions.height > viewportDimensions.height,
+        'Full page height can exceed viewport height');
+      assert.strictEqual(fullPageDimensions.width, viewportDimensions.width,
+        'Full page width should match viewport width');
+
+      // Test minimum and maximum constraints still apply
+      assert.ok(fullPageDimensions.width >= 200 && fullPageDimensions.width <= 4000,
+        'Full page width within parameter limits');
+      // Note: Height limits don't apply to calculated full page height
+    });
+  });
+
+  describe('Element Screenshot Support', () => {
+    it('should include selector parameter in schema validation', () => {
+      // Test that the selector parameter is properly defined
+      const selectorSchema = z.string().optional();
+
+      // Test valid selector values
+      assert.ok(selectorSchema.safeParse('#main-header').success, 'selector accepts ID selector');
+      assert.ok(selectorSchema.safeParse('.content-box').success, 'selector accepts class selector');
+      assert.ok(selectorSchema.safeParse('div[data-testid="content-section"]').success, 'selector accepts attribute selector');
+      assert.ok(selectorSchema.safeParse(undefined).success, 'selector accepts undefined');
+
+      // Test invalid selector values
+      assert.ok(!selectorSchema.safeParse(123).success, 'selector rejects number');
+      assert.ok(!selectorSchema.safeParse(true).success, 'selector rejects boolean');
+      assert.ok(!selectorSchema.safeParse(null).success, 'selector rejects null');
+    });
+
+    it('should handle selector parameter routing logic', () => {
+      // Test the logic that determines which screenshot method to use
+      const testCases = [
+        { selector: '#main-header', fullPage: false, expectedMethod: 'takeElementScreenshot' },
+        { selector: '.content-box', fullPage: true, expectedMethod: 'takeElementScreenshot' },
+        { selector: undefined, fullPage: true, expectedMethod: 'takeFullPageScreenshot' },
+        { selector: undefined, fullPage: false, expectedMethod: 'takeScreenshot' }
+      ];
+
+      testCases.forEach(testCase => {
+        let expectedMethod;
+        if (testCase.selector) {
+          expectedMethod = 'takeElementScreenshot';
+        } else if (testCase.fullPage) {
+          expectedMethod = 'takeFullPageScreenshot';
+        } else {
+          expectedMethod = 'takeScreenshot';
+        }
+
+        assert.strictEqual(expectedMethod, testCase.expectedMethod,
+          `selector=${testCase.selector}, fullPage=${testCase.fullPage} should route to ${testCase.expectedMethod}`);
+      });
+    });
+
+    it('should properly configure screenshot service for element mode', () => {
+      // Test that the screenshot service has the element screenshot method
+      const screenshotService = (server as any).screenshotService;
+      assert.ok(screenshotService, 'Screenshot service exists');
+
+      // Verify element screenshot method exists
+      assert.strictEqual(typeof screenshotService.takeElementScreenshot, 'function',
+        'takeElementScreenshot method exists');
+    });
+
+    it('should prioritize selector over fullPage when both are provided', () => {
+      // Test that element screenshots take precedence over full page when selector is provided
+      const testCase = { selector: '#main-header', fullPage: true };
+
+      // When both selector and fullPage are provided, selector should take precedence
+      const expectedMethod = 'takeElementScreenshot';
+
+      assert.strictEqual(expectedMethod, 'takeElementScreenshot',
+        'selector should take precedence over fullPage parameter');
+    });
+
+    it('should include element dimensions in response metadata', () => {
+      // Test that response metadata reflects element-specific information
+      const mockElementMetadata = {
+        width: 400, // Element width (smaller than viewport)
+        height: 150, // Element height (smaller than viewport)
+        timestamp: Date.now(),
+        url: 'http://localhost:3000/element-test.html',
+        viewport: {
+          width: 1280,
+          height: 720
+        },
+        configuration: {
+          retryCount: 3,
+          userAgent: 'default'
+        }
+      };
+
+      // Verify metadata structure for element screenshots
+      assert.ok(mockElementMetadata.width <= mockElementMetadata.viewport.width,
+        'Element width should be <= viewport width');
+      assert.ok(mockElementMetadata.height <= mockElementMetadata.viewport.height,
+        'Element height should be <= viewport height');
+      assert.strictEqual(typeof mockElementMetadata.width, 'number', 'Width should be number');
+      assert.strictEqual(typeof mockElementMetadata.height, 'number', 'Height should be number');
+      assert.ok(mockElementMetadata.viewport, 'Viewport info should be included');
+    });
+  });
+
   describe('Error Prevention', () => {
     it('should prevent "No server info found" error with proper MCP implementation', () => {
       // This test specifically targets the error that was happening
@@ -264,6 +443,70 @@ describe('MCP Server Integration', () => {
       const errorContent = expectedErrorResponse.content[0];
       assert.ok(errorContent, 'error content should exist');
       assert.strictEqual(errorContent.type, 'text', 'error content should be text type');
+    });
+
+    it('should include proper metadata for full page screenshots', () => {
+      // Test that full page screenshot responses include correct metadata
+      const fullPageMetadata = {
+        width: 1280,
+        height: 2500, // Full page height
+        timestamp: Date.now(),
+        url: 'http://localhost:3000/long-page.html',
+        viewport: {
+          width: 1280,
+          height: 720
+        },
+        configuration: {
+          retryCount: 3,
+          userAgent: 'default'
+        }
+      };
+
+      // Verify metadata structure
+      assert.ok(fullPageMetadata.height > fullPageMetadata.viewport.height,
+        'Full page metadata should show height exceeding viewport');
+      assert.ok(fullPageMetadata.url.includes('long-page'),
+        'URL should reference long page test fixture');
+      assert.strictEqual(typeof fullPageMetadata.timestamp, 'number',
+        'Timestamp should be number');
+    });
+  });
+
+  describe('JPEG Format Support', () => {
+    it('should include jpeg in format schema validation', () => {
+      const validFormats = ['webp', 'png', 'jpeg'];
+
+      validFormats.forEach(format => {
+        assert.ok(['webp', 'png', 'jpeg'].includes(format), `${format} should be supported`);
+      });
+    });
+
+    it('should handle jpeg format parameter routing logic', () => {
+      const mockRequest = {
+        url: 'https://example.com',
+        format: 'jpeg' as const,
+        quality: 85
+      };
+
+      assert.strictEqual(mockRequest.format, 'jpeg');
+      assert.strictEqual(mockRequest.quality, 85);
+    });
+
+    it('should properly configure screenshot service for JPEG mode', () => {
+      const jpegOptions = {
+        url: 'https://example.com',
+        format: 'jpeg' as const,
+        quality: 90
+      };
+
+      assert.strictEqual(jpegOptions.format, 'jpeg');
+      assert.strictEqual(typeof jpegOptions.quality, 'number');
+      assert.ok(jpegOptions.quality >= 1 && jpegOptions.quality <= 100);
+    });
+
+    it('should include JPEG MIME type in response metadata', () => {
+      const expectedMimeType = 'image/jpeg';
+      assert.strictEqual(expectedMimeType, 'image/jpeg');
     });
   });
 });

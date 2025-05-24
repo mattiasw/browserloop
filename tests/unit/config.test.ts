@@ -55,7 +55,7 @@ describe('ConfigManager', () => {
   test('should handle invalid environment variables gracefully', () => {
     // Set invalid environment variables
     process.env.BROWSERLOOP_DEFAULT_WIDTH = 'invalid';
-    process.env.BROWSERLOOP_DEFAULT_FORMAT = 'jpeg'; // Not supported
+    process.env.BROWSERLOOP_DEFAULT_FORMAT = 'gif'; // Not supported
     process.env.BROWSERLOOP_RETRY_COUNT = 'not-a-number';
 
     const config = new ConfigManager();

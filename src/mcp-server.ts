@@ -48,7 +48,7 @@ export class McpScreenshotServer {
           .min(PARAMETER_LIMITS.HEIGHT.MIN, `Height must be at least ${PARAMETER_LIMITS.HEIGHT.MIN}`)
           .max(PARAMETER_LIMITS.HEIGHT.MAX, `Height must be at most ${PARAMETER_LIMITS.HEIGHT.MAX}`)
           .optional(),
-        format: z.enum(['webp', 'png']).optional(),
+        format: z.enum(['webp', 'png', 'jpeg']).optional(),
         quality: z.number()
           .min(PARAMETER_LIMITS.QUALITY.MIN, `Quality must be at least ${PARAMETER_LIMITS.QUALITY.MIN}`)
           .max(PARAMETER_LIMITS.QUALITY.MAX, `Quality must be at most ${PARAMETER_LIMITS.QUALITY.MAX}`)
@@ -59,7 +59,8 @@ export class McpScreenshotServer {
           .max(PARAMETER_LIMITS.TIMEOUT.MAX, `Timeout must be at most ${PARAMETER_LIMITS.TIMEOUT.MAX}ms`)
           .optional(),
         fullPage: z.boolean().optional(),
-        userAgent: z.string().optional()
+        userAgent: z.string().optional(),
+        selector: z.string().optional()
       },
       async (request, extra) => {
         const requestId = extra.requestId || 'unknown';
@@ -79,10 +80,18 @@ export class McpScreenshotServer {
           const userAgent = request.userAgent ?? config.getBrowserConfig().userAgent;
           const options = userAgent ? { ...baseOptions, userAgent } : baseOptions;
 
+          // Add selector if provided
+          const finalOptions = request.selector ? { ...options, selector: request.selector } : options;
+
           // Take screenshot using appropriate method
-          const result = request.fullPage
-            ? await this.screenshotService.takeFullPageScreenshot(options)
-            : await this.screenshotService.takeScreenshot(options);
+          let result;
+          if (request.selector) {
+            result = await this.screenshotService.takeElementScreenshot(finalOptions);
+          } else if (request.fullPage) {
+            result = await this.screenshotService.takeFullPageScreenshot(finalOptions);
+          } else {
+            result = await this.screenshotService.takeScreenshot(finalOptions);
+          }
 
           // Format response for MCP
           return {
@@ -101,12 +110,12 @@ export class McpScreenshotServer {
                     timestamp: result.timestamp,
                     url: request.url,
                     viewport: {
-                      width: options.width,
-                      height: options.height
+                      width: finalOptions.width,
+                      height: finalOptions.height
                     },
                     configuration: {
                       retryCount: config.getBrowserConfig().retryCount,
-                      userAgent: ('userAgent' in options ? options.userAgent : undefined) || 'default'
+                      userAgent: ('userAgent' in finalOptions ? finalOptions.userAgent : undefined) || 'default'
                     }
                   }
                 }, null, 2)

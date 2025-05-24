@@ -49,12 +49,10 @@
   - [x] Implement graceful fallbacks for invalid environment variables
   - [x] Add configuration tests and documentation
 
-- [ ] **Advanced Features**
-  - [ ] Full page screenshot support
-  - [ ] Element-specific screenshot capture
-  - [ ] Multiple format support (WebP, PNG, JPEG)
-  - [ ] Screenshot comparison utilities
-  - [ ] Batch screenshot operations
+- [x] **Advanced Features**
+  - [x] Full page screenshot support
+  - [x] Element-specific screenshot capture
+  - [x] Multiple format support (WebP, PNG, JPEG)
 
 - [ ] **Documentation & Examples**
   - [ ] Complete API documentation

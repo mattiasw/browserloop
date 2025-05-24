@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Element Screenshot Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+        }
+
+        .header {
+            background: #3498db;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .content-box {
+            background: white;
+            border: 2px solid #2c3e50;
+            border-radius: 10px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .small-element {
+            background: #e74c3c;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 10px;
+        }
+
+        .large-element {
+            background: #27ae60;
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin: 20px 0;
+            min-height: 200px;
+        }
+
+        .hidden-element {
+            display: none;
+        }
+
+        .positioned-element {
+            position: absolute;
+            top: 500px;
+            left: 50px;
+            background: #f39c12;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            width: 200px;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .grid-item {
+            background: #9b59b6;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header" id="main-header">
+        <h1>Element Screenshot Test Page</h1>
+        <p>This page contains various elements for testing element-specific screenshots</p>
+    </div>
+
+    <div class="content-box" data-testid="content-section">
+        <h2>Content Section</h2>
+        <p>This is a content box with a border and shadow. It should be easily identifiable in screenshots.</p>
+
+        <div class="small-element" id="small-red">Small Red Element</div>
+        <div class="small-element">Another Small Element</div>
+    </div>
+
+    <div class="large-element" id="large-green">
+        <h3>Large Green Element</h3>
+        <p>This is a larger element with more content. It has a significant height and should capture well.</p>
+        <ul>
+            <li>List item 1</li>
+            <li>List item 2</li>
+            <li>List item 3</li>
+        </ul>
+    </div>
+
+    <div class="grid-container" id="grid-section">
+        <div class="grid-item">Grid Item 1</div>
+        <div class="grid-item">Grid Item 2</div>
+        <div class="grid-item">Grid Item 3</div>
+        <div class="grid-item">Grid Item 4</div>
+        <div class="grid-item">Grid Item 5</div>
+        <div class="grid-item">Grid Item 6</div>
+    </div>
+
+    <div class="positioned-element" id="positioned">
+        Positioned Element
+        <br>
+        This element is positioned absolutely
+    </div>
+
+    <div class="hidden-element" id="hidden">
+        This element is hidden and should not be capturable
+    </div>
+
+    <footer style="margin-top: 600px; padding: 20px; background: #34495e; color: white; text-align: center;">
+        <p>Footer content at the bottom of the page</p>
+    </footer>
+</body>
+</html>

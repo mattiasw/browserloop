@@ -15,10 +15,11 @@
     "dev": "tsc --watch",
     "dev:ts": "node --experimental-strip-types --watch src/index.ts",
     "check-node": "node check-node.js",
-    "test": "npm run build && npm run test:unit && npm run test:integration && npm run test:e2e:built",
-    "test:unit": "node --test dist/tests/unit/test-utils.test.js dist/tests/unit/screenshot-service.test.js dist/tests/unit/config.test.js",
+    "test": "npm run build && npm run test:unit && npm run test:integration && npm run test:e2e:format && npm run test:e2e:built",
+    "test:unit": "node --test dist/tests/unit/test-utils.test.js dist/tests/unit/screenshot-service.test.js dist/tests/unit/config.test.js dist/tests/unit/image-processor.test.js",
     "test:integration": "node --test dist/tests/integration/mcp-server.test.js",
     "test:e2e": "node --test dist/tests/e2e/docker-integration.test.js",
+    "test:e2e:format": "node --test dist/tests/e2e/format-support.test.js",
     "test:e2e:built": "node --test dist/tests/e2e/built-server.test.js",
     "test:e2e:ts": "node --experimental-strip-types --test tests/e2e/docker-integration.test.ts",
     "test:all": "npm run test && npm run test:e2e",
@@ -59,7 +60,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.6",
+    "@types/sharp": "^0.31.1",
     "playwright": "^1.48.2",
+    "sharp": "^0.34.2",
     "zod": "^3.25.28"
   },
   "devDependencies": {

@@ -2,22 +2,24 @@
  * Configuration options for screenshot capture
  */
 export interface ScreenshotOptions {
-  /** Target URL to capture */
+  /** URL to screenshot */
   url: string;
-  /** Viewport width */
+  /** Viewport width (default: 1280) */
   width?: number;
-  /** Viewport height */
+  /** Viewport height (default: 720) */
   height?: number;
-  /** Image format (webp or png) */
-  format?: 'webp' | 'png';
-  /** Image quality (0-100) for WebP */
+  /** Image format (webp, png, or jpeg) */
+  format?: 'webp' | 'png' | 'jpeg';
+  /** Image quality (0-100) for WebP and JPEG */
   quality?: number;
-  /** Wait for network idle before capturing */
+  /** Wait for network idle before screenshot (default: true) */
   waitForNetworkIdle?: boolean;
-  /** Timeout in milliseconds */
+  /** Timeout in milliseconds (default: 30000) */
   timeout?: number;
-  /** Custom user agent string */
+  /** User agent string (optional) */
   userAgent?: string;
+  /** CSS selector for element screenshot (optional) */
+  selector?: string;
 }
 
 /**
@@ -31,7 +33,7 @@ export interface ScreenshotServiceConfig {
   };
   /** Default screenshot settings */
   screenshot: {
-    defaultFormat: 'webp' | 'png';
+    defaultFormat: 'webp' | 'png' | 'jpeg';
     defaultQuality: number;
     defaultTimeout: number;
     defaultWaitForNetworkIdle: boolean;
@@ -84,8 +86,8 @@ export interface McpScreenshotRequest {
   /** Viewport height (default: 720) */
   height?: number;
   /** Image format (default: webp) */
-  format?: 'webp' | 'png';
-  /** Image quality 0-100 for WebP (default: 80) */
+  format?: 'webp' | 'png' | 'jpeg';
+  /** Image quality 0-100 for WebP and JPEG (default: 80) */
   quality?: number;
   /** Wait for network idle before capturing (default: true) */
   waitForNetworkIdle?: boolean;
@@ -93,6 +95,8 @@ export interface McpScreenshotRequest {
   timeout?: number;
   /** Take full page screenshot instead of viewport (default: false) */
   fullPage?: boolean;
+  /** CSS selector for element-specific screenshot */
+  selector?: string;
 }
 
 /**
@@ -113,4 +117,25 @@ export interface McpScreenshotResponse {
       height: number;
     };
   };
+}
+
+export interface ImageProcessingConfig {
+  /** Output image format */
+  format: 'webp' | 'png' | 'jpeg';
+  /** Image quality 0-100 for WebP and JPEG (default: 80) */
+  quality?: number;
+  /** Viewport width in pixels (200-4000) */
+  width?: number;
+  /** Viewport height in pixels (200-4000) */
+  height?: number;
+  /** Wait for network idle before screenshot (default: true) */
+  waitForNetworkIdle?: boolean;
+  /** Timeout in milliseconds (1000-120000) */
+  timeout?: number;
+  /** User agent string (optional) */
+  userAgent?: string;
+  /** CSS selector for element screenshot (optional) */
+  selector?: string;
+  /** Take full page screenshot instead of viewport */
+  fullPage?: boolean;
 }

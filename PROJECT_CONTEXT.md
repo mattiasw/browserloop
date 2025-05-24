@@ -17,6 +17,7 @@
 ### Core Technology Stack
 - **Node.js 20+ with TypeScript**: Modern JavaScript runtime with strong typing
 - **Playwright**: Browser automation for reliable screenshot capture
+- **Sharp**: High-performance image processing for format conversion
 - **Docker**: Containerized deployment for consistency across environments
 - **MCP Protocol**: Standard protocol for AI tool integration
 
@@ -31,9 +32,12 @@
 - **Why**: User preference for faster tooling
 - **Configuration**: Comprehensive linting and formatting rules in `biome.json`
 
-**3. WebP Image Format**
-- **Why**: Better compression than PNG (smaller file sizes for MCP transport)
-- **Alternative**: PNG support also available for compatibility
+**3. Multiple Image Format Support (PNG, JPEG, WebP)**
+- **Why**: Flexibility for different use cases and performance requirements
+- **PNG**: Lossless quality for UI screenshots with text and sharp edges
+- **JPEG**: Efficient compression for photographic content and gradients
+- **WebP**: Best compression with good quality for modern browsers
+- **Implementation**: Sharp-based image processing with quality-first capture strategy
 
 **4. Node.js Built-in Test Runner**
 - **Why**: No external test dependencies, modern Node.js feature
@@ -46,6 +50,11 @@
 **6. Non-root Container Security**
 - **Implementation**: Dedicated 'playwright' user in container
 - **Benefits**: Security best practices, proper file permissions
+
+**7. Quality-First Image Processing**
+- **Strategy**: Always capture as PNG (highest quality), then convert to requested format
+- **Benefits**: Maintains maximum image quality while supporting all formats
+- **Implementation**: Sharp library for reliable cross-platform image conversion
 
 ## Current Implementation State
 
@@ -72,7 +81,7 @@ browserloop/
 ```
 
 **Dependencies Installed**:
-- Production: `@modelcontextprotocol/sdk@^1.0.6`, `playwright@^1.48.2`, `zod@^3.25.28`
+- Production: `@modelcontextprotocol/sdk@^1.0.6`, `playwright@^1.48.2`, `sharp@^0.34.2`, `zod@^3.25.28`
 - Development: TypeScript, Biome, Node.js types
 
 **Docker Environment**:
@@ -84,27 +93,39 @@ browserloop/
 **Core Playwright Service** ✅:
 - ScreenshotService class with full functionality
 - Support for different viewport sizes (configurable width/height)
-- WebP and PNG format support with automatic conversion
+- PNG, JPEG, and WebP format support with Sharp-based conversion
 - Configurable page load strategies (networkidle/domcontentloaded)
 - Comprehensive error handling and resource cleanup
 - Full page and viewport screenshot capabilities
+- Element-specific screenshot capture with CSS selectors
 - Browser session management with proper initialization
 - Timeout handling and retry logic
+
+**Image Processing Service** ✅:
+- Sharp-based format conversion for JPEG and WebP
+- Quality-first capture strategy (PNG → conversion)
+- Configurable quality settings for lossy formats
+- Proper MIME type generation for all formats
+- Optimal Playwright format selection
 
 **MCP Server Implementation** ✅:
 - Complete MCP protocol server setup with stdio transport
 - Screenshot tool registered with proper schema and Zod validation
+- Support for PNG, JPEG, and WebP format parameters
 - Correct MCP response format with image content type and isError field
 - Base64 image encoding with proper MIME types
 - Parameter validation with reasonable defaults and limits
 - Clean JSON-RPC communication (no console output interference)
 
 **Testing Infrastructure** ✅:
-- 17 unit and integration tests passing (including response format verification)
-- 3 E2E Docker tests passing
+- 31 unit tests passing (including ImageProcessor tests)
+- 32 integration tests passing (including JPEG format support)
+- 7 E2E format support tests passing
+- 4 built server E2E tests passing
 - Test fixtures with beautiful HTML pages
 - Screenshot validation utilities
 - Response format compliance testing
+- Comprehensive format conversion testing
 
 ### Configuration Cleanup ✅
 
@@ -126,8 +147,9 @@ The MCP screenshot server is now fully functional and ready for production use:
 2. **Response Format**: Correct image content type with metadata
 3. **Error Handling**: Proper error responses with isError field
 4. **Clean Communication**: No console output interference
-5. **Comprehensive Testing**: All tests passing
-6. **Documentation**: Complete setup and usage instructions
+5. **Comprehensive Testing**: All 74 tests passing across all suites
+6. **Multiple Format Support**: PNG, JPEG, and WebP with quality controls
+7. **Documentation**: Complete setup and usage instructions
 
 ## Development Environment Setup
 
@@ -186,17 +208,6 @@ Add to your AI tool's MCP config:
 ## Future Enhancement Opportunities
 
 While the core functionality is complete, these optional enhancements could be added:
-
-- [ ] **Configuration & Options**
-  - [ ] Environment variable support for default settings
-  - [ ] User agent configuration options
-  - [ ] Custom browser launch arguments
-
-- [ ] **Advanced Features**
-  - [ ] Element-specific screenshot capture (CSS selectors)
-  - [ ] JPEG format support
-  - [ ] Screenshot comparison utilities
-  - [ ] Batch screenshot operations
 
 - [ ] **Performance & Reliability**
   - [ ] Browser session reuse for better performance

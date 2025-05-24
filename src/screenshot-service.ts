@@ -1,4 +1,5 @@
 import { chromium, type Browser, type Page } from 'playwright';
+import { ImageProcessor, type ImageConversionOptions } from './image-processor.js';
 import type { ScreenshotOptions, ScreenshotResult, ScreenshotServiceConfig, RetryAttempt } from './types.js';
 
 export class ScreenshotService {
@@ -68,6 +69,32 @@ export class ScreenshotService {
   }
 
   /**
+   * Take a screenshot of a specific element using CSS selector
+   */
+  async takeElementScreenshot(options: ScreenshotOptions): Promise<ScreenshotResult> {
+    if (!options.selector) {
+      throw new Error('Selector is required for element screenshot');
+    }
+
+    return await this.executeWithRetry(async () => {
+      await this.ensureInitialized();
+
+      const config = this.createScreenshotConfig(options);
+      const page = await this.createPage(config);
+
+      try {
+        await this.navigateToUrl(page, config);
+        const element = await this.findElement(page, options.selector!);
+        const screenshotBuffer = await this.captureElementScreenshot(page, element, config);
+        const elementSize = await this.getElementDimensions(element);
+        return this.createResult(screenshotBuffer, config, elementSize);
+      } finally {
+        await this.closePage(page);
+      }
+    });
+  }
+
+  /**
    * Clean up resources
    */
   async cleanup(): Promise<void> {
@@ -125,13 +152,24 @@ export class ScreenshotService {
     config: ReturnType<typeof this.createScreenshotConfig>,
     fullPage: boolean
   ): Promise<Buffer> {
-    const playwrightFormat = config.format === 'webp' ? 'png' : config.format;
+    // Always capture as PNG for best quality, then convert if needed
+    const playwrightFormat = 'png';
     const screenshotOptions = {
       type: playwrightFormat as 'png',
       fullPage
     };
 
-    return await page.screenshot(screenshotOptions);
+    const rawBuffer = await page.screenshot(screenshotOptions);
+
+    // Convert to requested format if needed
+    if (ImageProcessor.needsConversion(config.format)) {
+      return await ImageProcessor.convertImage(rawBuffer, {
+        format: config.format,
+        quality: config.quality
+      });
+    }
+
+    return rawBuffer;
   }
 
   private async getPageDimensions(page: Page): Promise<{ width: number; height: number }> {
@@ -141,13 +179,57 @@ export class ScreenshotService {
     }));
   }
 
+  private async findElement(page: Page, selector: string) {
+    const element = await page.locator(selector).first();
+
+    const count = await element.count();
+    if (count === 0) {
+      throw new Error(`Element not found: ${selector}`);
+    }
+
+    await element.scrollIntoViewIfNeeded();
+
+    return element;
+  }
+
+  private async captureElementScreenshot(page: Page, element: any, config: ReturnType<typeof this.createScreenshotConfig>): Promise<Buffer> {
+    // Always capture as PNG for best quality, then convert if needed
+    const playwrightFormat = 'png';
+
+    const rawBuffer = await element.screenshot({
+      type: playwrightFormat as 'png'
+    });
+
+    // Convert to requested format if needed
+    if (ImageProcessor.needsConversion(config.format)) {
+      return await ImageProcessor.convertImage(rawBuffer, {
+        format: config.format,
+        quality: config.quality
+      });
+    }
+
+    return rawBuffer;
+  }
+
+  private async getElementDimensions(element: any): Promise<{ width: number; height: number }> {
+    const boundingBox = await element.boundingBox();
+    if (!boundingBox) {
+      throw new Error('Could not get element dimensions');
+    }
+
+    return {
+      width: Math.round(boundingBox.width),
+      height: Math.round(boundingBox.height)
+    };
+  }
+
   private createResult(
     screenshotBuffer: Buffer,
     config: ReturnType<typeof this.createScreenshotConfig>,
     pageSize?: { width: number; height: number }
   ): ScreenshotResult {
     const base64Data = screenshotBuffer.toString('base64');
-    const mimeType = config.format === 'webp' ? 'image/webp' : `image/${config.format}`;
+    const mimeType = ImageProcessor.getMimeType(config.format);
 
     return {
       data: base64Data,

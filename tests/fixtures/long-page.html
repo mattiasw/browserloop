@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Long Page Test - BrowserLoop</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+            color: white;
+        }
+        .block {
+            width: 100%;
+            height: 600px;
+            padding: 20px;
+            box-sizing: border-box;
+            border: 2px solid rgba(255,255,255,0.3);
+            margin-bottom: 20px;
+        }
+        .block:nth-child(odd) {
+            background: rgba(255,0,0,0.2);
+        }
+        .block:nth-child(even) {
+            background: rgba(0,255,0,0.2);
+        }
+        h1 {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .marker {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: red;
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+    <div class="marker">TOP MARKER</div>
+
+    <h1>Long Page Test - Should be much taller than 600px</h1>
+
+    <div class="block">
+        <h2>Block 1 (600px tall)</h2>
+        <p>This block is 600px tall, same as our viewport height.</p>
+    </div>
+
+    <div class="block">
+        <h2>Block 2 (600px tall)</h2>
+        <p>This block should push the total height to over 1200px.</p>
+    </div>
+
+    <div class="block">
+        <h2>Block 3 (600px tall)</h2>
+        <p>This block should push the total height to over 1800px.</p>
+    </div>
+
+    <div class="block">
+        <h2>Block 4 (600px tall)</h2>
+        <p>This block should push the total height to over 2400px.</p>
+    </div>
+
+    <div class="block">
+        <h2>Block 5 (600px tall)</h2>
+        <p>This block should push the total height to over 3000px.</p>
+        <div style="position: absolute; bottom: 20px; right: 20px; background: red; color: white; padding: 10px; border-radius: 5px;">
+            BOTTOM MARKER
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded');
+            console.log('Document dimensions:', {
+                scrollWidth: document.documentElement.scrollWidth,
+                scrollHeight: document.documentElement.scrollHeight,
+                clientWidth: document.documentElement.clientWidth,
+                clientHeight: document.documentElement.clientHeight
+            });
+        });
+    </script>
+</body>
+</html>
