@@ -22,14 +22,17 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer, type Server } from 'node:http';
 import { ScreenshotService } from '../../src/screenshot-service.js';
-import { createTestScreenshotServiceConfig, isValidBase64Image } from '../../src/test-utils.js';
+import {
+  createTestScreenshotServiceConfig,
+  isValidBase64Image,
+} from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 describe('Element Screenshots E2E', () => {
-  let server: any;
+  let server: Server;
   let screenshotService: ScreenshotService;
   const port = 3003;
   const baseUrl = `http://localhost:${port}`;
@@ -40,8 +43,8 @@ describe('Element Screenshots E2E', () => {
         defaultFormat: 'png',
         defaultQuality: 80,
         defaultTimeout: 30000,
-        defaultWaitForNetworkIdle: false
-      }
+        defaultWaitForNetworkIdle: false,
+      },
     });
   }
 
@@ -95,18 +98,36 @@ describe('Element Screenshots E2E', () => {
         url,
         selector: '.container',
         format: 'png' as const,
-        timeout: 10000
+        timeout: 10000,
       };
 
       const result = await screenshotService.takeElementScreenshot(options);
 
-      assert.ok(isValidBase64Image(result.data), 'Element screenshot has valid base64 data');
-      assert.strictEqual(result.mimeType, 'image/png', 'Element screenshot has correct MIME type');
-      assert.ok(typeof result.width === 'number' && result.width > 0, 'Element has valid width');
-      assert.ok(typeof result.height === 'number' && result.height > 0, 'Element has valid height');
-      assert.ok(typeof result.timestamp === 'number', 'Element screenshot has timestamp');
+      assert.ok(
+        isValidBase64Image(result.data),
+        'Element screenshot has valid base64 data'
+      );
+      assert.strictEqual(
+        result.mimeType,
+        'image/png',
+        'Element screenshot has correct MIME type'
+      );
+      assert.ok(
+        typeof result.width === 'number' && result.width > 0,
+        'Element has valid width'
+      );
+      assert.ok(
+        typeof result.height === 'number' && result.height > 0,
+        'Element has valid height'
+      );
+      assert.ok(
+        typeof result.timestamp === 'number',
+        'Element screenshot has timestamp'
+      );
 
-      console.log(`Container element dimensions: ${result.width}x${result.height}`);
+      console.log(
+        `Container element dimensions: ${result.width}x${result.height}`
+      );
     });
 
     test('should capture screenshot of h1 element', async () => {
@@ -115,14 +136,24 @@ describe('Element Screenshots E2E', () => {
         url,
         selector: 'h1',
         format: 'png' as const,
-        timeout: 10000
+        timeout: 10000,
       };
 
       const result = await screenshotService.takeElementScreenshot(options);
 
-      assert.ok(isValidBase64Image(result.data), 'H1 element screenshot is valid');
-      assert.strictEqual(result.mimeType, 'image/png', 'H1 element has correct MIME type');
-      assert.ok(result.width > 0 && result.height > 0, 'H1 element has valid dimensions');
+      assert.ok(
+        isValidBase64Image(result.data),
+        'H1 element screenshot is valid'
+      );
+      assert.strictEqual(
+        result.mimeType,
+        'image/png',
+        'H1 element has correct MIME type'
+      );
+      assert.ok(
+        result.width > 0 && result.height > 0,
+        'H1 element has valid dimensions'
+      );
 
       console.log(`H1 element dimensions: ${result.width}x${result.height}`);
     });
@@ -133,14 +164,24 @@ describe('Element Screenshots E2E', () => {
         url,
         selector: '.test-element',
         format: 'webp' as const,
-        timeout: 10000
+        timeout: 10000,
       };
 
       const result = await screenshotService.takeElementScreenshot(options);
 
-      assert.ok(isValidBase64Image(result.data), 'Test element screenshot is valid');
-      assert.strictEqual(result.mimeType, 'image/webp', 'Test element has correct MIME type');
-      assert.ok(result.width > 0 && result.height > 0, 'Test element has valid dimensions');
+      assert.ok(
+        isValidBase64Image(result.data),
+        'Test element screenshot is valid'
+      );
+      assert.strictEqual(
+        result.mimeType,
+        'image/webp',
+        'Test element has correct MIME type'
+      );
+      assert.ok(
+        result.width > 0 && result.height > 0,
+        'Test element has valid dimensions'
+      );
 
       console.log(`Test element dimensions: ${result.width}x${result.height}`);
     });
@@ -151,15 +192,23 @@ describe('Element Screenshots E2E', () => {
         url,
         selector: '#timestamp',
         format: 'png' as const,
-        timeout: 10000
+        timeout: 10000,
       };
 
       const result = await screenshotService.takeElementScreenshot(options);
 
-      assert.ok(isValidBase64Image(result.data), 'Timestamp element screenshot is valid');
-      assert.ok(result.width > 0 && result.height > 0, 'Timestamp element has valid dimensions');
+      assert.ok(
+        isValidBase64Image(result.data),
+        'Timestamp element screenshot is valid'
+      );
+      assert.ok(
+        result.width > 0 && result.height > 0,
+        'Timestamp element has valid dimensions'
+      );
 
-      console.log(`Timestamp element dimensions: ${result.width}x${result.height}`);
+      console.log(
+        `Timestamp element dimensions: ${result.width}x${result.height}`
+      );
     });
   });
 
@@ -171,26 +220,50 @@ describe('Element Screenshots E2E', () => {
         width: 1280,
         height: 720,
         format: 'png' as const,
-        timeout: 10000
+        timeout: 10000,
       };
 
-      const viewportResult = await screenshotService.takeScreenshot(baseOptions);
+      const viewportResult =
+        await screenshotService.takeScreenshot(baseOptions);
       const elementResult = await screenshotService.takeElementScreenshot({
         ...baseOptions,
-        selector: '.container'
+        selector: '.container',
       });
 
-      assert.ok(isValidBase64Image(viewportResult.data), 'Viewport screenshot is valid');
-      assert.ok(isValidBase64Image(elementResult.data), 'Element screenshot is valid');
+      assert.ok(
+        isValidBase64Image(viewportResult.data),
+        'Viewport screenshot is valid'
+      );
+      assert.ok(
+        isValidBase64Image(elementResult.data),
+        'Element screenshot is valid'
+      );
 
-      assert.strictEqual(viewportResult.width, 1280, 'Viewport screenshot has correct width');
-      assert.strictEqual(viewportResult.height, 720, 'Viewport screenshot has correct height');
+      assert.strictEqual(
+        viewportResult.width,
+        1280,
+        'Viewport screenshot has correct width'
+      );
+      assert.strictEqual(
+        viewportResult.height,
+        720,
+        'Viewport screenshot has correct height'
+      );
 
-      assert.ok(elementResult.width !== viewportResult.width || elementResult.height !== viewportResult.height,
-        'Element screenshot should have different dimensions than viewport');
+      assert.ok(
+        elementResult.width !== viewportResult.width ||
+          elementResult.height !== viewportResult.height,
+        'Element screenshot should have different dimensions than viewport'
+      );
 
-      assert.ok(elementResult.width < viewportResult.width, 'Element width should be smaller than viewport');
-      assert.ok(elementResult.height < viewportResult.height, 'Element height should be smaller than viewport');
+      assert.ok(
+        elementResult.width < viewportResult.width,
+        'Element width should be smaller than viewport'
+      );
+      assert.ok(
+        elementResult.height < viewportResult.height,
+        'Element height should be smaller than viewport'
+      );
 
       console.log(`Viewport: ${viewportResult.width}x${viewportResult.height}`);
       console.log(`Element: ${elementResult.width}x${elementResult.height}`);
@@ -201,29 +274,43 @@ describe('Element Screenshots E2E', () => {
       const baseOptions = {
         url,
         format: 'png' as const,
-        timeout: 10000
+        timeout: 10000,
       };
 
       const smallElementResult = await screenshotService.takeElementScreenshot({
         ...baseOptions,
-        selector: '#timestamp'
+        selector: '#timestamp',
       });
 
       const largeElementResult = await screenshotService.takeElementScreenshot({
         ...baseOptions,
-        selector: '.container'
+        selector: '.container',
       });
 
-      assert.ok(isValidBase64Image(smallElementResult.data), 'Small element screenshot is valid');
-      assert.ok(isValidBase64Image(largeElementResult.data), 'Large element screenshot is valid');
+      assert.ok(
+        isValidBase64Image(smallElementResult.data),
+        'Small element screenshot is valid'
+      );
+      assert.ok(
+        isValidBase64Image(largeElementResult.data),
+        'Large element screenshot is valid'
+      );
 
-      assert.ok(largeElementResult.width > smallElementResult.width,
-        'Large element should be wider than small element');
-      assert.ok(largeElementResult.height > smallElementResult.height,
-        'Large element should be taller than small element');
+      assert.ok(
+        largeElementResult.width > smallElementResult.width,
+        'Large element should be wider than small element'
+      );
+      assert.ok(
+        largeElementResult.height > smallElementResult.height,
+        'Large element should be taller than small element'
+      );
 
-      console.log(`Small element: ${smallElementResult.width}x${smallElementResult.height}`);
-      console.log(`Large element: ${largeElementResult.width}x${largeElementResult.height}`);
+      console.log(
+        `Small element: ${smallElementResult.width}x${smallElementResult.height}`
+      );
+      console.log(
+        `Large element: ${largeElementResult.width}x${largeElementResult.height}`
+      );
     });
   });
 
@@ -233,7 +320,7 @@ describe('Element Screenshots E2E', () => {
         url: `${baseUrl}/simple-page.html`,
         selector: '#non-existent-element',
         format: 'png' as const,
-        timeout: 5000
+        timeout: 5000,
       };
 
       try {
@@ -241,8 +328,14 @@ describe('Element Screenshots E2E', () => {
         assert.fail('Should have thrown error for non-existent element');
       } catch (error) {
         assert.ok(error instanceof Error, 'Should throw Error instance');
-        assert.ok(error.message.includes('Element not found'), 'Error message should mention element not found');
-        assert.ok(error.message.includes('#non-existent-element'), 'Error message should include selector');
+        assert.ok(
+          error.message.includes('Element not found'),
+          'Error message should mention element not found'
+        );
+        assert.ok(
+          error.message.includes('#non-existent-element'),
+          'Error message should include selector'
+        );
       }
     });
 
@@ -250,7 +343,7 @@ describe('Element Screenshots E2E', () => {
       const options = {
         url: `${baseUrl}/simple-page.html`,
         format: 'png' as const,
-        timeout: 5000
+        timeout: 5000,
       };
 
       try {
@@ -258,7 +351,10 @@ describe('Element Screenshots E2E', () => {
         assert.fail('Should have thrown error for missing selector');
       } catch (error) {
         assert.ok(error instanceof Error, 'Should throw Error instance');
-        assert.ok(error.message.includes('Selector is required'), 'Error message should mention selector requirement');
+        assert.ok(
+          error.message.includes('Selector is required'),
+          'Error message should mention selector requirement'
+        );
       }
     });
 
@@ -267,7 +363,7 @@ describe('Element Screenshots E2E', () => {
         url: `${baseUrl}/simple-page.html`,
         selector: ':::invalid-selector',
         format: 'png' as const,
-        timeout: 5000
+        timeout: 5000,
       };
 
       try {
@@ -275,7 +371,10 @@ describe('Element Screenshots E2E', () => {
         assert.fail('Should have thrown error for invalid CSS selector');
       } catch (error) {
         assert.ok(error instanceof Error, 'Should throw Error instance');
-        assert.ok(error.message.length > 0, 'Error should have descriptive message');
+        assert.ok(
+          error.message.length > 0,
+          'Error should have descriptive message'
+        );
       }
     });
   });
@@ -286,27 +385,49 @@ describe('Element Screenshots E2E', () => {
       const baseOptions = {
         url,
         selector: '.container',
-        timeout: 10000
+        timeout: 10000,
       };
 
       const pngResult = await screenshotService.takeElementScreenshot({
         ...baseOptions,
-        format: 'png' as const
+        format: 'png' as const,
       });
 
       const webpResult = await screenshotService.takeElementScreenshot({
         ...baseOptions,
-        format: 'webp' as const
+        format: 'webp' as const,
       });
 
-      assert.ok(isValidBase64Image(pngResult.data), 'PNG element screenshot is valid');
-      assert.ok(isValidBase64Image(webpResult.data), 'WebP element screenshot is valid');
+      assert.ok(
+        isValidBase64Image(pngResult.data),
+        'PNG element screenshot is valid'
+      );
+      assert.ok(
+        isValidBase64Image(webpResult.data),
+        'WebP element screenshot is valid'
+      );
 
-      assert.strictEqual(pngResult.mimeType, 'image/png', 'PNG element has correct MIME type');
-      assert.strictEqual(webpResult.mimeType, 'image/webp', 'WebP element has correct MIME type');
+      assert.strictEqual(
+        pngResult.mimeType,
+        'image/png',
+        'PNG element has correct MIME type'
+      );
+      assert.strictEqual(
+        webpResult.mimeType,
+        'image/webp',
+        'WebP element has correct MIME type'
+      );
 
-      assert.strictEqual(pngResult.width, webpResult.width, 'Both formats have same width');
-      assert.strictEqual(pngResult.height, webpResult.height, 'Both formats have same height');
+      assert.strictEqual(
+        pngResult.width,
+        webpResult.width,
+        'Both formats have same width'
+      );
+      assert.strictEqual(
+        pngResult.height,
+        webpResult.height,
+        'Both formats have same height'
+      );
     });
   });
 
@@ -318,12 +439,12 @@ describe('Element Screenshots E2E', () => {
       const startTime = Date.now();
 
       const screenshots = await Promise.all(
-        selectors.map(selector =>
+        selectors.map((selector) =>
           screenshotService.takeElementScreenshot({
             url,
             selector,
             format: 'png' as const,
-            timeout: 10000
+            timeout: 10000,
           })
         )
       );
@@ -332,12 +453,23 @@ describe('Element Screenshots E2E', () => {
       const totalTime = endTime - startTime;
 
       screenshots.forEach((result, index) => {
-        assert.ok(isValidBase64Image(result.data), `Element screenshot ${index + 1} is valid`);
-        assert.ok(result.width > 0 && result.height > 0, `Element screenshot ${index + 1} has valid dimensions`);
-        console.log(`Element ${selectors[index]}: ${result.width}x${result.height}`);
+        assert.ok(
+          isValidBase64Image(result.data),
+          `Element screenshot ${index + 1} is valid`
+        );
+        assert.ok(
+          result.width > 0 && result.height > 0,
+          `Element screenshot ${index + 1} has valid dimensions`
+        );
+        console.log(
+          `Element ${selectors[index]}: ${result.width}x${result.height}`
+        );
       });
 
-      assert.ok(totalTime < 30000, `Multiple element screenshots should complete in reasonable time (${totalTime}ms)`);
+      assert.ok(
+        totalTime < 30000,
+        `Multiple element screenshots should complete in reasonable time (${totalTime}ms)`
+      );
     });
   });
 });

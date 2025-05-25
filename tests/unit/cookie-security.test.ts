@@ -26,8 +26,8 @@ describe('Cookie Security', () => {
       const maliciousCookies: Cookie[] = [
         {
           name: '<script>alert',
-          value: 'test_value'
-        }
+          value: 'test_value',
+        },
       ];
 
       assert.throws(() => {
@@ -40,8 +40,8 @@ describe('Cookie Security', () => {
         {
           name: 'test_cookie',
           value: 'test_value',
-          domain: 'javascript:alert(1)'
-        }
+          domain: 'javascript:alert(1)',
+        },
       ];
 
       assert.throws(() => {
@@ -53,8 +53,8 @@ describe('Cookie Security', () => {
       const maliciousCookies: Cookie[] = [
         {
           name: 'eval(',
-          value: 'test_value'
-        }
+          value: 'test_value',
+        },
       ];
 
       assert.throws(() => {
@@ -66,17 +66,19 @@ describe('Cookie Security', () => {
       const oversizedCookie = 'x'.repeat(5000); // Exceeds 4096 byte limit
 
       assert.throws(() => {
-        CookieUtils.parseCookies([{
-          name: 'test',
-          value: oversizedCookie
-        }] as Cookie[]);
+        CookieUtils.parseCookies([
+          {
+            name: 'test',
+            value: oversizedCookie,
+          },
+        ] as Cookie[]);
       }, /Cookie value too long/);
     });
 
     test('should reject too many cookies', () => {
       const manyCookies = Array.from({ length: 60 }, (_, i) => ({
         name: `cookie_${i}`,
-        value: 'value'
+        value: 'value',
       }));
 
       assert.throws(() => {
@@ -88,8 +90,8 @@ describe('Cookie Security', () => {
       const invalidNameCookies: Cookie[] = [
         {
           name: 'cookie with spaces',
-          value: 'test_value'
-        }
+          value: 'test_value',
+        },
       ];
 
       assert.throws(() => {
@@ -102,8 +104,8 @@ describe('Cookie Security', () => {
         {
           name: 'test_cookie',
           value: 'test_value',
-          domain: 'domain<script>'
-        }
+          domain: 'domain<script>',
+        },
       ];
 
       assert.throws(() => {
@@ -118,8 +120,8 @@ describe('Cookie Security', () => {
         {
           name: 'sensitive_cookie',
           value: 'very_secret_value_123',
-          expires: 1234567890
-        }
+          expires: 1234567890,
+        },
       ];
 
       // Verify initial state
@@ -137,9 +139,9 @@ describe('Cookie Security', () => {
     });
 
     test('should handle null/undefined arrays gracefully', () => {
-      // Should not throw
-      CookieUtils.clearCookieMemory(null as any);
-      CookieUtils.clearCookieMemory(undefined as any);
+      // Should not throw - testing guard clause behavior
+      CookieUtils.clearCookieMemory(null as unknown as Cookie[]);
+      CookieUtils.clearCookieMemory(undefined as unknown as Cookie[]);
       CookieUtils.clearCookieMemory([] as Cookie[]);
     });
 
@@ -148,12 +150,12 @@ describe('Cookie Security', () => {
         null,
         undefined,
         'not an object',
-        { name: 'test' } // missing value
+        { name: 'test' }, // missing value
       ];
 
       // Should not throw when clearing memory
       assert.doesNotThrow(() => {
-        CookieUtils.clearCookieMemory(malformedCookies as any);
+        CookieUtils.clearCookieMemory(malformedCookies as unknown as Cookie[]);
       });
     });
   });
@@ -165,17 +167,26 @@ describe('Cookie Security', () => {
           name: 'secret_session',
           value: 'super_secret_token_xyz123',
           domain: 'example.com',
-          path: '/secure'
-        }
+          path: '/secure',
+        },
       ];
 
       const sanitized = CookieUtils.sanitizeCookiesForLogging(cookies);
 
       // Verify no actual values are in sanitized output
       const sanitizedStr = JSON.stringify(sanitized);
-      assert.ok(!sanitizedStr.includes('super_secret_token_xyz123'), 'Sanitized output should not contain actual cookie value');
-      assert.ok(sanitizedStr.includes('valueLength'), 'Should include value length');
-      assert.ok(sanitizedStr.includes('hasValue'), 'Should include hasValue flag');
+      assert.ok(
+        !sanitizedStr.includes('super_secret_token_xyz123'),
+        'Sanitized output should not contain actual cookie value'
+      );
+      assert.ok(
+        sanitizedStr.includes('valueLength'),
+        'Should include value length'
+      );
+      assert.ok(
+        sanitizedStr.includes('hasValue'),
+        'Should include hasValue flag'
+      );
     });
 
     test('should include useful debugging info without sensitive data', () => {
@@ -185,14 +196,14 @@ describe('Cookie Security', () => {
           value: 'secret123',
           domain: 'example.com',
           httpOnly: true,
-          secure: true
-        }
+          secure: true,
+        },
       ];
 
       const sanitized = CookieUtils.sanitizeCookiesForLogging(cookies);
 
       assert.strictEqual(sanitized.length, 1);
-      const sanitizedCookie = sanitized[0] as any;
+      const sanitizedCookie = sanitized[0] as Record<string, unknown>;
 
       assert.strictEqual(sanitizedCookie.name, 'auth_token');
       assert.strictEqual(sanitizedCookie.domain, 'example.com');
@@ -200,20 +211,23 @@ describe('Cookie Security', () => {
       assert.strictEqual(sanitizedCookie.secure, true);
       assert.strictEqual(sanitizedCookie.valueLength, 9);
       assert.strictEqual(sanitizedCookie.hasValue, true);
-      assert.ok(!sanitizedCookie.hasOwnProperty('value'), 'Should not include actual value');
+      assert.ok(
+        !Object.hasOwn(sanitizedCookie, 'value'),
+        'Should not include actual value'
+      );
     });
 
     test('should handle auto-derived domains in logging', () => {
       const cookies: Cookie[] = [
         {
           name: 'test_cookie',
-          value: 'test_value'
+          value: 'test_value',
           // No domain specified
-        }
+        },
       ];
 
       const sanitized = CookieUtils.sanitizeCookiesForLogging(cookies);
-      const sanitizedCookie = sanitized[0] as any;
+      const sanitizedCookie = sanitized[0] as Record<string, unknown>;
 
       assert.strictEqual(sanitizedCookie.domain, '[auto-derived]');
       assert.strictEqual(sanitizedCookie.path, '/');
@@ -222,7 +236,8 @@ describe('Cookie Security', () => {
 
   describe('Validation Bypass Prevention', () => {
     test('should not allow bypassing validation with malformed JSON', () => {
-      const maliciousJson = '{"__proto__": {"name": "evil", "value": "payload"}}';
+      const maliciousJson =
+        '{"__proto__": {"name": "evil", "value": "payload"}}';
 
       assert.throws(() => {
         CookieUtils.parseCookies(maliciousJson);
@@ -233,12 +248,12 @@ describe('Cookie Security', () => {
       const mixedCookies = [
         {
           name: 'good_cookie',
-          value: 'good_value'
+          value: 'good_value',
         },
         {
           name: '<script>',
-          value: 'evil_value'
-        }
+          value: 'evil_value',
+        },
       ];
 
       assert.throws(() => {
@@ -251,8 +266,8 @@ describe('Cookie Security', () => {
         {
           name: 'test',
           value: 'test',
-          expires: 999999999999999 // Way beyond 32-bit timestamp limit
-        }
+          expires: 999999999999999, // Way beyond 32-bit timestamp limit
+        },
       ];
 
       assert.throws(() => {
@@ -260,18 +275,33 @@ describe('Cookie Security', () => {
       }, /Cookie expires timestamp too large/);
     });
 
-    test('should enforce negative expires validation', () => {
-      const negativeExpiresCookie = [
+    test('should allow session cookies with expires -1', () => {
+      const sessionCookie = [
         {
           name: 'test',
           value: 'test',
-          expires: -1
-        }
+          expires: -1, // Session cookie
+        },
+      ];
+
+      // Should not throw for session cookies
+      assert.doesNotThrow(() => {
+        CookieUtils.parseCookies(sessionCookie as Cookie[]);
+      });
+    });
+
+    test('should reject invalid negative expires values', () => {
+      const invalidExpiresCookie = [
+        {
+          name: 'test',
+          value: 'test',
+          expires: -2, // Invalid negative value (only -1 allowed)
+        },
       ];
 
       assert.throws(() => {
-        CookieUtils.parseCookies(negativeExpiresCookie as Cookie[]);
-      }, /Cookie expires must be non-negative/);
+        CookieUtils.parseCookies(invalidExpiresCookie as Cookie[]);
+      }, /Cookie expires must be -1 \(session\) or positive timestamp/);
     });
   });
 });

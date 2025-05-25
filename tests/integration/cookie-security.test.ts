@@ -18,7 +18,11 @@
 import { strict as assert } from 'node:assert';
 import { test, describe } from 'node:test';
 import { ScreenshotService } from '../../src/screenshot-service.js';
-import { createTestServer, createTestScreenshotOptions, createTestScreenshotServiceConfig } from '../../src/test-utils.js';
+import {
+  createTestServer,
+  createTestScreenshotOptions,
+  createTestScreenshotServiceConfig,
+} from '../../src/test-utils.js';
 import type { Cookie } from '../../src/types.js';
 
 describe('Cookie Security Integration', () => {
@@ -39,13 +43,13 @@ describe('Cookie Security Integration', () => {
           {
             name: 'evil_cookie',
             value: 'evil_value',
-            domain: 'attacker.com' // Different from localhost
-          }
+            domain: 'attacker.com', // Different from localhost
+          },
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          cookies
+          cookies,
         });
 
         // Should reject due to domain mismatch
@@ -77,13 +81,13 @@ describe('Cookie Security Integration', () => {
           {
             name: 'valid_cookie',
             value: 'valid_value',
-            domain: 'localhost' // Matches URL domain
-          }
+            domain: 'localhost', // Matches URL domain
+          },
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          cookies
+          cookies,
         });
 
         // Should not throw with correct domain
@@ -112,13 +116,13 @@ describe('Cookie Security Integration', () => {
           {
             name: 'subdomain_cookie',
             value: 'subdomain_value',
-            domain: '.localhost' // Should be allowed for localhost
-          }
+            domain: '.localhost', // Should be allowed for localhost
+          },
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          cookies
+          cookies,
         });
 
         // Should not throw with subdomain pattern
@@ -147,13 +151,13 @@ describe('Cookie Security Integration', () => {
           {
             name: 'ip_cookie',
             value: 'ip_value',
-            domain: '127.0.0.1' // Should be allowed for localhost URLs
-          }
+            domain: '127.0.0.1', // Should be allowed for localhost URLs
+          },
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          cookies
+          cookies,
         });
 
         // Should not throw with IP address
@@ -184,24 +188,27 @@ describe('Cookie Security Integration', () => {
           {
             name: 'secret_cookie',
             value: 'very_secret_value_that_should_not_appear_in_error',
-            domain: 'evil.com'
-          }
+            domain: 'evil.com',
+          },
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          cookies
+          cookies,
         });
 
         try {
           await service.takeScreenshot(options);
           assert.fail('Should have thrown an error');
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
 
           // Verify that the secret value is not exposed in the error message
           assert.ok(
-            !errorMessage.includes('very_secret_value_that_should_not_appear_in_error'),
+            !errorMessage.includes(
+              'very_secret_value_that_should_not_appear_in_error'
+            ),
             'Error message should not contain cookie value'
           );
 
@@ -234,20 +241,21 @@ describe('Cookie Security Integration', () => {
           {
             name: 'xss_cookie',
             value: '<script>alert("xss")</script>',
-            domain: 'localhost'
-          }
+            domain: 'localhost',
+          },
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          cookies
+          cookies,
         });
 
         try {
           await service.takeScreenshot(options);
           assert.fail('Should have thrown validation error');
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : String(error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
 
           // Verify that the suspicious script content is not exposed
           assert.ok(
@@ -257,7 +265,8 @@ describe('Cookie Security Integration', () => {
 
           // But should still contain useful debugging info
           assert.ok(
-            errorMessage.includes('Cookie injection failed') || errorMessage.includes('validation'),
+            errorMessage.includes('Cookie injection failed') ||
+              errorMessage.includes('validation'),
             'Error message should indicate validation failure'
           );
         }
@@ -286,13 +295,13 @@ describe('Cookie Security Integration', () => {
           {
             name: 'sensitive_token',
             value: 'super_secret_token_123456789',
-            domain: 'wrong-domain.com' // This will cause failure
-          }
+            domain: 'wrong-domain.com', // This will cause failure
+          },
         ];
 
         const options = createTestScreenshotOptions({
           url: `http://localhost:${port}/simple.html`,
-          cookies
+          cookies,
         });
 
         // Expect this to fail due to domain mismatch

@@ -23,12 +23,14 @@ import type { LoggingConfig, BrowserloopError } from '../../src/types.js';
 describe('Logger', () => {
   let logger: Logger;
 
-  function createTestLoggingConfig(overrides: Partial<LoggingConfig> = {}): LoggingConfig {
+  function createTestLoggingConfig(
+    overrides: Partial<LoggingConfig> = {}
+  ): LoggingConfig {
     return {
       debug: false,
       enableMetrics: true,
       silent: true,
-      ...overrides
+      ...overrides,
     };
   }
 
@@ -46,21 +48,52 @@ describe('Logger', () => {
       const testLogger = new Logger(config);
 
       assert.ok(testLogger, 'Logger should be created');
-      assert.strictEqual(typeof testLogger.debug, 'function', 'Should have debug method');
-      assert.strictEqual(typeof testLogger.info, 'function', 'Should have info method');
-      assert.strictEqual(typeof testLogger.warn, 'function', 'Should have warn method');
-      assert.strictEqual(typeof testLogger.error, 'function', 'Should have error method');
+      assert.strictEqual(
+        typeof testLogger.debug,
+        'function',
+        'Should have debug method'
+      );
+      assert.strictEqual(
+        typeof testLogger.info,
+        'function',
+        'Should have info method'
+      );
+      assert.strictEqual(
+        typeof testLogger.warn,
+        'function',
+        'Should have warn method'
+      );
+      assert.strictEqual(
+        typeof testLogger.error,
+        'function',
+        'Should have error method'
+      );
     });
 
     test('should have metrics methods', () => {
-      assert.strictEqual(typeof logger.getMetrics, 'function', 'Should have getMetrics method');
-      assert.strictEqual(typeof logger.getUptime, 'function', 'Should have getUptime method');
-      assert.strictEqual(typeof logger.clearMetrics, 'function', 'Should have clearMetrics method');
+      assert.strictEqual(
+        typeof logger.getMetrics,
+        'function',
+        'Should have getMetrics method'
+      );
+      assert.strictEqual(
+        typeof logger.getUptime,
+        'function',
+        'Should have getUptime method'
+      );
+      assert.strictEqual(
+        typeof logger.clearMetrics,
+        'function',
+        'Should have clearMetrics method'
+      );
     });
 
     test('should track uptime', () => {
       const uptime = logger.getUptime();
-      assert.ok(typeof uptime === 'number' && uptime >= 0, 'Uptime should be a non-negative number');
+      assert.ok(
+        typeof uptime === 'number' && uptime >= 0,
+        'Uptime should be a non-negative number'
+      );
     });
   });
 
@@ -68,10 +101,26 @@ describe('Logger', () => {
     test('should start with empty metrics', () => {
       const metrics = logger.getMetrics();
 
-      assert.strictEqual(metrics.totalErrors, 0, 'Should start with zero total errors');
-      assert.strictEqual(metrics.lastHourErrors, 0, 'Should start with zero hourly errors');
-      assert.strictEqual(metrics.errorsByCategory.network, 0, 'Should start with zero network errors');
-      assert.strictEqual(metrics.errorsBySeverity.high, 0, 'Should start with zero high severity errors');
+      assert.strictEqual(
+        metrics.totalErrors,
+        0,
+        'Should start with zero total errors'
+      );
+      assert.strictEqual(
+        metrics.lastHourErrors,
+        0,
+        'Should start with zero hourly errors'
+      );
+      assert.strictEqual(
+        metrics.errorsByCategory.network,
+        0,
+        'Should start with zero network errors'
+      );
+      assert.strictEqual(
+        metrics.errorsBySeverity.high,
+        0,
+        'Should start with zero high severity errors'
+      );
     });
 
     test('should track error metrics when enabled', () => {
@@ -80,17 +129,29 @@ describe('Logger', () => {
         category: 'network',
         severity: 'medium',
         isRecoverable: true,
-        context: { timestamp: Date.now() }
+        context: { timestamp: Date.now() },
       };
 
       logger.error('Test error message', error);
 
       const metrics = logger.getMetrics();
       assert.strictEqual(metrics.totalErrors, 1, 'Should track total errors');
-      assert.strictEqual(metrics.errorsByCategory.network, 1, 'Should track network errors');
-      assert.strictEqual(metrics.errorsBySeverity.medium, 1, 'Should track medium severity errors');
+      assert.strictEqual(
+        metrics.errorsByCategory.network,
+        1,
+        'Should track network errors'
+      );
+      assert.strictEqual(
+        metrics.errorsBySeverity.medium,
+        1,
+        'Should track medium severity errors'
+      );
       assert.ok(metrics.lastError, 'Should track last error');
-      assert.strictEqual(metrics.lastError?.category, 'network', 'Should track last error category');
+      assert.strictEqual(
+        metrics.lastError?.category,
+        'network',
+        'Should track last error category'
+      );
     });
 
     test('should clear metrics', () => {
@@ -99,7 +160,7 @@ describe('Logger', () => {
         category: 'timeout',
         severity: 'high',
         isRecoverable: true,
-        context: { timestamp: Date.now() }
+        context: { timestamp: Date.now() },
       };
 
       logger.error('Test error', error);
@@ -107,9 +168,21 @@ describe('Logger', () => {
 
       const metrics = logger.getMetrics();
       assert.strictEqual(metrics.totalErrors, 0, 'Should clear total errors');
-      assert.strictEqual(metrics.errorsByCategory.timeout, 0, 'Should clear category errors');
-      assert.strictEqual(metrics.errorsBySeverity.high, 0, 'Should clear severity errors');
-      assert.strictEqual(metrics.lastError, undefined, 'Should clear last error');
+      assert.strictEqual(
+        metrics.errorsByCategory.timeout,
+        0,
+        'Should clear category errors'
+      );
+      assert.strictEqual(
+        metrics.errorsBySeverity.high,
+        0,
+        'Should clear severity errors'
+      );
+      assert.strictEqual(
+        metrics.lastError,
+        undefined,
+        'Should clear last error'
+      );
     });
   });
 
@@ -130,7 +203,7 @@ describe('Logger', () => {
       logger.browserReset('Connection lost', {
         error: 'Browser disconnected',
         attempt: 2,
-        url: 'https://example.com'
+        url: 'https://example.com',
       });
 
       assert.ok(true, 'Browser reset logging should not throw');
@@ -145,17 +218,35 @@ describe('Error Categorization', () => {
       new Error('Connection refused'),
       new Error('DNS lookup failed'),
       new Error('ENOTFOUND example.com'),
-      new Error('ECONNREFUSED')
+      new Error('ECONNREFUSED'),
     ];
 
-    networkErrors.forEach(error => {
-      const categorized = categorizeError(error, { url: 'https://example.com' });
+    networkErrors.forEach((error) => {
+      const categorized = categorizeError(error, {
+        url: 'https://example.com',
+      });
 
-      assert.strictEqual(categorized.category, 'network', `Should categorize "${error.message}" as network error`);
-      assert.strictEqual(categorized.severity, 'medium', 'Network errors should have medium severity');
-      assert.strictEqual(categorized.isRecoverable, true, 'Network errors should be recoverable');
+      assert.strictEqual(
+        categorized.category,
+        'network',
+        `Should categorize "${error.message}" as network error`
+      );
+      assert.strictEqual(
+        categorized.severity,
+        'medium',
+        'Network errors should have medium severity'
+      );
+      assert.strictEqual(
+        categorized.isRecoverable,
+        true,
+        'Network errors should be recoverable'
+      );
       assert.ok(categorized.context, 'Should include context');
-      assert.strictEqual(categorized.context?.url, 'https://example.com', 'Should include URL in context');
+      assert.strictEqual(
+        categorized.context?.url,
+        'https://example.com',
+        'Should include URL in context'
+      );
     });
   });
 
@@ -163,15 +254,27 @@ describe('Error Categorization', () => {
     const timeoutErrors = [
       new Error('Timeout exceeded'),
       new Error('Navigation timeout of 30000ms exceeded'),
-      new Error('Request timeout')
+      new Error('Request timeout'),
     ];
 
-    timeoutErrors.forEach(error => {
+    timeoutErrors.forEach((error) => {
       const categorized = categorizeError(error);
 
-      assert.strictEqual(categorized.category, 'timeout', `Should categorize "${error.message}" as timeout error`);
-      assert.strictEqual(categorized.severity, 'medium', 'Timeout errors should have medium severity');
-      assert.strictEqual(categorized.isRecoverable, true, 'Timeout errors should be recoverable');
+      assert.strictEqual(
+        categorized.category,
+        'timeout',
+        `Should categorize "${error.message}" as timeout error`
+      );
+      assert.strictEqual(
+        categorized.severity,
+        'medium',
+        'Timeout errors should have medium severity'
+      );
+      assert.strictEqual(
+        categorized.isRecoverable,
+        true,
+        'Timeout errors should be recoverable'
+      );
     });
   });
 
@@ -180,30 +283,54 @@ describe('Error Categorization', () => {
       new Error('Browser has been closed'),
       new Error('Browser disconnected'),
       new Error('Target closed'),
-      new Error('Page crashed')
+      new Error('Page crashed'),
     ];
 
-    crashErrors.forEach(error => {
+    crashErrors.forEach((error) => {
       const categorized = categorizeError(error);
 
-      assert.strictEqual(categorized.category, 'browser_crash', `Should categorize "${error.message}" as browser crash`);
-      assert.strictEqual(categorized.severity, 'high', 'Browser crash errors should have high severity');
-      assert.strictEqual(categorized.isRecoverable, true, 'Browser crash errors should be recoverable');
+      assert.strictEqual(
+        categorized.category,
+        'browser_crash',
+        `Should categorize "${error.message}" as browser crash`
+      );
+      assert.strictEqual(
+        categorized.severity,
+        'high',
+        'Browser crash errors should have high severity'
+      );
+      assert.strictEqual(
+        categorized.isRecoverable,
+        true,
+        'Browser crash errors should be recoverable'
+      );
     });
   });
 
   test('should categorize element not found errors', () => {
     const elementErrors = [
       new Error('Element not found: .selector'),
-      new Error('Selector did not match any elements')
+      new Error('Selector did not match any elements'),
     ];
 
-    elementErrors.forEach(error => {
+    elementErrors.forEach((error) => {
       const categorized = categorizeError(error);
 
-      assert.strictEqual(categorized.category, 'element_not_found', `Should categorize "${error.message}" as element not found`);
-      assert.strictEqual(categorized.severity, 'low', 'Element not found errors should have low severity');
-      assert.strictEqual(categorized.isRecoverable, false, 'Element not found errors should not be recoverable');
+      assert.strictEqual(
+        categorized.category,
+        'element_not_found',
+        `Should categorize "${error.message}" as element not found`
+      );
+      assert.strictEqual(
+        categorized.severity,
+        'low',
+        'Element not found errors should have low severity'
+      );
+      assert.strictEqual(
+        categorized.isRecoverable,
+        false,
+        'Element not found errors should not be recoverable'
+      );
     });
   });
 
@@ -211,15 +338,27 @@ describe('Error Categorization', () => {
     const validationErrors = [
       new Error('Invalid parameter value'),
       new Error('Validation failed'),
-      new Error('Parameter out of range')
+      new Error('Parameter out of range'),
     ];
 
-    validationErrors.forEach(error => {
+    validationErrors.forEach((error) => {
       const categorized = categorizeError(error);
 
-      assert.strictEqual(categorized.category, 'invalid_input', `Should categorize "${error.message}" as invalid input`);
-      assert.strictEqual(categorized.severity, 'low', 'Validation errors should have low severity');
-      assert.strictEqual(categorized.isRecoverable, false, 'Validation errors should not be recoverable');
+      assert.strictEqual(
+        categorized.category,
+        'invalid_input',
+        `Should categorize "${error.message}" as invalid input`
+      );
+      assert.strictEqual(
+        categorized.severity,
+        'low',
+        'Validation errors should have low severity'
+      );
+      assert.strictEqual(
+        categorized.isRecoverable,
+        false,
+        'Validation errors should not be recoverable'
+      );
     });
   });
 
@@ -227,15 +366,27 @@ describe('Error Categorization', () => {
     const dockerErrors = [
       new Error('Docker container failed'),
       new Error('Failed to launch browser in container'),
-      new Error('Container not found')
+      new Error('Container not found'),
     ];
 
-    dockerErrors.forEach(error => {
+    dockerErrors.forEach((error) => {
       const categorized = categorizeError(error);
 
-      assert.strictEqual(categorized.category, 'docker', `Should categorize "${error.message}" as docker error`);
-      assert.strictEqual(categorized.severity, 'critical', 'Docker errors should have critical severity');
-      assert.strictEqual(categorized.isRecoverable, true, 'Docker errors should be recoverable');
+      assert.strictEqual(
+        categorized.category,
+        'docker',
+        `Should categorize "${error.message}" as docker error`
+      );
+      assert.strictEqual(
+        categorized.severity,
+        'critical',
+        'Docker errors should have critical severity'
+      );
+      assert.strictEqual(
+        categorized.isRecoverable,
+        true,
+        'Docker errors should be recoverable'
+      );
     });
   });
 
@@ -243,15 +394,27 @@ describe('Error Categorization', () => {
     const resourceErrors = [
       new Error('Out of memory'),
       new Error('Disk space full'),
-      new Error('Resource limit exceeded')
+      new Error('Resource limit exceeded'),
     ];
 
-    resourceErrors.forEach(error => {
+    resourceErrors.forEach((error) => {
       const categorized = categorizeError(error);
 
-      assert.strictEqual(categorized.category, 'resource', `Should categorize "${error.message}" as resource error`);
-      assert.strictEqual(categorized.severity, 'high', 'Resource errors should have high severity');
-      assert.strictEqual(categorized.isRecoverable, true, 'Resource errors should be recoverable');
+      assert.strictEqual(
+        categorized.category,
+        'resource',
+        `Should categorize "${error.message}" as resource error`
+      );
+      assert.strictEqual(
+        categorized.severity,
+        'high',
+        'Resource errors should have high severity'
+      );
+      assert.strictEqual(
+        categorized.isRecoverable,
+        true,
+        'Resource errors should be recoverable'
+      );
     });
   });
 
@@ -259,9 +422,21 @@ describe('Error Categorization', () => {
     const unknownError = new Error('Some unexpected error');
     const categorized = categorizeError(unknownError);
 
-    assert.strictEqual(categorized.category, 'unknown', 'Should categorize unrecognized errors as unknown');
-    assert.strictEqual(categorized.severity, 'medium', 'Unknown errors should have medium severity');
-    assert.strictEqual(categorized.isRecoverable, true, 'Unknown errors should be recoverable by default');
+    assert.strictEqual(
+      categorized.category,
+      'unknown',
+      'Should categorize unrecognized errors as unknown'
+    );
+    assert.strictEqual(
+      categorized.severity,
+      'medium',
+      'Unknown errors should have medium severity'
+    );
+    assert.strictEqual(
+      categorized.isRecoverable,
+      true,
+      'Unknown errors should be recoverable by default'
+    );
   });
 
   test('should include context when provided', () => {
@@ -271,8 +446,15 @@ describe('Error Categorization', () => {
     const categorized = categorizeError(error, context);
 
     assert.ok(categorized.context, 'Should include context');
-    assert.strictEqual(categorized.context?.url, 'https://test.com', 'Should include URL from context');
-    assert.ok(typeof categorized.context?.timestamp === 'number', 'Should include timestamp');
+    assert.strictEqual(
+      categorized.context?.url,
+      'https://test.com',
+      'Should include URL from context'
+    );
+    assert.ok(
+      typeof categorized.context?.timestamp === 'number',
+      'Should include timestamp'
+    );
   });
 
   test('should handle context without URL', () => {
@@ -281,7 +463,14 @@ describe('Error Categorization', () => {
     const categorized = categorizeError(error);
 
     assert.ok(categorized.context, 'Should include context even without URL');
-    assert.ok(typeof categorized.context?.timestamp === 'number', 'Should include timestamp');
-    assert.strictEqual(categorized.context?.url, undefined, 'Should not include URL when not provided');
+    assert.ok(
+      typeof categorized.context?.timestamp === 'number',
+      'Should include timestamp'
+    );
+    assert.strictEqual(
+      categorized.context?.url,
+      undefined,
+      'Should not include URL when not provided'
+    );
   });
 });

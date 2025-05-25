@@ -17,7 +17,6 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 /**
  * MCP Screenshot Server
  * A Model Context Protocol server for taking screenshots of web pages
@@ -57,7 +56,6 @@ process.on('uncaughtException', (error) => {
 });
 
 // Start the MCP server
-startMcpServer()
-  .catch((error) => {
-    process.exit(1);
-  });
+startMcpServer().catch((error) => {
+  process.exit(1);
+});

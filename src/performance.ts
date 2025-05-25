@@ -92,7 +92,9 @@ export class PerformanceTester {
   /**
    * Measure performance of a single screenshot operation
    */
-  async measureScreenshot(options: ScreenshotOptions): Promise<PerformanceMetrics> {
+  async measureScreenshot(
+    options: ScreenshotOptions
+  ): Promise<PerformanceMetrics> {
     const startTime = Date.now();
     const startMemory = process.memoryUsage();
 
@@ -107,15 +109,15 @@ export class PerformanceTester {
     return {
       totalTime: endTime - startTime,
       breakdown: {
-        navigation: navEnd - navStart
+        navigation: navEnd - navStart,
       },
       memory: {
         heapUsed: endMemory.heapUsed - startMemory.heapUsed,
         heapTotal: endMemory.heapTotal,
         external: endMemory.external,
-        rss: endMemory.rss
+        rss: endMemory.rss,
       },
-      resultSize: Buffer.from(result.data, 'base64').length
+      resultSize: Buffer.from(result.data, 'base64').length,
     };
   }
 
@@ -123,7 +125,14 @@ export class PerformanceTester {
    * Run a comprehensive benchmark
    */
   async runBenchmark(options: BenchmarkOptions): Promise<BenchmarkResult> {
-    const { iterations, warmup = 3, testUrls, screenshotOptions = {}, concurrent = false, concurrency = 3 } = options;
+    const {
+      iterations,
+      warmup = 3,
+      testUrls,
+      screenshotOptions = {},
+      concurrent = false,
+      concurrency = 3,
+    } = options;
 
     // Warmup phase
     console.log(`Running ${warmup} warmup iterations...`);
@@ -143,13 +152,18 @@ export class PerformanceTester {
       const batches = Math.ceil(iterations / concurrency);
       for (let batch = 0; batch < batches; batch++) {
         const batchPromises: Promise<PerformanceMetrics>[] = [];
-        const batchSize = Math.min(concurrency, iterations - batch * concurrency);
+        const batchSize = Math.min(
+          concurrency,
+          iterations - batch * concurrency
+        );
 
         for (let i = 0; i < batchSize; i++) {
           const iterationIndex = batch * concurrency + i;
           const url = testUrls[iterationIndex % testUrls.length];
           if (url) {
-            batchPromises.push(this.measureScreenshot({ url, ...screenshotOptions }));
+            batchPromises.push(
+              this.measureScreenshot({ url, ...screenshotOptions })
+            );
           }
         }
 
@@ -161,7 +175,10 @@ export class PerformanceTester {
       for (let i = 0; i < iterations; i++) {
         const url = testUrls[i % testUrls.length];
         if (url) {
-          const metric = await this.measureScreenshot({ url, ...screenshotOptions });
+          const metric = await this.measureScreenshot({
+            url,
+            ...screenshotOptions,
+          });
           metrics.push(metric);
         }
       }
@@ -171,21 +188,21 @@ export class PerformanceTester {
     const totalTestTime = endTime - startTime;
 
     // Calculate statistics
-    const times = metrics.map(m => m.totalTime);
-    const sizes = metrics.map(m => m.resultSize);
+    const times = metrics.map((m) => m.totalTime);
+    const sizes = metrics.map((m) => m.resultSize);
     const summary = this.calculateStatistics(times);
 
     const totalSize = sizes.reduce((sum, size) => sum + size, 0);
     const throughput = {
       screenshotsPerSecond: (iterations * 1000) / totalTestTime,
-      avgBytesPerSecond: (totalSize * 1000) / totalTestTime
+      avgBytesPerSecond: (totalSize * 1000) / totalTestTime,
     };
 
     return {
       metrics,
       summary,
       throughput,
-      config: options
+      config: options,
     };
   }
 
@@ -201,7 +218,7 @@ export class PerformanceTester {
         median: 0,
         p95: 0,
         p99: 0,
-        stdDev: 0
+        stdDev: 0,
       };
     }
 
@@ -209,7 +226,9 @@ export class PerformanceTester {
     const sum = sorted.reduce((a, b) => a + b, 0);
     const avg = sum / sorted.length;
 
-    const variance = sorted.reduce((acc, val) => acc + Math.pow(val - avg, 2), 0) / sorted.length;
+    const variance =
+      sorted.reduce((acc, val) => acc + (val - avg) ** 2, 0) /
+      sorted.length;
     const stdDev = Math.sqrt(variance);
 
     return {
@@ -219,14 +238,16 @@ export class PerformanceTester {
       median: sorted[Math.floor(sorted.length / 2)] ?? 0,
       p95: sorted[Math.floor(sorted.length * 0.95)] ?? 0,
       p99: sorted[Math.floor(sorted.length * 0.99)] ?? 0,
-      stdDev: Math.round(stdDev * 100) / 100
+      stdDev: Math.round(stdDev * 100) / 100,
     };
   }
 
   /**
    * Compare performance between different configurations
    */
-  async compareConfigurations(configs: Array<{ name: string; options: BenchmarkOptions }>): Promise<void> {
+  async compareConfigurations(
+    configs: Array<{ name: string; options: BenchmarkOptions }>
+  ): Promise<void> {
     console.log('Running performance comparison...\n');
 
     const results: Array<{ name: string; result: BenchmarkResult }> = [];
@@ -235,7 +256,9 @@ export class PerformanceTester {
       console.log(`Testing configuration: ${config.name}`);
       const result = await this.runBenchmark(config.options);
       results.push({ name: config.name, result });
-      console.log(`Completed ${config.name}: ${result.summary.avg}ms avg, ${result.throughput.screenshotsPerSecond.toFixed(2)} shots/sec\n`);
+      console.log(
+        `Completed ${config.name}: ${result.summary.avg}ms avg, ${result.throughput.screenshotsPerSecond.toFixed(2)} shots/sec\n`
+      );
     }
 
     // Print comparison table
@@ -244,17 +267,19 @@ export class PerformanceTester {
     console.log('Config Name\t\tAvg Time\tMin Time\tMax Time\tThroughput');
     console.log('----------\t\t--------\t--------\t--------\t----------');
 
-    results.forEach(({ name, result }) => {
+    for (const { name, result } of results) {
       console.log(
         `${name.padEnd(15)}\t${result.summary.avg}ms\t\t${result.summary.min}ms\t\t${result.summary.max}ms\t\t${result.throughput.screenshotsPerSecond.toFixed(2)} shots/sec`
       );
-    });
+    }
   }
 }
 
 /**
  * Create a performance testing instance
  */
-export function createPerformanceTester(service: ScreenshotService): PerformanceTester {
+export function createPerformanceTester(
+  service: ScreenshotService
+): PerformanceTester {
   return new PerformanceTester(service);
 }

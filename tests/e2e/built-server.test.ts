@@ -38,7 +38,7 @@ describe('Built Server E2E', () => {
 
         const serverProcess = spawn('node', [builtServerPath], {
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' }
+          env: { ...process.env, NODE_ENV: 'test' },
         });
 
         // Give the server a moment to start
@@ -51,7 +51,11 @@ describe('Built Server E2E', () => {
           if (stdout.trim() === '' && stderr.trim() === '') {
             resolve();
           } else {
-            reject(new Error(`Server should start silently but produced output: stdout="${stdout}", stderr="${stderr}"`));
+            reject(
+              new Error(
+                `Server should start silently but produced output: stdout="${stdout}", stderr="${stderr}"`
+              )
+            );
           }
         }, 2000);
 
@@ -88,26 +92,26 @@ describe('Built Server E2E', () => {
           reject(new Error('MCP protocol test timeout'));
         }, 10000);
 
-        let receivedOutput = false;
+        const receivedOutput = false;
 
         const serverProcess = spawn('node', [builtServerPath], {
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' }
+          env: { ...process.env, NODE_ENV: 'test' },
         });
 
         // Give server time to initialize
         setTimeout(() => {
           // Send a basic MCP initialize message
-          const initMessage = JSON.stringify({
+          const initMessage = `${JSON.stringify({
             jsonrpc: '2.0',
             id: 1,
             method: 'initialize',
             params: {
               protocolVersion: '2024-11-05',
               capabilities: {},
-              clientInfo: { name: 'test-client', version: '1.0.0' }
-            }
-          }) + '\n';
+              clientInfo: { name: 'test-client', version: '1.0.0' },
+            },
+          })}\n`;
 
           serverProcess.stdin.write(initMessage);
         }, 1000);
@@ -140,10 +144,15 @@ describe('Built Server E2E', () => {
 
       try {
         const stats = await stat(builtServerPath);
-        assert.ok(stats.isFile(), 'Built server file should exist and be a file');
+        assert.ok(
+          stats.isFile(),
+          'Built server file should exist and be a file'
+        );
         assert.ok(stats.size > 0, 'Built server file should not be empty');
       } catch (error) {
-        assert.fail(`Built server file not found or invalid: ${error}. Run 'npm run build' first.`);
+        assert.fail(
+          `Built server file not found or invalid: ${error}. Run 'npm run build' first.`
+        );
       }
     });
 
@@ -154,12 +163,16 @@ describe('Built Server E2E', () => {
       return new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           serverProcess.kill('SIGKILL'); // Force kill if hanging
-          reject(new Error('Server did not respond to termination signal - may be hanging'));
+          reject(
+            new Error(
+              'Server did not respond to termination signal - may be hanging'
+            )
+          );
         }, 5000); // Reduced timeout
 
         const serverProcess = spawn('node', [builtServerPath], {
           stdio: ['pipe', 'pipe', 'pipe'],
-          env: { ...process.env, NODE_ENV: 'test' }
+          env: { ...process.env, NODE_ENV: 'test' },
         });
 
         // Give server time to start, then try graceful shutdown
@@ -173,7 +186,11 @@ describe('Built Server E2E', () => {
           if (signal === 'SIGTERM' || code === 0) {
             resolve();
           } else {
-            reject(new Error(`Server exited unexpectedly with code ${code}, signal ${signal}`));
+            reject(
+              new Error(
+                `Server exited unexpectedly with code ${code}, signal ${signal}`
+              )
+            );
           }
         });
 

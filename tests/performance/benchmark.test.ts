@@ -17,14 +17,14 @@
 
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
-import { createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { ScreenshotService } from '../../src/screenshot-service.js';
 import { createPerformanceTester } from '../../src/performance.js';
 import { createTestScreenshotServiceConfig } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 
 describe('Performance Benchmarks', () => {
-  let server: any;
+  let server: Server;
   let screenshotService: ScreenshotService;
   const port = 3005;
   const baseUrl = `http://localhost:${port}`;
@@ -35,13 +35,13 @@ describe('Performance Benchmarks', () => {
         defaultFormat: 'webp',
         defaultQuality: 80,
         defaultTimeout: 10000,
-        defaultWaitForNetworkIdle: false
+        defaultWaitForNetworkIdle: false,
       },
       logging: {
         debug: false,
         enableMetrics: true,
-        silent: true
-      }
+        silent: true,
+      },
     });
   }
 
@@ -99,14 +99,19 @@ describe('Performance Benchmarks', () => {
       url: baseUrl,
       width: 800,
       height: 600,
-      format: 'webp'
+      format: 'webp',
     });
 
     assert.ok(result.totalTime > 0, 'Should measure execution time');
     assert.ok(result.resultSize > 0, 'Should measure result size');
-    assert.ok(result.memory.heapUsed !== undefined, 'Should measure memory usage');
+    assert.ok(
+      result.memory.heapUsed !== undefined,
+      'Should measure memory usage'
+    );
 
-    console.log(`Single screenshot: ${result.totalTime}ms, ${result.resultSize} bytes`);
+    console.log(
+      `Single screenshot: ${result.totalTime}ms, ${result.resultSize} bytes`
+    );
   });
 
   test('should benchmark sequential performance', async () => {
@@ -119,17 +124,28 @@ describe('Performance Benchmarks', () => {
       screenshotOptions: {
         width: 800,
         height: 600,
-        format: 'webp'
+        format: 'webp',
       },
-      concurrent: false
+      concurrent: false,
     });
 
     assert.ok(benchmark.summary.avg > 0, 'Should calculate average time');
-    assert.ok(benchmark.summary.min <= benchmark.summary.avg, 'Min should be <= average');
-    assert.ok(benchmark.summary.max >= benchmark.summary.avg, 'Max should be >= average');
-    assert.ok(benchmark.throughput.screenshotsPerSecond > 0, 'Should calculate throughput');
+    assert.ok(
+      benchmark.summary.min <= benchmark.summary.avg,
+      'Min should be <= average'
+    );
+    assert.ok(
+      benchmark.summary.max >= benchmark.summary.avg,
+      'Max should be >= average'
+    );
+    assert.ok(
+      benchmark.throughput.screenshotsPerSecond > 0,
+      'Should calculate throughput'
+    );
 
-    console.log(`Sequential (5 iterations): ${benchmark.summary.avg}ms avg, ${benchmark.throughput.screenshotsPerSecond.toFixed(2)} shots/sec`);
+    console.log(
+      `Sequential (5 iterations): ${benchmark.summary.avg}ms avg, ${benchmark.throughput.screenshotsPerSecond.toFixed(2)} shots/sec`
+    );
   });
 
   test('should benchmark concurrent performance', async () => {
@@ -142,16 +158,21 @@ describe('Performance Benchmarks', () => {
       screenshotOptions: {
         width: 800,
         height: 600,
-        format: 'webp'
+        format: 'webp',
       },
       concurrent: true,
-      concurrency: 3
+      concurrency: 3,
     });
 
     assert.ok(benchmark.summary.avg > 0, 'Should calculate average time');
-    assert.ok(benchmark.throughput.screenshotsPerSecond > 0, 'Should calculate throughput');
+    assert.ok(
+      benchmark.throughput.screenshotsPerSecond > 0,
+      'Should calculate throughput'
+    );
 
-    console.log(`Concurrent (6 iterations, 3 concurrent): ${benchmark.summary.avg}ms avg, ${benchmark.throughput.screenshotsPerSecond.toFixed(2)} shots/sec`);
+    console.log(
+      `Concurrent (6 iterations, 3 concurrent): ${benchmark.summary.avg}ms avg, ${benchmark.throughput.screenshotsPerSecond.toFixed(2)} shots/sec`
+    );
   });
 
   test('should compare different formats performance', async () => {
@@ -164,8 +185,12 @@ describe('Performance Benchmarks', () => {
           iterations: 3,
           warmup: 1,
           testUrls: [baseUrl],
-          screenshotOptions: { format: 'png' as const, width: 600, height: 400 }
-        }
+          screenshotOptions: {
+            format: 'png' as const,
+            width: 600,
+            height: 400,
+          },
+        },
       },
       {
         name: 'WebP',
@@ -173,8 +198,12 @@ describe('Performance Benchmarks', () => {
           iterations: 3,
           warmup: 1,
           testUrls: [baseUrl],
-          screenshotOptions: { format: 'webp' as const, width: 600, height: 400 }
-        }
+          screenshotOptions: {
+            format: 'webp' as const,
+            width: 600,
+            height: 400,
+          },
+        },
       },
       {
         name: 'JPEG',
@@ -182,9 +211,13 @@ describe('Performance Benchmarks', () => {
           iterations: 3,
           warmup: 1,
           testUrls: [baseUrl],
-          screenshotOptions: { format: 'jpeg' as const, width: 600, height: 400 }
-        }
-      }
+          screenshotOptions: {
+            format: 'jpeg' as const,
+            width: 600,
+            height: 400,
+          },
+        },
+      },
     ];
 
     await tester.compareConfigurations(configs);
@@ -200,7 +233,7 @@ describe('Performance Benchmarks', () => {
     const screenshots = await Promise.all([
       screenshotService.takeScreenshot({ url: baseUrl, format: 'webp' }),
       screenshotService.takeScreenshot({ url: baseUrl, format: 'webp' }),
-      screenshotService.takeScreenshot({ url: baseUrl, format: 'webp' })
+      screenshotService.takeScreenshot({ url: baseUrl, format: 'webp' }),
     ]);
 
     const endTime = Date.now();
@@ -208,14 +241,24 @@ describe('Performance Benchmarks', () => {
 
     // Verify all screenshots are valid
     screenshots.forEach((result, index) => {
-      assert.ok(result.data.length > 0, `Screenshot ${index + 1} should have data`);
-      assert.strictEqual(result.mimeType, 'image/webp', `Screenshot ${index + 1} should be WebP`);
+      assert.ok(
+        result.data.length > 0,
+        `Screenshot ${index + 1} should have data`
+      );
+      assert.strictEqual(
+        result.mimeType,
+        'image/webp',
+        `Screenshot ${index + 1} should be WebP`
+      );
     });
 
     console.log(`Page pooling test (3 screenshots): ${totalTime}ms total`);
 
     // With page pooling, 3 screenshots should complete reasonably quickly
-    assert.ok(totalTime < 15000, 'Page pooling should improve performance for multiple screenshots');
+    assert.ok(
+      totalTime < 15000,
+      'Page pooling should improve performance for multiple screenshots'
+    );
   });
 
   test('should measure memory efficiency', async () => {
@@ -227,16 +270,21 @@ describe('Performance Benchmarks', () => {
         url: baseUrl,
         format: 'webp',
         width: 400,
-        height: 300
+        height: 300,
       });
     }
 
     const endMemory = process.memoryUsage();
     const heapGrowth = endMemory.heapUsed - startMemory.heapUsed;
 
-    console.log(`Memory growth after 5 screenshots: ${Math.round(heapGrowth / 1024 / 1024 * 100) / 100}MB`);
+    console.log(
+      `Memory growth after 5 screenshots: ${Math.round((heapGrowth / 1024 / 1024) * 100) / 100}MB`
+    );
 
     // Memory growth should be reasonable (less than 100MB for 5 small screenshots)
-    assert.ok(heapGrowth < 100 * 1024 * 1024, 'Memory usage should be reasonable');
+    assert.ok(
+      heapGrowth < 100 * 1024 * 1024,
+      'Memory usage should be reasonable'
+    );
   });
 });

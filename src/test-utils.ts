@@ -19,7 +19,7 @@
  * Test utilities for the browserloop project
  */
 
-import { createServer, IncomingMessage, ServerResponse } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -31,34 +31,36 @@ const __dirname = dirname(__filename);
 /**
  * Creates a test configuration for ScreenshotService
  */
-export function createTestScreenshotServiceConfig(overrides: Partial<ScreenshotServiceConfig> = {}): ScreenshotServiceConfig {
+export function createTestScreenshotServiceConfig(
+  overrides: Partial<ScreenshotServiceConfig> = {}
+): ScreenshotServiceConfig {
   return {
     viewport: {
       defaultWidth: 1280,
       defaultHeight: 720,
-      ...overrides.viewport
+      ...overrides.viewport,
     },
     screenshot: {
       defaultFormat: 'webp',
       defaultQuality: 80,
       defaultTimeout: 30000,
       defaultWaitForNetworkIdle: true,
-      ...overrides.screenshot
+      ...overrides.screenshot,
     },
     browser: {
       retryCount: 3,
       retryDelay: 1000,
-      ...overrides.browser
+      ...overrides.browser,
     },
     authentication: {
       defaultCookies: [],
-      ...overrides.authentication
+      ...overrides.authentication,
     },
     logging: {
       debug: false,
       enableMetrics: false,
       silent: true,
-      ...overrides.logging
+      ...overrides.logging,
     },
     timeouts: {
       browserInit: 30000,
@@ -66,8 +68,8 @@ export function createTestScreenshotServiceConfig(overrides: Partial<ScreenshotS
       elementWait: 5000,
       screenshot: 10000,
       network: 5000,
-      ...overrides.timeouts
-    }
+      ...overrides.timeouts,
+    },
   };
 }
 
@@ -75,14 +77,15 @@ export function createTestScreenshotServiceConfig(overrides: Partial<ScreenshotS
  * Creates a simple test server for testing purposes
  */
 export function createTestServer(port = 0) {
-  const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-    try {
-      const url = req.url || '/';
+  const server = createServer(
+    async (req: IncomingMessage, res: ServerResponse) => {
+      try {
+        const url = req.url || '/';
 
-      // Handle specific routes
-      if (url === '/simple.html' || url === '/') {
-        res.writeHead(200, { 'Content-Type': 'text/html' });
-        res.end(`
+        // Handle specific routes
+        if (url === '/simple.html' || url === '/') {
+          res.writeHead(200, { 'Content-Type': 'text/html' });
+          res.end(`
           <!DOCTYPE html>
           <html>
           <head><title>Simple Test Page</title></head>
@@ -92,30 +95,37 @@ export function createTestServer(port = 0) {
           </body>
           </html>
         `);
-        return;
-      }
-
-      // Try to serve fixture files
-      if (url.endsWith('.html')) {
-        const fixturePath = join(__dirname, '..', 'tests', 'fixtures', url.slice(1));
-        try {
-          const content = await readFile(fixturePath, 'utf-8');
-          res.writeHead(200, { 'Content-Type': 'text/html' });
-          res.end(content);
           return;
-        } catch (error) {
-          // File not found, continue to 404
         }
-      }
 
-      // 404 for other routes
-      res.writeHead(404, { 'Content-Type': 'text/plain' });
-      res.end('Not Found');
-    } catch (error) {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Internal Server Error');
+        // Try to serve fixture files
+        if (url.endsWith('.html')) {
+          const fixturePath = join(
+            __dirname,
+            '..',
+            'tests',
+            'fixtures',
+            url.slice(1)
+          );
+          try {
+            const content = await readFile(fixturePath, 'utf-8');
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(content);
+            return;
+          } catch (error) {
+            // File not found, continue to 404
+          }
+        }
+
+        // 404 for other routes
+        res.writeHead(404, { 'Content-Type': 'text/plain' });
+        res.end('Not Found');
+      } catch (error) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Internal Server Error');
+      }
     }
-  });
+  );
 
   let actualPort: number;
 
@@ -148,7 +158,7 @@ export function createTestServer(port = 0) {
           else resolve();
         });
       });
-    }
+    },
   };
 }
 

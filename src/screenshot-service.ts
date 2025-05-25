@@ -16,7 +16,12 @@
  */
 
 import { chromium, type Browser, type Page } from 'playwright';
-import { ImageProcessor, type ImageConversionOptions } from './image-processor.js';
+import {
+  convertImage,
+  getMimeType,
+  needsConversion,
+  type ImageConversionOptions,
+} from './image-processor.js';
 import { Logger, categorizeError } from './logger.js';
 import { CookieUtils } from './cookie-utils.js';
 import type {
@@ -26,7 +31,7 @@ import type {
   RetryAttempt,
   HealthCheck,
   BrowserloopError,
-  Cookie
+  Cookie,
 } from './types.js';
 
 export class ScreenshotService {
@@ -62,17 +67,21 @@ export class ScreenshotService {
     }
 
     this.initializationInProgress = true;
-    this.logger.debug('Initializing browser', { timeout: this.serviceConfig.timeouts.browserInit });
+    this.logger.debug('Initializing browser', {
+      timeout: this.serviceConfig.timeouts.browserInit,
+    });
 
     try {
       const initTimeout = setTimeout(() => {
-        throw new Error(`Browser initialization timeout after ${this.serviceConfig.timeouts.browserInit}ms`);
+        throw new Error(
+          `Browser initialization timeout after ${this.serviceConfig.timeouts.browserInit}ms`
+        );
       }, this.serviceConfig.timeouts.browserInit);
 
       this.browser = await chromium.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        timeout: this.serviceConfig.timeouts.browserInit
+        timeout: this.serviceConfig.timeouts.browserInit,
       });
 
       clearTimeout(initTimeout);
@@ -99,14 +108,18 @@ export class ScreenshotService {
 
       try {
         await this.navigateToUrl(page, config);
-        const screenshotBuffer = await this.captureScreenshot(page, config, false);
+        const screenshotBuffer = await this.captureScreenshot(
+          page,
+          config,
+          false
+        );
         const result = this.createResult(screenshotBuffer, config);
 
         this.lastSuccessfulOperation = Date.now();
         this.logger.debug('Screenshot captured successfully', {
           url: options.url,
           format: config.format,
-          size: screenshotBuffer.length
+          size: screenshotBuffer.length,
         });
 
         return result;
@@ -119,7 +132,9 @@ export class ScreenshotService {
   /**
    * Take a full page screenshot with enhanced error handling
    */
-  async takeFullPageScreenshot(options: ScreenshotOptions): Promise<ScreenshotResult> {
+  async takeFullPageScreenshot(
+    options: ScreenshotOptions
+  ): Promise<ScreenshotResult> {
     return await this.executeWithRetry(async () => {
       await this.ensureInitialized();
 
@@ -129,7 +144,11 @@ export class ScreenshotService {
       try {
         await this.navigateToUrl(page, config);
         const pageSize = await this.getPageDimensions(page);
-        const screenshotBuffer = await this.captureScreenshot(page, config, true);
+        const screenshotBuffer = await this.captureScreenshot(
+          page,
+          config,
+          true
+        );
         const result = this.createResult(screenshotBuffer, config, pageSize);
 
         this.lastSuccessfulOperation = Date.now();
@@ -137,7 +156,7 @@ export class ScreenshotService {
           url: options.url,
           format: config.format,
           pageSize,
-          size: screenshotBuffer.length
+          size: screenshotBuffer.length,
         });
 
         return result;
@@ -150,7 +169,9 @@ export class ScreenshotService {
   /**
    * Take a screenshot of a specific element with enhanced error handling
    */
-  async takeElementScreenshot(options: ScreenshotOptions): Promise<ScreenshotResult> {
+  async takeElementScreenshot(
+    options: ScreenshotOptions
+  ): Promise<ScreenshotResult> {
     if (!options.selector) {
       const error = new Error('Selector is required for element screenshot');
       const categorizedError = categorizeError(error, { url: options.url });
@@ -167,7 +188,11 @@ export class ScreenshotService {
       try {
         await this.navigateToUrl(page, config);
         const element = await this.findElement(page, options.selector!);
-        const screenshotBuffer = await this.captureElementScreenshot(page, element, config);
+        const screenshotBuffer = await this.captureElementScreenshot(
+          page,
+          element,
+          config
+        );
         const elementSize = await this.getElementDimensions(element);
         const result = this.createResult(screenshotBuffer, config, elementSize);
 
@@ -177,7 +202,7 @@ export class ScreenshotService {
           selector: options.selector,
           format: config.format,
           elementSize,
-          size: screenshotBuffer.length
+          size: screenshotBuffer.length,
         });
 
         return result;
@@ -195,18 +220,25 @@ export class ScreenshotService {
     const memoryUsage = process.memoryUsage();
 
     return {
-      healthy: this.isInitialized && this.browser !== null && !this.initializationInProgress,
+      healthy:
+        this.isInitialized &&
+        this.browser !== null &&
+        !this.initializationInProgress,
       browser: {
         initialized: this.isInitialized,
         connected: this.browser !== null && this.browser.isConnected(),
-        ...(metrics.lastError?.message && { lastError: metrics.lastError.message })
+        ...(metrics.lastError?.message && {
+          lastError: metrics.lastError.message,
+        }),
       },
       resources: {
         memoryUsage: memoryUsage.heapUsed,
-        uptime: this.logger.getUptime()
+        uptime: this.logger.getUptime(),
       },
-      ...(this.lastSuccessfulOperation && { lastSuccessfulOperation: this.lastSuccessfulOperation }),
-      recentErrorCount: metrics.lastHourErrors
+      ...(this.lastSuccessfulOperation && {
+        lastSuccessfulOperation: this.lastSuccessfulOperation,
+      }),
+      recentErrorCount: metrics.lastHourErrors,
     };
   }
 
@@ -218,8 +250,8 @@ export class ScreenshotService {
 
     // Close all pages in pool
     await Promise.all([
-      ...this.pagePool.map(page => this.safeClosePage(page)),
-      ...Array.from(this.activePages).map(page => this.safeClosePage(page))
+      ...this.pagePool.map((page) => this.safeClosePage(page)),
+      ...Array.from(this.activePages).map((page) => this.safeClosePage(page)),
     ]);
 
     this.pagePool = [];
@@ -230,7 +262,9 @@ export class ScreenshotService {
         await this.browser.close();
         this.logger.debug('Browser closed successfully');
       } catch (error) {
-        this.logger.warn('Error during browser cleanup', { error: (error as Error).message });
+        this.logger.warn('Error during browser cleanup', {
+          error: (error as Error).message,
+        });
       }
       this.browser = null;
       this.isInitialized = false;
@@ -241,7 +275,11 @@ export class ScreenshotService {
    * Check if service is healthy
    */
   isHealthy(): boolean {
-    return this.isInitialized && this.browser !== null && !this.initializationInProgress;
+    return (
+      this.isInitialized &&
+      this.browser !== null &&
+      !this.initializationInProgress
+    );
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -264,10 +302,12 @@ export class ScreenshotService {
       height: options.height ?? this.serviceConfig.viewport.defaultHeight,
       format: options.format ?? this.serviceConfig.screenshot.defaultFormat,
       quality: options.quality ?? this.serviceConfig.screenshot.defaultQuality,
-      waitForNetworkIdle: options.waitForNetworkIdle ?? this.serviceConfig.screenshot.defaultWaitForNetworkIdle,
+      waitForNetworkIdle:
+        options.waitForNetworkIdle ??
+        this.serviceConfig.screenshot.defaultWaitForNetworkIdle,
       timeout: options.timeout ?? this.serviceConfig.screenshot.defaultTimeout,
       userAgent: options.userAgent ?? this.serviceConfig.browser.userAgent,
-      cookies: mergedCookies
+      cookies: mergedCookies,
     };
   }
 
@@ -275,14 +315,17 @@ export class ScreenshotService {
    * Merge default cookies with request cookies
    * Request cookies take priority over default cookies with the same name
    */
-  private mergeCookies(defaultCookies: Cookie[], requestCookies?: Cookie[] | string): Cookie[] | string | undefined {
+  private mergeCookies(
+    defaultCookies: Cookie[],
+    requestCookies?: Cookie[] | string
+  ): Cookie[] | string | undefined {
     // Log debug information about cookie merging
     if (this.serviceConfig.logging.debug) {
       this.logger.debug('Cookie merging process', {
         defaultCookieCount: defaultCookies?.length || 0,
-        defaultCookieNames: defaultCookies?.map(c => c.name) || [],
+        defaultCookieNames: defaultCookies?.map((c) => c.name) || [],
         hasRequestCookies: !!requestCookies,
-        requestCookiesType: typeof requestCookies
+        requestCookiesType: typeof requestCookies,
       });
     }
 
@@ -302,20 +345,21 @@ export class ScreenshotService {
     if (!requestCookies) {
       this.logger.debug('No request cookies - using default cookies only', {
         defaultCookieCount: defaultCookies.length,
-        defaultCookieNames: defaultCookies.map(c => c.name)
+        defaultCookieNames: defaultCookies.map((c) => c.name),
       });
       return defaultCookies;
     }
 
     try {
       // Parse request cookies if they're a string
-      const parsedRequestCookies = typeof requestCookies === 'string'
-        ? CookieUtils.parseCookies(requestCookies)
-        : requestCookies;
+      const parsedRequestCookies =
+        typeof requestCookies === 'string'
+          ? CookieUtils.parseCookies(requestCookies)
+          : requestCookies;
 
       // Create a map of request cookies by name for fast lookup
       const requestCookieMap = new Map<string, Cookie>();
-      parsedRequestCookies.forEach(cookie => {
+      parsedRequestCookies.forEach((cookie) => {
         requestCookieMap.set(cookie.name, cookie);
       });
 
@@ -325,7 +369,7 @@ export class ScreenshotService {
       const addedDefaultCookies: string[] = [];
 
       // Add default cookies that aren't overridden by request cookies
-      defaultCookies.forEach(defaultCookie => {
+      defaultCookies.forEach((defaultCookie) => {
         if (!requestCookieMap.has(defaultCookie.name)) {
           mergedCookies.push(defaultCookie);
           addedDefaultCookies.push(defaultCookie.name);
@@ -335,7 +379,7 @@ export class ScreenshotService {
       });
 
       // Add all request cookies (these take priority)
-      parsedRequestCookies.forEach(requestCookie => {
+      parsedRequestCookies.forEach((requestCookie) => {
         mergedCookies.push(requestCookie);
       });
 
@@ -345,8 +389,8 @@ export class ScreenshotService {
           totalMergedCookies: mergedCookies.length,
           addedDefaultCookies,
           overriddenCookies,
-          requestCookieNames: parsedRequestCookies.map(c => c.name),
-          finalCookieNames: mergedCookies.map(c => c.name)
+          requestCookieNames: parsedRequestCookies.map((c) => c.name),
+          finalCookieNames: mergedCookies.map((c) => c.name),
         });
       }
 
@@ -355,13 +399,15 @@ export class ScreenshotService {
       // If parsing fails, log warning and return request cookies only
       this.logger.warn('Failed to merge default cookies with request cookies', {
         error: error instanceof Error ? error.message : 'Unknown error',
-        fallbackBehavior: 'Using request cookies only'
+        fallbackBehavior: 'Using request cookies only',
       });
       return requestCookies;
     }
   }
 
-  private async createPage(config: ReturnType<typeof this.createScreenshotConfig>): Promise<Page> {
+  private async createPage(
+    config: ReturnType<typeof this.createScreenshotConfig>
+  ): Promise<Page> {
     const pageOptions = config.userAgent ? { userAgent: config.userAgent } : {};
     const page = await this.browser!.newPage(pageOptions);
 
@@ -371,8 +417,14 @@ export class ScreenshotService {
     return page;
   }
 
-  private async navigateToUrl(page: Page, config: ReturnType<typeof this.createScreenshotConfig>): Promise<void> {
-    const navigationTimeout = Math.min(config.timeout, this.serviceConfig.timeouts.navigation);
+  private async navigateToUrl(
+    page: Page,
+    config: ReturnType<typeof this.createScreenshotConfig>
+  ): Promise<void> {
+    const navigationTimeout = Math.min(
+      config.timeout,
+      this.serviceConfig.timeouts.navigation
+    );
 
     // Inject cookies before navigation if provided
     if (config.cookies) {
@@ -386,11 +438,16 @@ export class ScreenshotService {
           const headers = response.headers();
           const setCookieHeaders = headers['set-cookie'];
           if (setCookieHeaders) {
-            this.logger.debug('Server sent Set-Cookie headers (might override injected cookies)', {
-              url: config.url,
-              setCookieHeaders: Array.isArray(setCookieHeaders) ? setCookieHeaders : [setCookieHeaders],
-              status: response.status()
-            });
+            this.logger.debug(
+              'Server sent Set-Cookie headers (might override injected cookies)',
+              {
+                url: config.url,
+                setCookieHeaders: Array.isArray(setCookieHeaders)
+                  ? setCookieHeaders
+                  : [setCookieHeaders],
+                status: response.status(),
+              }
+            );
           }
         }
       });
@@ -398,7 +455,7 @@ export class ScreenshotService {
 
     await page.goto(config.url, {
       waitUntil: config.waitForNetworkIdle ? 'networkidle' : 'domcontentloaded',
-      timeout: navigationTimeout
+      timeout: navigationTimeout,
     });
 
     // Debug: Dump actual cookies present in browser after navigation
@@ -410,13 +467,18 @@ export class ScreenshotService {
   /**
    * Inject cookies into the browser context before navigation
    */
-  private async injectCookies(page: Page, cookiesInput: Cookie[] | string, url: string): Promise<void> {
+  private async injectCookies(
+    page: Page,
+    cookiesInput: Cookie[] | string,
+    url: string
+  ): Promise<void> {
     let cookies: Cookie[] = [];
     let playwrightCookies: any[] = [];
 
     try {
       // Parse and validate cookies using existing utilities
-      const { cookies: parsedCookies, sanitizedForLogging } = CookieUtils.validateAndSanitize(cookiesInput);
+      const { cookies: parsedCookies, sanitizedForLogging } =
+        CookieUtils.validateAndSanitize(cookiesInput);
       cookies = parsedCookies;
 
       if (cookies.length === 0) {
@@ -424,12 +486,17 @@ export class ScreenshotService {
       }
 
       // Automatically enhance cookies if they appear to need it
-      this.logger.debug('About to enhance cookies if needed', { cookieCount: cookies.length });
+      this.logger.debug('About to enhance cookies if needed', {
+        cookieCount: cookies.length,
+      });
       try {
         cookies = this.enhanceCookiesIfNeeded(cookies);
       } catch (enhancementError) {
         this.logger.warn('Cookie enhancement failed, using original cookies', {
-          error: enhancementError instanceof Error ? enhancementError.message : 'Unknown error'
+          error:
+            enhancementError instanceof Error
+              ? enhancementError.message
+              : 'Unknown error',
         });
       }
 
@@ -441,10 +508,15 @@ export class ScreenshotService {
         cookieCount: cookies.length,
         cookies: sanitizedForLogging,
         cookieTypes: {
-          hostPrefixed: cookies.filter(c => c.name.startsWith('__Host-')).length,
-          securePrefixed: cookies.filter(c => c.name.startsWith('__Secure-')).length,
-          regular: cookies.filter(c => !c.name.startsWith('__Host-') && !c.name.startsWith('__Secure-')).length
-        }
+          hostPrefixed: cookies.filter((c) => c.name.startsWith('__Host-'))
+            .length,
+          securePrefixed: cookies.filter((c) => c.name.startsWith('__Secure-'))
+            .length,
+          regular: cookies.filter(
+            (c) =>
+              !c.name.startsWith('__Host-') && !c.name.startsWith('__Secure-')
+          ).length,
+        },
       });
 
       // Derive domain from URL if not specified in cookies
@@ -456,10 +528,10 @@ export class ScreenshotService {
       this.validateCookieDomains(cookies, urlObj);
 
       // Convert cookies to Playwright format with proper prefix handling
-      playwrightCookies = cookies.map(cookie => {
+      playwrightCookies = cookies.map((cookie) => {
         const playwrightCookie: any = {
           name: cookie.name,
-          value: cookie.value
+          value: cookie.value,
         };
 
         // Handle __Host- prefix requirements (RFC 6265bis)
@@ -493,7 +565,11 @@ export class ScreenshotService {
         if (cookie.httpOnly !== undefined) {
           playwrightCookie.httpOnly = cookie.httpOnly;
         }
-        if (cookie.secure !== undefined && !cookie.name.startsWith('__Host-') && !cookie.name.startsWith('__Secure-')) {
+        if (
+          cookie.secure !== undefined &&
+          !cookie.name.startsWith('__Host-') &&
+          !cookie.name.startsWith('__Secure-')
+        ) {
           // Only set user-defined secure for non-prefix cookies
           playwrightCookie.secure = cookie.secure;
         }
@@ -516,7 +592,7 @@ export class ScreenshotService {
       if (this.serviceConfig.logging.debug) {
         this.logger.debug('Playwright cookies being injected', {
           url,
-          playwrightCookies: playwrightCookies.map(c => ({
+          playwrightCookies: playwrightCookies.map((c) => ({
             name: c.name,
             domain: c.domain,
             path: c.path,
@@ -525,23 +601,28 @@ export class ScreenshotService {
             httpOnly: c.httpOnly,
             sameSite: c.sameSite,
             hasValue: !!c.value,
-            valueLength: c.value?.length || 0
-          }))
+            valueLength: c.value?.length || 0,
+          })),
         });
       }
 
       await Promise.race([
         context.addCookies(playwrightCookies),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Cookie injection timeout after ${cookieTimeout}ms`)), cookieTimeout)
-        )
+          setTimeout(
+            () =>
+              reject(
+                new Error(`Cookie injection timeout after ${cookieTimeout}ms`)
+              ),
+            cookieTimeout
+          )
+        ),
       ]);
 
       this.logger.debug('Cookies injected successfully', {
         url,
-        cookieCount: playwrightCookies.length
+        cookieCount: playwrightCookies.length,
       });
-
     } catch (error) {
       // Clear sensitive data from memory before throwing
       this.clearCookieMemory(cookies, playwrightCookies);
@@ -551,19 +632,27 @@ export class ScreenshotService {
       if (error instanceof Error) {
         if (error.message.includes('timeout')) {
           categorizedError = categorizeError(error, { url });
-        } else if (error.message.includes('validation') || error.message.includes('parsing')) {
+        } else if (
+          error.message.includes('validation') ||
+          error.message.includes('parsing')
+        ) {
           categorizedError = categorizeError(error, { url });
         } else {
           categorizedError = categorizeError(error, { url });
         }
       } else {
-        categorizedError = categorizeError(new Error('Unknown cookie injection error'), { url });
+        categorizedError = categorizeError(
+          new Error('Unknown cookie injection error'),
+          { url }
+        );
       }
 
       this.logger.error('Cookie injection failed', categorizedError);
 
       // Sanitize error message to prevent cookie value exposure
-      const sanitizedErrorMessage = this.sanitizeErrorMessage(error instanceof Error ? error.message : 'Unknown error');
+      const sanitizedErrorMessage = this.sanitizeErrorMessage(
+        error instanceof Error ? error.message : 'Unknown error'
+      );
       throw new Error(`Cookie injection failed: ${sanitizedErrorMessage}`);
     } finally {
       // Always clear sensitive data from memory after use
@@ -577,39 +666,48 @@ export class ScreenshotService {
    */
   private enhanceCookiesIfNeeded(cookies: Cookie[]): Cookie[] {
     // Check if cookies need enhancement
-    const cookieAnalysis = cookies.map(cookie => ({
+    const cookieAnalysis = cookies.map((cookie) => ({
       name: cookie.name,
       missingExpires: cookie.expires === undefined,
       missingSecure: cookie.secure === undefined,
-      isAuthCookie: cookie.name.startsWith('__Host-') ||
-                   cookie.name.startsWith('__Secure-') ||
-                   cookie.name.includes('auth') ||
-                   cookie.name.includes('session'),
-      needsEnhancement: false
+      isAuthCookie:
+        cookie.name.startsWith('__Host-') ||
+        cookie.name.startsWith('__Secure-') ||
+        cookie.name.includes('auth') ||
+        cookie.name.includes('session'),
+      needsEnhancement: false,
     }));
 
     // Update needs enhancement flag
-    cookieAnalysis.forEach(analysis => {
-      const missingSecurityFlags = analysis.missingSecure && analysis.isAuthCookie;
-      analysis.needsEnhancement = analysis.missingExpires || missingSecurityFlags;
+    cookieAnalysis.forEach((analysis) => {
+      const missingSecurityFlags =
+        analysis.missingSecure && analysis.isAuthCookie;
+      analysis.needsEnhancement =
+        analysis.missingExpires || missingSecurityFlags;
     });
 
-    const needsEnhancement = cookieAnalysis.some(analysis => analysis.needsEnhancement);
+    const needsEnhancement = cookieAnalysis.some(
+      (analysis) => analysis.needsEnhancement
+    );
 
     // Log detailed analysis
     this.logger.debug('Cookie enhancement analysis', {
       cookieAnalysis,
-      overallNeedsEnhancement: needsEnhancement
+      overallNeedsEnhancement: needsEnhancement,
     });
 
     if (!needsEnhancement) {
-      this.logger.debug('Cookies already have proper attributes, no enhancement needed');
+      this.logger.debug(
+        'Cookies already have proper attributes, no enhancement needed'
+      );
       return cookies;
     }
 
-    this.logger.debug('Automatically enhancing cookies with security attributes and expiration dates');
+    this.logger.debug(
+      'Automatically enhancing cookies with security attributes and expiration dates'
+    );
 
-    return cookies.map(cookie => {
+    return cookies.map((cookie) => {
       const enhanced = { ...cookie };
 
       // Only add expiration date if missing and not a session cookie
@@ -631,7 +729,10 @@ export class ScreenshotService {
         if (enhanced.secure === undefined) enhanced.secure = true;
         if (enhanced.httpOnly === undefined) enhanced.httpOnly = true;
         if (enhanced.path === undefined) enhanced.path = enhanced.path || '/';
-      } else if (cookie.name.includes('auth') || cookie.name.includes('session')) {
+      } else if (
+        cookie.name.includes('auth') ||
+        cookie.name.includes('session')
+      ) {
         // Authentication cookies
         if (enhanced.secure === undefined) enhanced.secure = true;
         if (enhanced.httpOnly === undefined) enhanced.httpOnly = true;
@@ -673,7 +774,9 @@ export class ScreenshotService {
         const cookieDomain = cookie.domain.toLowerCase();
 
         if (!this.isDomainValid(cookieDomain, targetDomain)) {
-          throw new Error(`Cookie domain '${cookie.name}' domain mismatch: URL domain is '${targetDomain}'`);
+          throw new Error(
+            `Cookie domain '${cookie.name}' domain mismatch: URL domain is '${targetDomain}'`
+          );
         }
       }
     }
@@ -693,9 +796,11 @@ export class ScreenshotService {
 
     // Handle localhost and IP addresses specially
     if (targetDomain === 'localhost' || targetDomain === '127.0.0.1') {
-      return cookieDomain === 'localhost' ||
-             cookieDomain === '127.0.0.1' ||
-             cookieDomain === '.localhost';
+      return (
+        cookieDomain === 'localhost' ||
+        cookieDomain === '127.0.0.1' ||
+        cookieDomain === '.localhost'
+      );
     }
 
     // Handle domain with leading dot (parent domain)
@@ -726,7 +831,7 @@ export class ScreenshotService {
   private clearCookieMemory(cookies: Cookie[], playwrightCookies: any[]): void {
     // Clear cookie values from original array
     if (cookies && Array.isArray(cookies)) {
-      cookies.forEach(cookie => {
+      cookies.forEach((cookie) => {
         if (cookie && typeof cookie === 'object') {
           // Overwrite sensitive fields with empty strings
           (cookie as any).value = '';
@@ -739,7 +844,7 @@ export class ScreenshotService {
 
     // Clear playwright cookies array
     if (playwrightCookies && Array.isArray(playwrightCookies)) {
-      playwrightCookies.forEach(cookie => {
+      playwrightCookies.forEach((cookie) => {
         if (cookie && typeof cookie === 'object') {
           // Overwrite sensitive fields with empty strings
           (cookie as any).value = '';
@@ -777,26 +882,28 @@ export class ScreenshotService {
     const screenshotOptions = {
       type: playwrightFormat as 'png',
       fullPage,
-      timeout: screenshotTimeout
+      timeout: screenshotTimeout,
     };
 
     const rawBuffer = await page.screenshot(screenshotOptions);
 
     // Convert to requested format if needed
-    if (ImageProcessor.needsConversion(config.format)) {
-      return await ImageProcessor.convertImage(rawBuffer, {
+    if (needsConversion(config.format)) {
+      return await convertImage(rawBuffer, {
         format: config.format,
-        quality: config.quality
+        quality: config.quality,
       });
     }
 
     return rawBuffer;
   }
 
-  private async getPageDimensions(page: Page): Promise<{ width: number; height: number }> {
+  private async getPageDimensions(
+    page: Page
+  ): Promise<{ width: number; height: number }> {
     return await page.evaluate(() => ({
       width: (globalThis as any).document.documentElement.scrollWidth,
-      height: (globalThis as any).document.documentElement.scrollHeight
+      height: (globalThis as any).document.documentElement.scrollHeight,
     }));
   }
 
@@ -813,26 +920,32 @@ export class ScreenshotService {
     return element;
   }
 
-  private async captureElementScreenshot(page: Page, element: any, config: ReturnType<typeof this.createScreenshotConfig>): Promise<Buffer> {
+  private async captureElementScreenshot(
+    page: Page,
+    element: any,
+    config: ReturnType<typeof this.createScreenshotConfig>
+  ): Promise<Buffer> {
     // Always capture as PNG for best quality, then convert if needed
     const playwrightFormat = 'png';
 
     const rawBuffer = await element.screenshot({
-      type: playwrightFormat as 'png'
+      type: playwrightFormat as 'png',
     });
 
     // Convert to requested format if needed
-    if (ImageProcessor.needsConversion(config.format)) {
-      return await ImageProcessor.convertImage(rawBuffer, {
+    if (needsConversion(config.format)) {
+      return await convertImage(rawBuffer, {
         format: config.format,
-        quality: config.quality
+        quality: config.quality,
       });
     }
 
     return rawBuffer;
   }
 
-  private async getElementDimensions(element: any): Promise<{ width: number; height: number }> {
+  private async getElementDimensions(
+    element: any
+  ): Promise<{ width: number; height: number }> {
     const boundingBox = await element.boundingBox();
     if (!boundingBox) {
       throw new Error('Could not get element dimensions');
@@ -840,7 +953,7 @@ export class ScreenshotService {
 
     return {
       width: Math.round(boundingBox.width),
-      height: Math.round(boundingBox.height)
+      height: Math.round(boundingBox.height),
     };
   }
 
@@ -850,21 +963,24 @@ export class ScreenshotService {
     pageSize?: { width: number; height: number }
   ): ScreenshotResult {
     const base64Data = screenshotBuffer.toString('base64');
-    const mimeType = ImageProcessor.getMimeType(config.format);
+    const mimeType = getMimeType(config.format);
 
     return {
       data: base64Data,
       mimeType,
       width: pageSize?.width ?? config.width,
       height: pageSize?.height ?? config.height,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     };
   }
 
   /**
    * Execute a function with retry logic
    */
-  private async executeWithRetry<T>(fn: () => Promise<T>, url: string): Promise<T> {
+  private async executeWithRetry<T>(
+    fn: () => Promise<T>,
+    url: string
+  ): Promise<T> {
     const maxAttempts = this.serviceConfig.browser.retryCount + 1; // +1 for initial attempt
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -872,13 +988,14 @@ export class ScreenshotService {
         return await fn();
       } catch (error) {
         const isLastAttempt = attempt === maxAttempts;
-        const typedError = error instanceof Error ? error : new Error(String(error));
+        const typedError =
+          error instanceof Error ? error : new Error(String(error));
 
         if (isLastAttempt) {
           const categorizedError = categorizeError(typedError, { url });
           this.logger.error('All retry attempts failed', categorizedError, {
             attempts: maxAttempts,
-            url
+            url,
           });
           throw error;
         }
@@ -888,7 +1005,7 @@ export class ScreenshotService {
           attempt,
           maxAttempts,
           error: typedError,
-          delay: this.serviceConfig.browser.retryDelay
+          delay: this.serviceConfig.browser.retryDelay,
         };
 
         // Log retry attempt using the logger
@@ -902,7 +1019,7 @@ export class ScreenshotService {
           this.logger.browserReset('Error recovery', {
             error: typedError.message,
             attempt,
-            url
+            url,
           });
           await this.resetBrowser();
         }
@@ -925,10 +1042,10 @@ export class ScreenshotService {
       'page crashed',
       'navigation failed',
       'protocol error',
-      'connection closed'
+      'connection closed',
     ];
 
-    return recoverableErrors.some(msg =>
+    return recoverableErrors.some((msg) =>
       error.message.toLowerCase().includes(msg.toLowerCase())
     );
   }
@@ -945,7 +1062,7 @@ export class ScreenshotService {
       }
     } catch (error) {
       this.logger.warn('Error during browser reset', {
-        error: (error as Error).message
+        error: (error as Error).message,
       });
     }
 
@@ -958,13 +1075,15 @@ export class ScreenshotService {
    * Delay execution for specified milliseconds
    */
   private async delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Get a page from the pool or create a new one
    */
-  private async getPage(config: ReturnType<typeof this.createScreenshotConfig>): Promise<Page> {
+  private async getPage(
+    config: ReturnType<typeof this.createScreenshotConfig>
+  ): Promise<Page> {
     // Try to get a page from the pool
     let page = this.pagePool.pop();
 
@@ -1005,7 +1124,9 @@ export class ScreenshotService {
       this.activePages.delete(page);
       this.pagePool.push(page);
 
-      this.logger.debug('Page returned to pool', { poolSize: this.pagePool.length });
+      this.logger.debug('Page returned to pool', {
+        poolSize: this.pagePool.length,
+      });
     } catch (error) {
       // If page cleanup fails, close it instead of reusing
       await this.safeClosePage(page);
@@ -1016,7 +1137,10 @@ export class ScreenshotService {
   /**
    * Configure page settings
    */
-  private async configurePage(page: Page, config: ReturnType<typeof this.createScreenshotConfig>): Promise<void> {
+  private async configurePage(
+    page: Page,
+    config: ReturnType<typeof this.createScreenshotConfig>
+  ): Promise<void> {
     await page.setViewportSize({ width: config.width, height: config.height });
     page.setDefaultTimeout(this.serviceConfig.timeouts.navigation);
   }
@@ -1031,7 +1155,9 @@ export class ScreenshotService {
       }
     } catch (error) {
       // Silent cleanup - don't interfere with stdio
-      this.logger.debug('Error closing page', { error: (error as Error).message });
+      this.logger.debug('Error closing page', {
+        error: (error as Error).message,
+      });
     }
   }
 
@@ -1045,11 +1171,16 @@ export class ScreenshotService {
 
       // Filter cookies relevant to the current URL
       const urlObj = new URL(url);
-      const relevantCookies = actualCookies.filter(cookie => {
+      const relevantCookies = actualCookies.filter((cookie) => {
         // Check if cookie applies to this URL
         if (cookie.domain) {
-          const cookieDomain = cookie.domain.startsWith('.') ? cookie.domain.slice(1) : cookie.domain;
-          return urlObj.hostname === cookieDomain || urlObj.hostname.endsWith('.' + cookieDomain);
+          const cookieDomain = cookie.domain.startsWith('.')
+            ? cookie.domain.slice(1)
+            : cookie.domain;
+          return (
+            urlObj.hostname === cookieDomain ||
+            urlObj.hostname.endsWith('.' + cookieDomain)
+          );
         }
         return true;
       });
@@ -1058,7 +1189,7 @@ export class ScreenshotService {
         url,
         totalCookiesInBrowser: actualCookies.length,
         relevantCookiesCount: relevantCookies.length,
-        relevantCookies: relevantCookies.map(cookie => ({
+        relevantCookies: relevantCookies.map((cookie) => ({
           name: cookie.name,
           domain: cookie.domain,
           path: cookie.path,
@@ -1069,35 +1200,45 @@ export class ScreenshotService {
           hasValue: !!cookie.value,
           expires: cookie.expires,
           isHostPrefixed: cookie.name.startsWith('__Host-'),
-          isSecurePrefixed: cookie.name.startsWith('__Secure-')
+          isSecurePrefixed: cookie.name.startsWith('__Secure-'),
         })),
         cookieAnalysis: {
-          hostPrefixed: relevantCookies.filter(c => c.name.startsWith('__Host-')).length,
-          securePrefixed: relevantCookies.filter(c => c.name.startsWith('__Secure-')).length,
-          withDomain: relevantCookies.filter(c => c.domain).length,
-          secure: relevantCookies.filter(c => c.secure).length,
-          httpOnly: relevantCookies.filter(c => c.httpOnly).length
-        }
+          hostPrefixed: relevantCookies.filter((c) =>
+            c.name.startsWith('__Host-')
+          ).length,
+          securePrefixed: relevantCookies.filter((c) =>
+            c.name.startsWith('__Secure-')
+          ).length,
+          withDomain: relevantCookies.filter((c) => c.domain).length,
+          secure: relevantCookies.filter((c) => c.secure).length,
+          httpOnly: relevantCookies.filter((c) => c.httpOnly).length,
+        },
       });
 
       // Check if our expected cookies are present
-      const expectedCookieNames = ['__Host-next-auth.csrf-token', '__Secure-next-auth.session-token', 'ajs_user_id'];
-      const missingCookies = expectedCookieNames.filter(expectedName =>
-        !relevantCookies.find(actualCookie => actualCookie.name === expectedName)
+      const expectedCookieNames = [
+        '__Host-next-auth.csrf-token',
+        '__Secure-next-auth.session-token',
+        'ajs_user_id',
+      ];
+      const missingCookies = expectedCookieNames.filter(
+        (expectedName) =>
+          !relevantCookies.find(
+            (actualCookie) => actualCookie.name === expectedName
+          )
       );
 
       if (missingCookies.length > 0) {
         this.logger.warn('Expected cookies missing from browser', {
           url,
           missingCookies,
-          presentCookieNames: relevantCookies.map(c => c.name)
+          presentCookieNames: relevantCookies.map((c) => c.name),
         });
       }
-
     } catch (error) {
       this.logger.warn('Failed to dump browser cookies for debugging', {
         url,
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       });
     }
   }

@@ -17,7 +17,12 @@
 
 import { writeFile, appendFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
-import type { LoggingConfig, BrowserloopError, ErrorCategory, ErrorSeverity } from './types.js';
+import type {
+  LoggingConfig,
+  BrowserloopError,
+  ErrorCategory,
+  ErrorSeverity,
+} from './types.js';
 
 /**
  * Log entry interface
@@ -67,15 +72,15 @@ export class Logger {
         element_not_found: 0,
         docker: 0,
         resource: 0,
-        unknown: 0
+        unknown: 0,
       },
       errorsBySeverity: {
         low: 0,
         medium: 0,
         high: 0,
-        critical: 0
+        critical: 0,
       },
-      lastHourErrors: 0
+      lastHourErrors: 0,
     };
     this.hourlyErrors = [];
   }
@@ -106,7 +111,11 @@ export class Logger {
   /**
    * Log error with categorization
    */
-  error(message: string, error?: BrowserloopError, context?: Record<string, any>): void {
+  error(
+    message: string,
+    error?: BrowserloopError,
+    context?: Record<string, any>
+  ): void {
     this.log('error', message, context, error);
 
     if (error && this.config.enableMetrics) {
@@ -117,12 +126,17 @@ export class Logger {
   /**
    * Log retry attempt
    */
-  retry(attempt: number, maxAttempts: number, error: Error, context?: Record<string, any>): void {
+  retry(
+    attempt: number,
+    maxAttempts: number,
+    error: Error,
+    context?: Record<string, any>
+  ): void {
     this.warn(`Retry attempt ${attempt}/${maxAttempts}`, {
       ...context,
       error: error.message,
       attempt,
-      maxAttempts
+      maxAttempts,
     });
   }
 
@@ -132,7 +146,7 @@ export class Logger {
   browserReset(reason: string, context?: Record<string, any>): void {
     this.warn('Browser reset triggered', {
       ...context,
-      reason
+      reason,
     });
   }
 
@@ -143,7 +157,7 @@ export class Logger {
     this.updateHourlyErrors();
     return {
       ...this.metrics,
-      lastHourErrors: this.hourlyErrors.length
+      lastHourErrors: this.hourlyErrors.length,
     };
   }
 
@@ -159,23 +173,29 @@ export class Logger {
    */
   clearMetrics(): void {
     this.metrics.totalErrors = 0;
-    Object.keys(this.metrics.errorsByCategory).forEach(key => {
+    for (const key of Object.keys(this.metrics.errorsByCategory)) {
       this.metrics.errorsByCategory[key as ErrorCategory] = 0;
-    });
-    Object.keys(this.metrics.errorsBySeverity).forEach(key => {
+    }
+    for (const key of Object.keys(this.metrics.errorsBySeverity)) {
       this.metrics.errorsBySeverity[key as ErrorSeverity] = 0;
-    });
+    }
     this.hourlyErrors = [];
+    // biome-ignore lint/performance/noDelete: Required for optional property cleanup
     delete this.metrics.lastError;
   }
 
-  private log(level: LogEntry['level'], message: string, context?: Record<string, any>, error?: BrowserloopError): void {
+  private log(
+    level: LogEntry['level'],
+    message: string,
+    context?: Record<string, any>,
+    error?: BrowserloopError
+  ): void {
     const entry: LogEntry = {
       timestamp: Date.now(),
       level,
       message,
       ...(context && { context }),
-      ...(error && { error })
+      ...(error && { error }),
     };
 
     // Only write to file in debug mode (never to console to avoid stdio interference)
@@ -192,18 +212,21 @@ export class Logger {
     try {
       await mkdir(dirname(this.config.logFile), { recursive: true });
 
-      const logLine = JSON.stringify({
-        timestamp: new Date(entry.timestamp).toISOString(),
-        level: entry.level,
-        message: entry.message,
-        context: entry.context,
-        error: entry.error ? {
-          category: entry.error.category,
-          severity: entry.error.severity,
-          message: entry.error.originalError.message,
-          isRecoverable: entry.error.isRecoverable
-        } : undefined
-      }) + '\n';
+      const logLine =
+        `${JSON.stringify({
+          timestamp: new Date(entry.timestamp).toISOString(),
+          level: entry.level,
+          message: entry.message,
+          context: entry.context,
+          error: entry.error
+            ? {
+                category: entry.error.category,
+                severity: entry.error.severity,
+                message: entry.error.originalError.message,
+                isRecoverable: entry.error.isRecoverable,
+              }
+            : undefined,
+        })}\n`;
 
       await appendFile(this.config.logFile, logLine);
     } catch {
@@ -219,128 +242,145 @@ export class Logger {
     this.metrics.lastError = {
       timestamp: Date.now(),
       category: error.category,
-      message: error.originalError.message
+      message: error.originalError.message,
     };
 
     // Track for hourly count
     this.hourlyErrors.push({
       timestamp: Date.now(),
-      category: error.category
+      category: error.category,
     });
 
     this.updateHourlyErrors();
   }
 
   private updateHourlyErrors(): void {
-    const oneHourAgo = Date.now() - (60 * 60 * 1000);
-    this.hourlyErrors = this.hourlyErrors.filter(error => error.timestamp > oneHourAgo);
+    const oneHourAgo = Date.now() - 60 * 60 * 1000;
+    this.hourlyErrors = this.hourlyErrors.filter(
+      (error) => error.timestamp > oneHourAgo
+    );
   }
 }
 
 /**
  * Categorize error based on error message and type
  */
-export function categorizeError(error: Error, context?: { url?: string }): BrowserloopError {
+export function categorizeError(
+  error: Error,
+  context?: { url?: string }
+): BrowserloopError {
   const message = error.message.toLowerCase();
 
   const createContext = (url?: string) => ({
     timestamp: Date.now(),
-    ...(url && { url })
+    ...(url && { url }),
   });
 
   // Network errors
-  if (message.includes('network') ||
-      message.includes('connection') ||
-      message.includes('dns') ||
-      message.includes('enotfound') ||
-      message.includes('econnrefused')) {
+  if (
+    message.includes('network') ||
+    message.includes('connection') ||
+    message.includes('dns') ||
+    message.includes('enotfound') ||
+    message.includes('econnrefused')
+  ) {
     return {
       originalError: error,
       category: 'network',
       severity: 'medium',
       isRecoverable: true,
-      context: createContext(context?.url)
+      context: createContext(context?.url),
     };
   }
 
   // Resource errors (check before timeout to avoid "exceeded" conflict)
-  if (message.includes('memory') ||
-      message.includes('resource') ||
-      message.includes('disk') ||
-      message.includes('out of memory') ||
-      message.includes('resource limit')) {
+  if (
+    message.includes('memory') ||
+    message.includes('resource') ||
+    message.includes('disk') ||
+    message.includes('out of memory') ||
+    message.includes('resource limit')
+  ) {
     return {
       originalError: error,
       category: 'resource',
       severity: 'high',
       isRecoverable: true,
-      context: createContext(context?.url)
+      context: createContext(context?.url),
     };
   }
 
   // Timeout errors (more specific patterns to avoid conflicts)
-  if (message.includes('timeout') ||
-      message.includes('navigation timeout') ||
-      message.includes('request timeout') ||
-      (message.includes('exceeded') && (message.includes('timeout') || message.includes('ms')))) {
+  if (
+    message.includes('timeout') ||
+    message.includes('navigation timeout') ||
+    message.includes('request timeout') ||
+    (message.includes('exceeded') &&
+      (message.includes('timeout') || message.includes('ms')))
+  ) {
     return {
       originalError: error,
       category: 'timeout',
       severity: 'medium',
       isRecoverable: true,
-      context: createContext(context?.url)
+      context: createContext(context?.url),
     };
   }
 
   // Browser crash errors
-  if (message.includes('browser has been closed') ||
-      message.includes('browser disconnected') ||
-      message.includes('target closed') ||
-      message.includes('page crashed')) {
+  if (
+    message.includes('browser has been closed') ||
+    message.includes('browser disconnected') ||
+    message.includes('target closed') ||
+    message.includes('page crashed')
+  ) {
     return {
       originalError: error,
       category: 'browser_crash',
       severity: 'high',
       isRecoverable: true,
-      context: createContext(context?.url)
+      context: createContext(context?.url),
     };
   }
 
   // Element not found errors
-  if (message.includes('element not found') ||
-      message.includes('selector')) {
+  if (message.includes('element not found') || message.includes('selector')) {
     return {
       originalError: error,
       category: 'element_not_found',
       severity: 'low',
       isRecoverable: false,
-      context: createContext(context?.url)
+      context: createContext(context?.url),
     };
   }
 
   // Input validation errors
-  if (message.includes('invalid') ||
-      message.includes('validation') ||
-      message.includes('parameter')) {
+  if (
+    message.includes('invalid') ||
+    message.includes('validation') ||
+    message.includes('parameter')
+  ) {
     return {
       originalError: error,
       category: 'invalid_input',
       severity: 'low',
       isRecoverable: false,
-      context: createContext(context?.url)
+      context: createContext(context?.url),
     };
   }
 
   // Docker/container errors
-  if (message.includes('docker') ||
-      message.includes('container') ||
-      message.includes('launch browser')) {
+  if (
+    message.includes('docker') ||
+    message.includes('container') ||
+    message.includes('launch browser')
+  ) {
     return {
       originalError: error,
       category: 'docker',
       severity: 'critical',
       isRecoverable: true,
-      context: createContext(context?.url)
+      context: createContext(context?.url),
     };
   }
 
@@ -350,6 +390,6 @@ export function categorizeError(error: Error, context?: { url?: string }): Brows
     category: 'unknown',
     severity: 'medium',
     isRecoverable: true,
-    context: createContext(context?.url)
+    context: createContext(context?.url),
   };
 }

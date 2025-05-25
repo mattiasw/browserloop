@@ -20,7 +20,7 @@ import assert from 'node:assert';
 import {
   createTestServer,
   createTestScreenshotOptions,
-  isValidBase64Image
+  isValidBase64Image,
 } from '../../src/test-utils.js';
 
 describe('Test Utils', () => {
@@ -124,12 +124,14 @@ describe('Test Utils', () => {
 
     it('should validate PNG headers', () => {
       // Mock PNG header in base64
-      const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      const pngBase64 =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
       assert.strictEqual(isValidBase64Image(pngBase64, 'image/png'), true);
     });
 
     it('should reject wrong format headers', () => {
-      const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+      const pngBase64 =
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
       assert.strictEqual(isValidBase64Image(pngBase64, 'image/webp'), false);
     });
   });

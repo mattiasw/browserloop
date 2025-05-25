@@ -51,7 +51,7 @@ export class ScreenshotCache {
     this.options = {
       maxSize: options.maxSize ?? 100,
       ttl: options.ttl ?? 5 * 60 * 1000, // 5 minutes default
-      enableLRU: options.enableLRU ?? true
+      enableLRU: options.enableLRU ?? true,
     };
   }
 
@@ -66,7 +66,7 @@ export class ScreenshotCache {
       options.format ?? 'default',
       options.quality?.toString() ?? 'default',
       options.waitForNetworkIdle?.toString() ?? 'default',
-      options.selector ?? 'no-selector'
+      options.selector ?? 'no-selector',
     ];
     return keyParts.join('|');
   }
@@ -107,7 +107,7 @@ export class ScreenshotCache {
       timestamp: now,
       expiresAt: now + this.options.ttl,
       accessCount: 0,
-      lastAccessed: now
+      lastAccessed: now,
     };
 
     // Check if we need to evict entries
@@ -159,16 +159,21 @@ export class ScreenshotCache {
   getStats() {
     const entries = Array.from(this.cache.values());
     const now = Date.now();
-    const expired = entries.filter(e => e.expiresAt && now > e.expiresAt).length;
+    const expired = entries.filter(
+      (e) => e.expiresAt && now > e.expiresAt
+    ).length;
 
     return {
       totalEntries: this.cache.size,
       maxSize: this.options.maxSize,
       expiredEntries: expired,
-      averageAge: entries.length > 0 ?
-        entries.reduce((sum, e) => sum + (now - e.timestamp), 0) / entries.length : 0,
+      averageAge:
+        entries.length > 0
+          ? entries.reduce((sum, e) => sum + (now - e.timestamp), 0) /
+            entries.length
+          : 0,
       totalAccesses: entries.reduce((sum, e) => sum + e.accessCount, 0),
-      hitRatio: this.calculateHitRatio()
+      hitRatio: this.calculateHitRatio(),
     };
   }
 
@@ -227,7 +232,9 @@ export class ScreenshotCache {
       }
     }
 
-    expiredKeys.forEach(key => this.cache.delete(key));
+    for (const key of expiredKeys) {
+      this.cache.delete(key);
+    }
   }
 }
 

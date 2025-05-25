@@ -21,7 +21,12 @@ import { z } from 'zod';
 import { ScreenshotService } from './screenshot-service.js';
 import { CookieUtils } from './cookie-utils.js';
 import { config } from './config.js';
-import type { ScreenshotServiceConfig } from './types.js';
+import type { ScreenshotServiceConfig, ScreenshotResult, ScreenshotOptions } from './types.js';
+
+// Extended screenshot options that include all possible properties
+interface ExtendedScreenshotOptions extends ScreenshotOptions {
+  fullPage?: boolean;
+}
 
 export class McpScreenshotServer {
   private server: McpServer;
@@ -31,11 +36,13 @@ export class McpScreenshotServer {
     // Create the MCP server instance
     this.server = new McpServer({
       name: 'browserloop',
-      version: '1.0.0'
+      version: '1.0.0',
     });
 
     // Create screenshot service with configuration
-    this.screenshotService = new ScreenshotService(config.getConfig() as ScreenshotServiceConfig);
+    this.screenshotService = new ScreenshotService(
+      config.getConfig() as ScreenshotServiceConfig
+    );
 
     this.setupScreenshotTool();
   }
@@ -50,7 +57,7 @@ export class McpScreenshotServer {
       WIDTH: { MIN: 200, MAX: 4000 },
       HEIGHT: { MIN: 200, MAX: 4000 },
       QUALITY: { MIN: 1, MAX: 100 },
-      TIMEOUT: { MIN: 1000, MAX: 120000 }
+      TIMEOUT: { MIN: 1000, MAX: 120000 },
     };
 
     // Cookie validation schema
@@ -62,41 +69,68 @@ export class McpScreenshotServer {
       httpOnly: z.boolean().optional(),
       secure: z.boolean().optional(),
       expires: z.number().optional(),
-      sameSite: z.enum(['Strict', 'Lax', 'None']).optional()
+      sameSite: z.enum(['Strict', 'Lax', 'None']).optional(),
     });
 
-    const CookiesSchema = z.union([
-      z.array(CookieObjectSchema),
-      z.string().min(1)
-    ]).optional();
+    const CookiesSchema = z
+      .union([z.array(CookieObjectSchema), z.string().min(1)])
+      .optional();
 
     // Register the screenshot tool
     this.server.tool(
       'screenshot',
       {
         url: z.string().url('Invalid URL format'),
-        width: z.number()
-          .min(PARAMETER_LIMITS.WIDTH.MIN, `Width must be at least ${PARAMETER_LIMITS.WIDTH.MIN}`)
-          .max(PARAMETER_LIMITS.WIDTH.MAX, `Width must be at most ${PARAMETER_LIMITS.WIDTH.MAX}`)
+        width: z
+          .number()
+          .min(
+            PARAMETER_LIMITS.WIDTH.MIN,
+            `Width must be at least ${PARAMETER_LIMITS.WIDTH.MIN}`
+          )
+          .max(
+            PARAMETER_LIMITS.WIDTH.MAX,
+            `Width must be at most ${PARAMETER_LIMITS.WIDTH.MAX}`
+          )
           .optional(),
-        height: z.number()
-          .min(PARAMETER_LIMITS.HEIGHT.MIN, `Height must be at least ${PARAMETER_LIMITS.HEIGHT.MIN}`)
-          .max(PARAMETER_LIMITS.HEIGHT.MAX, `Height must be at most ${PARAMETER_LIMITS.HEIGHT.MAX}`)
+        height: z
+          .number()
+          .min(
+            PARAMETER_LIMITS.HEIGHT.MIN,
+            `Height must be at least ${PARAMETER_LIMITS.HEIGHT.MIN}`
+          )
+          .max(
+            PARAMETER_LIMITS.HEIGHT.MAX,
+            `Height must be at most ${PARAMETER_LIMITS.HEIGHT.MAX}`
+          )
           .optional(),
         format: z.enum(['webp', 'png', 'jpeg']).optional(),
-        quality: z.number()
-          .min(PARAMETER_LIMITS.QUALITY.MIN, `Quality must be at least ${PARAMETER_LIMITS.QUALITY.MIN}`)
-          .max(PARAMETER_LIMITS.QUALITY.MAX, `Quality must be at most ${PARAMETER_LIMITS.QUALITY.MAX}`)
+        quality: z
+          .number()
+          .min(
+            PARAMETER_LIMITS.QUALITY.MIN,
+            `Quality must be at least ${PARAMETER_LIMITS.QUALITY.MIN}`
+          )
+          .max(
+            PARAMETER_LIMITS.QUALITY.MAX,
+            `Quality must be at most ${PARAMETER_LIMITS.QUALITY.MAX}`
+          )
           .optional(),
         waitForNetworkIdle: z.boolean().optional(),
-        timeout: z.number()
-          .min(PARAMETER_LIMITS.TIMEOUT.MIN, `Timeout must be at least ${PARAMETER_LIMITS.TIMEOUT.MIN}ms`)
-          .max(PARAMETER_LIMITS.TIMEOUT.MAX, `Timeout must be at most ${PARAMETER_LIMITS.TIMEOUT.MAX}ms`)
+        timeout: z
+          .number()
+          .min(
+            PARAMETER_LIMITS.TIMEOUT.MIN,
+            `Timeout must be at least ${PARAMETER_LIMITS.TIMEOUT.MIN}ms`
+          )
+          .max(
+            PARAMETER_LIMITS.TIMEOUT.MAX,
+            `Timeout must be at most ${PARAMETER_LIMITS.TIMEOUT.MAX}ms`
+          )
           .optional(),
         fullPage: z.boolean().optional(),
         userAgent: z.string().optional(),
         selector: z.string().optional(),
-        cookies: CookiesSchema
+        cookies: CookiesSchema,
       },
       async (request, extra) => {
         const requestId = extra.requestId || 'unknown';
@@ -108,42 +142,62 @@ export class McpScreenshotServer {
             height: request.height ?? viewportConfig.defaultHeight,
             format: request.format ?? screenshotConfig.defaultFormat,
             quality: request.quality ?? screenshotConfig.defaultQuality,
-            waitForNetworkIdle: request.waitForNetworkIdle ?? screenshotConfig.defaultWaitForNetworkIdle,
-            timeout: request.timeout ?? screenshotConfig.defaultTimeout
+            waitForNetworkIdle:
+              request.waitForNetworkIdle ??
+              screenshotConfig.defaultWaitForNetworkIdle,
+            timeout: request.timeout ?? screenshotConfig.defaultTimeout,
           };
 
           // Only add userAgent if one is provided
-          const userAgent = request.userAgent ?? config.getBrowserConfig().userAgent;
-          const options = userAgent ? { ...baseOptions, userAgent } : baseOptions;
+          const userAgent =
+            request.userAgent ?? config.getBrowserConfig().userAgent;
+          const options = userAgent
+            ? { ...baseOptions, userAgent }
+            : baseOptions;
 
           // Add selector if provided
-          let finalOptions = request.selector ? { ...options, selector: request.selector } : options;
+          let finalOptions = request.selector
+            ? { ...options, selector: request.selector }
+            : options;
 
           // Add cookies if provided
           if (request.cookies) {
             try {
-              const { cookies } = CookieUtils.validateAndSanitize(request.cookies);
+              const { cookies } = CookieUtils.validateAndSanitize(
+                request.cookies
+              );
               finalOptions = { ...finalOptions, cookies } as any;
             } catch (cookieError) {
-              const cookieErrorMessage = cookieError instanceof Error ? cookieError.message : 'Cookie validation failed';
+              const cookieErrorMessage =
+                cookieError instanceof Error
+                  ? cookieError.message
+                  : 'Cookie validation failed';
               return {
-                content: [{
-                  type: 'text',
-                  text: `Cookie validation failed: ${cookieErrorMessage}`
-                }],
-                isError: true
+                content: [
+                  {
+                    type: 'text',
+                    text: `Cookie validation failed: ${cookieErrorMessage}`,
+                  },
+                ],
+                isError: true,
               };
             }
           }
 
           // Take screenshot using appropriate method
-          let result;
+          let result: ScreenshotResult;
           if (request.selector) {
-            result = await this.screenshotService.takeElementScreenshot(finalOptions as any);
+            result = await this.screenshotService.takeElementScreenshot(
+              finalOptions as any
+            );
           } else if (request.fullPage) {
-            result = await this.screenshotService.takeFullPageScreenshot(finalOptions as any);
+            result = await this.screenshotService.takeFullPageScreenshot(
+              finalOptions as any
+            );
           } else {
-            result = await this.screenshotService.takeScreenshot(finalOptions as any);
+            result = await this.screenshotService.takeScreenshot(
+              finalOptions as any
+            );
           }
 
           // Format response for MCP
@@ -152,40 +206,49 @@ export class McpScreenshotServer {
               {
                 type: 'image',
                 data: result.data,
-                mimeType: result.mimeType
+                mimeType: result.mimeType,
               },
               {
                 type: 'text',
-                text: JSON.stringify({
-                  metadata: {
-                    width: result.width,
-                    height: result.height,
-                    timestamp: result.timestamp,
-                    url: request.url,
-                    viewport: {
-                      width: finalOptions.width,
-                      height: finalOptions.height
+                text: JSON.stringify(
+                  {
+                    metadata: {
+                      width: result.width,
+                      height: result.height,
+                      timestamp: result.timestamp,
+                      url: request.url,
+                      viewport: {
+                        width: finalOptions.width,
+                        height: finalOptions.height,
+                      },
+                      configuration: {
+                        retryCount: config.getBrowserConfig().retryCount,
+                        userAgent:
+                          ('userAgent' in finalOptions
+                            ? finalOptions.userAgent
+                            : undefined) || 'default',
+                      },
                     },
-                    configuration: {
-                      retryCount: config.getBrowserConfig().retryCount,
-                      userAgent: ('userAgent' in finalOptions ? finalOptions.userAgent : undefined) || 'default'
-                    }
-                  }
-                }, null, 2)
-              }
+                  },
+                  null,
+                  2
+                ),
+              },
             ],
-            isError: false
+            isError: false,
           };
-
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
 
           return {
-            content: [{
-              type: 'text',
-              text: `Screenshot capture failed: ${errorMessage}`
-            }],
-            isError: true
+            content: [
+              {
+                type: 'text',
+                text: `Screenshot capture failed: ${errorMessage}`,
+              },
+            ],
+            isError: true,
           };
         }
       }
@@ -196,15 +259,10 @@ export class McpScreenshotServer {
    * Start the MCP server
    */
   async start(): Promise<void> {
-    try {
-      await this.screenshotService.initialize();
+    await this.screenshotService.initialize();
 
-      const transport = new StdioServerTransport();
-      await this.server.connect(transport);
-
-    } catch (error) {
-      throw error;
-    }
+    const transport = new StdioServerTransport();
+    await this.server.connect(transport);
   }
 
   /**

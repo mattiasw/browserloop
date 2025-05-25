@@ -120,20 +120,31 @@ describe('ConfigManager - Default Cookies', () => {
     const config = new ConfigManager();
     const authConfig = config.getAuthenticationConfig();
 
-    assert.ok(Array.isArray(authConfig.defaultCookies), 'Default cookies should be an array');
-    assert.strictEqual(authConfig.defaultCookies.length, 0, 'Should start with empty default cookies');
+    assert.ok(
+      Array.isArray(authConfig.defaultCookies),
+      'Default cookies should be an array'
+    );
+    assert.strictEqual(
+      authConfig.defaultCookies.length,
+      0,
+      'Should start with empty default cookies'
+    );
   });
 
   test('should parse valid default cookies from environment', () => {
     process.env.BROWSERLOOP_DEFAULT_COOKIES = JSON.stringify([
       { name: 'session_id', value: 'abc123', domain: 'example.com' },
-      { name: 'auth_token', value: 'def456' }
+      { name: 'auth_token', value: 'def456' },
     ]);
 
     const config = new ConfigManager();
     const authConfig = config.getAuthenticationConfig();
 
-    assert.strictEqual(authConfig.defaultCookies.length, 2, 'Should parse 2 cookies');
+    assert.strictEqual(
+      authConfig.defaultCookies.length,
+      2,
+      'Should parse 2 cookies'
+    );
 
     const firstCookie = authConfig.defaultCookies[0];
     const secondCookie = authConfig.defaultCookies[1];
@@ -141,10 +152,26 @@ describe('ConfigManager - Default Cookies', () => {
     assert.ok(firstCookie, 'First cookie should exist');
     assert.ok(secondCookie, 'Second cookie should exist');
 
-    assert.strictEqual(firstCookie.name, 'session_id', 'First cookie name should match');
-    assert.strictEqual(firstCookie.value, 'abc123', 'First cookie value should match');
-    assert.strictEqual(firstCookie.domain, 'example.com', 'First cookie domain should match');
-    assert.strictEqual(secondCookie.name, 'auth_token', 'Second cookie name should match');
+    assert.strictEqual(
+      firstCookie.name,
+      'session_id',
+      'First cookie name should match'
+    );
+    assert.strictEqual(
+      firstCookie.value,
+      'abc123',
+      'First cookie value should match'
+    );
+    assert.strictEqual(
+      firstCookie.domain,
+      'example.com',
+      'First cookie domain should match'
+    );
+    assert.strictEqual(
+      secondCookie.name,
+      'auth_token',
+      'Second cookie name should match'
+    );
   });
 
   test('should handle invalid JSON gracefully', () => {
@@ -154,20 +181,28 @@ describe('ConfigManager - Default Cookies', () => {
     const config = new ConfigManager();
     const authConfig = config.getAuthenticationConfig();
 
-    assert.strictEqual(authConfig.defaultCookies.length, 0, 'Should fallback to empty array on invalid JSON');
+    assert.strictEqual(
+      authConfig.defaultCookies.length,
+      0,
+      'Should fallback to empty array on invalid JSON'
+    );
   });
 
   test('should handle invalid cookie format gracefully', () => {
     process.env.BROWSERLOOP_DEFAULT_COOKIES = JSON.stringify([
       { name: '', value: 'invalid_empty_name' }, // Invalid: empty name
-      { name: 'valid_cookie', value: 'valid_value' }
+      { name: 'valid_cookie', value: 'valid_value' },
     ]);
     process.env.BROWSERLOOP_SILENT = 'true'; // Suppress warnings in tests
 
     const config = new ConfigManager();
     const authConfig = config.getAuthenticationConfig();
 
-    assert.strictEqual(authConfig.defaultCookies.length, 0, 'Should fallback to empty array on validation failure');
+    assert.strictEqual(
+      authConfig.defaultCookies.length,
+      0,
+      'Should fallback to empty array on validation failure'
+    );
   });
 
   test('should parse cookies with all optional properties', () => {
@@ -180,14 +215,18 @@ describe('ConfigManager - Default Cookies', () => {
         httpOnly: true,
         secure: true,
         expires: 1640995200,
-        sameSite: 'Strict'
-      }
+        sameSite: 'Strict',
+      },
     ]);
 
     const config = new ConfigManager();
     const authConfig = config.getAuthenticationConfig();
 
-    assert.strictEqual(authConfig.defaultCookies.length, 1, 'Should parse 1 cookie');
+    assert.strictEqual(
+      authConfig.defaultCookies.length,
+      1,
+      'Should parse 1 cookie'
+    );
     const cookie = authConfig.defaultCookies[0];
 
     assert.ok(cookie, 'Cookie should exist');
@@ -203,14 +242,18 @@ describe('ConfigManager - Default Cookies', () => {
 
   test('should handle malformed cookie array gracefully', () => {
     process.env.BROWSERLOOP_DEFAULT_COOKIES = JSON.stringify({
-      not: 'an array'
+      not: 'an array',
     });
     process.env.BROWSERLOOP_SILENT = 'true';
 
     const config = new ConfigManager();
     const authConfig = config.getAuthenticationConfig();
 
-    assert.strictEqual(authConfig.defaultCookies.length, 0, 'Should fallback to empty array for non-array JSON');
+    assert.strictEqual(
+      authConfig.defaultCookies.length,
+      0,
+      'Should fallback to empty array for non-array JSON'
+    );
   });
 
   test('should parse cookies from JSON file path', () => {
@@ -218,7 +261,7 @@ describe('ConfigManager - Default Cookies', () => {
     const cookiesFile = '/tmp/test-cookies.json';
     const cookiesData = [
       { name: 'file_session', value: 'file_value', domain: 'example.com' },
-      { name: 'file_auth', value: 'file_auth_value' }
+      { name: 'file_auth', value: 'file_auth_value' },
     ];
 
     writeFileSync(cookiesFile, JSON.stringify(cookiesData), 'utf-8');
@@ -229,7 +272,11 @@ describe('ConfigManager - Default Cookies', () => {
       const config = new ConfigManager();
       const authConfig = config.getAuthenticationConfig();
 
-      assert.strictEqual(authConfig.defaultCookies.length, 2, 'Should parse 2 cookies from file');
+      assert.strictEqual(
+        authConfig.defaultCookies.length,
+        2,
+        'Should parse 2 cookies from file'
+      );
 
       const firstCookie = authConfig.defaultCookies[0];
       const secondCookie = authConfig.defaultCookies[1];
@@ -237,9 +284,21 @@ describe('ConfigManager - Default Cookies', () => {
       assert.ok(firstCookie, 'First cookie should exist');
       assert.ok(secondCookie, 'Second cookie should exist');
 
-      assert.strictEqual(firstCookie.name, 'file_session', 'First cookie name should match');
-      assert.strictEqual(firstCookie.value, 'file_value', 'First cookie value should match');
-      assert.strictEqual(secondCookie.name, 'file_auth', 'Second cookie name should match');
+      assert.strictEqual(
+        firstCookie.name,
+        'file_session',
+        'First cookie name should match'
+      );
+      assert.strictEqual(
+        firstCookie.value,
+        'file_value',
+        'First cookie value should match'
+      );
+      assert.strictEqual(
+        secondCookie.name,
+        'file_auth',
+        'Second cookie name should match'
+      );
     } finally {
       // Clean up
       unlinkSync(cookiesFile);
@@ -253,7 +312,11 @@ describe('ConfigManager - Default Cookies', () => {
     const config = new ConfigManager();
     const authConfig = config.getAuthenticationConfig();
 
-    assert.strictEqual(authConfig.defaultCookies.length, 0, 'Should fallback to empty array for missing file');
+    assert.strictEqual(
+      authConfig.defaultCookies.length,
+      0,
+      'Should fallback to empty array for missing file'
+    );
   });
 
   test('should handle invalid JSON in cookie file gracefully', () => {
@@ -268,7 +331,11 @@ describe('ConfigManager - Default Cookies', () => {
       const config = new ConfigManager();
       const authConfig = config.getAuthenticationConfig();
 
-      assert.strictEqual(authConfig.defaultCookies.length, 0, 'Should fallback to empty array for invalid JSON file');
+      assert.strictEqual(
+        authConfig.defaultCookies.length,
+        0,
+        'Should fallback to empty array for invalid JSON file'
+      );
     } finally {
       // Clean up
       unlinkSync(cookiesFile);
@@ -278,13 +345,17 @@ describe('ConfigManager - Default Cookies', () => {
   test('should maintain backward compatibility with JSON strings', () => {
     // This test ensures the old JSON string approach still works
     process.env.BROWSERLOOP_DEFAULT_COOKIES = JSON.stringify([
-      { name: 'json_session', value: 'json_value', domain: 'example.com' }
+      { name: 'json_session', value: 'json_value', domain: 'example.com' },
     ]);
 
     const config = new ConfigManager();
     const authConfig = config.getAuthenticationConfig();
 
-    assert.strictEqual(authConfig.defaultCookies.length, 1, 'Should parse 1 cookie from JSON string');
+    assert.strictEqual(
+      authConfig.defaultCookies.length,
+      1,
+      'Should parse 1 cookie from JSON string'
+    );
 
     const cookie = authConfig.defaultCookies[0];
     assert.ok(cookie, 'Cookie should exist');
@@ -296,13 +367,10 @@ describe('ConfigManager - Default Cookies', () => {
     // Test cases for different path formats
     const validFilePaths = [
       '/tmp/test-cookies-1.json',
-      '/tmp/test-cookies-2.json'
+      '/tmp/test-cookies-2.json',
     ];
 
-    const jsonStrings = [
-      '[{"name":"session","value":"123"}]',
-      '[]'
-    ];
+    const jsonStrings = ['[{"name":"session","value":"123"}]', '[]'];
 
     // Test valid file paths
     validFilePaths.forEach((filePath) => {
@@ -317,10 +385,18 @@ describe('ConfigManager - Default Cookies', () => {
         const authConfig = config.getAuthenticationConfig();
 
         // Should not throw and should return empty array from file
-        assert.strictEqual(authConfig.defaultCookies.length, 0, `File path ${filePath} should be treated as file`);
+        assert.strictEqual(
+          authConfig.defaultCookies.length,
+          0,
+          `File path ${filePath} should be treated as file`
+        );
       } finally {
         // Clean up
-        try { unlinkSync(filePath); } catch { /* ignore */ }
+        try {
+          unlinkSync(filePath);
+        } catch {
+          /* ignore */
+        }
       }
     });
 
@@ -335,7 +411,11 @@ describe('ConfigManager - Default Cookies', () => {
       // For the valid JSON with a cookie, we should get 1 cookie
       // For the empty array JSON, we should get 0 cookies
       const expectedCount = jsonString === '[]' ? 0 : 1;
-      assert.strictEqual(authConfig.defaultCookies.length, expectedCount, `JSON string ${jsonString} should be parsed correctly`);
+      assert.strictEqual(
+        authConfig.defaultCookies.length,
+        expectedCount,
+        `JSON string ${jsonString} should be parsed correctly`
+      );
     });
 
     // Test file with actual cookies
@@ -350,11 +430,23 @@ describe('ConfigManager - Default Cookies', () => {
       const config = new ConfigManager();
       const authConfig = config.getAuthenticationConfig();
 
-      assert.strictEqual(authConfig.defaultCookies.length, 1, 'Should load 1 cookie from file');
-      assert.strictEqual(authConfig.defaultCookies[0]?.name, 'test', 'Cookie name should match');
+      assert.strictEqual(
+        authConfig.defaultCookies.length,
+        1,
+        'Should load 1 cookie from file'
+      );
+      assert.strictEqual(
+        authConfig.defaultCookies[0]?.name,
+        'test',
+        'Cookie name should match'
+      );
     } finally {
       // Clean up
-      try { unlinkSync(cookiesFile); } catch { /* ignore */ }
+      try {
+        unlinkSync(cookiesFile);
+      } catch {
+        /* ignore */
+      }
     }
   });
 });

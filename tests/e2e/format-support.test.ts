@@ -17,19 +17,22 @@
 
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
-import { createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ScreenshotService } from '../../src/screenshot-service.js';
-import { createTestScreenshotServiceConfig, isValidBase64Image } from '../../src/test-utils.js';
+import {
+  createTestScreenshotServiceConfig,
+  isValidBase64Image,
+} from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 describe('Format Support E2E', () => {
-  let server: any;
+  let server: Server;
   let screenshotService: ScreenshotService;
   const port = 3002;
   const baseUrl = `http://localhost:${port}`;
@@ -40,8 +43,8 @@ describe('Format Support E2E', () => {
         defaultFormat: 'webp',
         defaultQuality: 80,
         defaultTimeout: 30000,
-        defaultWaitForNetworkIdle: true
-      }
+        defaultWaitForNetworkIdle: true,
+      },
     });
   }
 
@@ -108,7 +111,7 @@ describe('Format Support E2E', () => {
       url: baseUrl,
       format: 'png',
       width: 800,
-      height: 600
+      height: 600,
     });
 
     assert.ok(result.data, 'Screenshot data should exist');
@@ -124,11 +127,15 @@ describe('Format Support E2E', () => {
       format: 'jpeg',
       quality: 85,
       width: 800,
-      height: 600
+      height: 600,
     });
 
     assert.ok(result.data, 'Screenshot data should exist');
-    assert.strictEqual(result.mimeType, 'image/jpeg', 'MIME type should be JPEG');
+    assert.strictEqual(
+      result.mimeType,
+      'image/jpeg',
+      'MIME type should be JPEG'
+    );
     assert.ok(isValidBase64Image(result.data), 'Should be valid base64 image');
     assert.strictEqual(result.width, 800, 'Width should match request');
     assert.strictEqual(result.height, 600, 'Height should match request');
@@ -140,11 +147,15 @@ describe('Format Support E2E', () => {
       format: 'webp',
       quality: 80,
       width: 800,
-      height: 600
+      height: 600,
     });
 
     assert.ok(result.data, 'Screenshot data should exist');
-    assert.strictEqual(result.mimeType, 'image/webp', 'MIME type should be WebP');
+    assert.strictEqual(
+      result.mimeType,
+      'image/webp',
+      'MIME type should be WebP'
+    );
     assert.ok(isValidBase64Image(result.data), 'Should be valid base64 image');
     assert.strictEqual(result.width, 800, 'Width should match request');
     assert.strictEqual(result.height, 600, 'Height should match request');
@@ -156,7 +167,7 @@ describe('Format Support E2E', () => {
       format: 'jpeg',
       quality: 30,
       width: 400,
-      height: 300
+      height: 300,
     });
 
     const highQuality = await screenshotService.takeScreenshot({
@@ -164,13 +175,21 @@ describe('Format Support E2E', () => {
       format: 'jpeg',
       quality: 95,
       width: 400,
-      height: 300
+      height: 300,
     });
 
     assert.ok(lowQuality.data, 'Low quality screenshot should exist');
     assert.ok(highQuality.data, 'High quality screenshot should exist');
-    assert.strictEqual(lowQuality.mimeType, 'image/jpeg', 'Low quality should be JPEG');
-    assert.strictEqual(highQuality.mimeType, 'image/jpeg', 'High quality should be JPEG');
+    assert.strictEqual(
+      lowQuality.mimeType,
+      'image/jpeg',
+      'Low quality should be JPEG'
+    );
+    assert.strictEqual(
+      highQuality.mimeType,
+      'image/jpeg',
+      'High quality should be JPEG'
+    );
 
     // High quality should generally produce larger files (more base64 data)
     // This is a rough heuristic test
@@ -178,8 +197,10 @@ describe('Format Support E2E', () => {
     const highQualitySize = highQuality.data.length;
 
     // Allow for some variance, but high quality should generally be larger
-    assert.ok(highQualitySize >= lowQualitySize * 0.8,
-      'High quality JPEG should not be significantly smaller than low quality');
+    assert.ok(
+      highQualitySize >= lowQualitySize * 0.8,
+      'High quality JPEG should not be significantly smaller than low quality'
+    );
   });
 
   test('should handle different quality settings for WebP', async () => {
@@ -188,7 +209,7 @@ describe('Format Support E2E', () => {
       format: 'webp',
       quality: 40,
       width: 400,
-      height: 300
+      height: 300,
     });
 
     const highQuality = await screenshotService.takeScreenshot({
@@ -196,13 +217,21 @@ describe('Format Support E2E', () => {
       format: 'webp',
       quality: 90,
       width: 400,
-      height: 300
+      height: 300,
     });
 
     assert.ok(lowQuality.data, 'Low quality WebP screenshot should exist');
     assert.ok(highQuality.data, 'High quality WebP screenshot should exist');
-    assert.strictEqual(lowQuality.mimeType, 'image/webp', 'Low quality should be WebP');
-    assert.strictEqual(highQuality.mimeType, 'image/webp', 'High quality should be WebP');
+    assert.strictEqual(
+      lowQuality.mimeType,
+      'image/webp',
+      'Low quality should be WebP'
+    );
+    assert.strictEqual(
+      highQuality.mimeType,
+      'image/webp',
+      'High quality should be WebP'
+    );
   });
 
   test('should support all formats for full page screenshots', async () => {
@@ -214,12 +243,19 @@ describe('Format Support E2E', () => {
         format,
         quality: 80,
         width: 600,
-        height: 400
+        height: 400,
       });
 
       assert.ok(result.data, `${format} full page screenshot should exist`);
-      assert.strictEqual(result.mimeType, `image/${format}`, `MIME type should be ${format}`);
-      assert.ok(isValidBase64Image(result.data), `${format} should be valid base64 image`);
+      assert.strictEqual(
+        result.mimeType,
+        `image/${format}`,
+        `MIME type should be ${format}`
+      );
+      assert.ok(
+        isValidBase64Image(result.data),
+        `${format} should be valid base64 image`
+      );
     }
   });
 
@@ -233,15 +269,25 @@ describe('Format Support E2E', () => {
         quality: 80,
         width: 600,
         height: 400,
-        selector: '.content'
+        selector: '.content',
       });
 
       assert.ok(result.data, `${format} element screenshot should exist`);
-      assert.strictEqual(result.mimeType, `image/${format}`, `MIME type should be ${format}`);
-      assert.ok(isValidBase64Image(result.data), `${format} should be valid base64 image`);
+      assert.strictEqual(
+        result.mimeType,
+        `image/${format}`,
+        `MIME type should be ${format}`
+      );
+      assert.ok(
+        isValidBase64Image(result.data),
+        `${format} should be valid base64 image`
+      );
 
       // Element screenshots should have different dimensions than viewport
-      assert.ok(result.width > 0 && result.height > 0, `${format} element should have valid dimensions`);
+      assert.ok(
+        result.width > 0 && result.height > 0,
+        `${format} element should have valid dimensions`
+      );
     }
   });
 });

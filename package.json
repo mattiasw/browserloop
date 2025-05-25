@@ -71,10 +71,9 @@
     "zod": "^3.25.28"
   },
   "devDependencies": {
-    "@biomejs/cli-linux-x64": "^1.9.4",
+    "@biomejs/biome": "^1.9.4",
     "@types/assert": "^1.5.11",
     "@types/node": "^22.10.2",
-    "biome": "^0.3.3",
     "typescript": "^5.7.2"
   }
 }

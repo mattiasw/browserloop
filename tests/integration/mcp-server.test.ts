@@ -55,14 +55,22 @@ describe('MCP Server Integration', () => {
 
       // Check that the server has the expected MCP methods
       // These are internal to McpServer but we can verify the class structure
-      assert.ok(typeof serverInstance.tool === 'function', 'Server has tool registration method');
-      assert.ok(typeof serverInstance.connect === 'function', 'Server has connect method');
+      assert.ok(
+        typeof serverInstance.tool === 'function',
+        'Server has tool registration method'
+      );
+      assert.ok(
+        typeof serverInstance.connect === 'function',
+        'Server has connect method'
+      );
 
       // Verify server is an instance of the official MCP server
-      assert.ok(serverInstance.constructor.name.includes('Mcp') ||
-                serverInstance.constructor.name.includes('MCP') ||
-                serverInstance.constructor.name === 'McpServer',
-                'Server is using official MCP implementation');
+      assert.ok(
+        serverInstance.constructor.name.includes('Mcp') ||
+          serverInstance.constructor.name.includes('MCP') ||
+          serverInstance.constructor.name === 'McpServer',
+        'Server is using official MCP implementation'
+      );
     });
 
     it('should register screenshot tool with proper schema', () => {
@@ -103,7 +111,10 @@ describe('MCP Server Integration', () => {
       const validWidth = 1280;
       const invalidWidth = 5000; // Above max limit
 
-      assert.ok(validWidth >= 200 && validWidth <= 4000, 'Valid width within limits');
+      assert.ok(
+        validWidth >= 200 && validWidth <= 4000,
+        'Valid width within limits'
+      );
       assert.ok(invalidWidth > 4000, 'Invalid width exceeds limits');
     });
 
@@ -127,14 +138,32 @@ describe('MCP Server Integration', () => {
       const fullPageSchema = z.boolean().optional();
 
       // Test valid fullPage values
-      assert.ok(fullPageSchema.safeParse(true).success, 'fullPage accepts true');
-      assert.ok(fullPageSchema.safeParse(false).success, 'fullPage accepts false');
-      assert.ok(fullPageSchema.safeParse(undefined).success, 'fullPage accepts undefined');
+      assert.ok(
+        fullPageSchema.safeParse(true).success,
+        'fullPage accepts true'
+      );
+      assert.ok(
+        fullPageSchema.safeParse(false).success,
+        'fullPage accepts false'
+      );
+      assert.ok(
+        fullPageSchema.safeParse(undefined).success,
+        'fullPage accepts undefined'
+      );
 
       // Test invalid fullPage values
-      assert.ok(!fullPageSchema.safeParse('true').success, 'fullPage rejects string "true"');
-      assert.ok(!fullPageSchema.safeParse(1).success, 'fullPage rejects number 1');
-      assert.ok(!fullPageSchema.safeParse(null).success, 'fullPage rejects null');
+      assert.ok(
+        !fullPageSchema.safeParse('true').success,
+        'fullPage rejects string "true"'
+      );
+      assert.ok(
+        !fullPageSchema.safeParse(1).success,
+        'fullPage rejects number 1'
+      );
+      assert.ok(
+        !fullPageSchema.safeParse(null).success,
+        'fullPage rejects null'
+      );
     });
 
     it('should handle fullPage parameter routing logic', () => {
@@ -142,16 +171,19 @@ describe('MCP Server Integration', () => {
       const testCases = [
         { fullPage: true, expectedMethod: 'takeFullPageScreenshot' },
         { fullPage: false, expectedMethod: 'takeScreenshot' },
-        { fullPage: undefined, expectedMethod: 'takeScreenshot' }
+        { fullPage: undefined, expectedMethod: 'takeScreenshot' },
       ];
 
-      testCases.forEach(testCase => {
+      testCases.forEach((testCase) => {
         const expectedMethod = testCase.fullPage
           ? 'takeFullPageScreenshot'
           : 'takeScreenshot';
 
-        assert.strictEqual(expectedMethod, testCase.expectedMethod,
-          `fullPage=${testCase.fullPage} should route to ${testCase.expectedMethod}`);
+        assert.strictEqual(
+          expectedMethod,
+          testCase.expectedMethod,
+          `fullPage=${testCase.fullPage} should route to ${testCase.expectedMethod}`
+        );
       });
     });
 
@@ -161,10 +193,16 @@ describe('MCP Server Integration', () => {
       assert.ok(screenshotService, 'Screenshot service exists');
 
       // Verify both methods exist
-      assert.strictEqual(typeof screenshotService.takeScreenshot, 'function',
-        'takeScreenshot method exists');
-      assert.strictEqual(typeof screenshotService.takeFullPageScreenshot, 'function',
-        'takeFullPageScreenshot method exists');
+      assert.strictEqual(
+        typeof screenshotService.takeScreenshot,
+        'function',
+        'takeScreenshot method exists'
+      );
+      assert.strictEqual(
+        typeof screenshotService.takeFullPageScreenshot,
+        'function',
+        'takeFullPageScreenshot method exists'
+      );
     });
 
     it('should include fullPage status in response metadata', () => {
@@ -176,19 +214,29 @@ describe('MCP Server Integration', () => {
         url: 'http://localhost:3000',
         viewport: {
           width: 1280,
-          height: 720
+          height: 720,
         },
         configuration: {
           retryCount: 3,
-          userAgent: 'default'
-        }
+          userAgent: 'default',
+        },
       };
 
       // Verify metadata structure for full page screenshots
-      assert.ok(mockMetadata.height > mockMetadata.viewport.height,
-        'Full page height should exceed viewport height');
-      assert.strictEqual(typeof mockMetadata.width, 'number', 'Width should be number');
-      assert.strictEqual(typeof mockMetadata.height, 'number', 'Height should be number');
+      assert.ok(
+        mockMetadata.height > mockMetadata.viewport.height,
+        'Full page height should exceed viewport height'
+      );
+      assert.strictEqual(
+        typeof mockMetadata.width,
+        'number',
+        'Width should be number'
+      );
+      assert.strictEqual(
+        typeof mockMetadata.height,
+        'number',
+        'Height should be number'
+      );
       assert.ok(mockMetadata.viewport, 'Viewport info should be included');
     });
 
@@ -198,14 +246,21 @@ describe('MCP Server Integration', () => {
       const fullPageDimensions = { width: 1280, height: 3000 }; // Much taller
 
       // Verify that full page can be larger than viewport
-      assert.ok(fullPageDimensions.height > viewportDimensions.height,
-        'Full page height can exceed viewport height');
-      assert.strictEqual(fullPageDimensions.width, viewportDimensions.width,
-        'Full page width should match viewport width');
+      assert.ok(
+        fullPageDimensions.height > viewportDimensions.height,
+        'Full page height can exceed viewport height'
+      );
+      assert.strictEqual(
+        fullPageDimensions.width,
+        viewportDimensions.width,
+        'Full page width should match viewport width'
+      );
 
       // Test minimum and maximum constraints still apply
-      assert.ok(fullPageDimensions.width >= 200 && fullPageDimensions.width <= 4000,
-        'Full page width within parameter limits');
+      assert.ok(
+        fullPageDimensions.width >= 200 && fullPageDimensions.width <= 4000,
+        'Full page width within parameter limits'
+      );
       // Note: Height limits don't apply to calculated full page height
     });
   });
@@ -216,27 +271,64 @@ describe('MCP Server Integration', () => {
       const selectorSchema = z.string().optional();
 
       // Test valid selector values
-      assert.ok(selectorSchema.safeParse('#main-header').success, 'selector accepts ID selector');
-      assert.ok(selectorSchema.safeParse('.content-box').success, 'selector accepts class selector');
-      assert.ok(selectorSchema.safeParse('div[data-testid="content-section"]').success, 'selector accepts attribute selector');
-      assert.ok(selectorSchema.safeParse(undefined).success, 'selector accepts undefined');
+      assert.ok(
+        selectorSchema.safeParse('#main-header').success,
+        'selector accepts ID selector'
+      );
+      assert.ok(
+        selectorSchema.safeParse('.content-box').success,
+        'selector accepts class selector'
+      );
+      assert.ok(
+        selectorSchema.safeParse('div[data-testid="content-section"]').success,
+        'selector accepts attribute selector'
+      );
+      assert.ok(
+        selectorSchema.safeParse(undefined).success,
+        'selector accepts undefined'
+      );
 
       // Test invalid selector values
-      assert.ok(!selectorSchema.safeParse(123).success, 'selector rejects number');
-      assert.ok(!selectorSchema.safeParse(true).success, 'selector rejects boolean');
-      assert.ok(!selectorSchema.safeParse(null).success, 'selector rejects null');
+      assert.ok(
+        !selectorSchema.safeParse(123).success,
+        'selector rejects number'
+      );
+      assert.ok(
+        !selectorSchema.safeParse(true).success,
+        'selector rejects boolean'
+      );
+      assert.ok(
+        !selectorSchema.safeParse(null).success,
+        'selector rejects null'
+      );
     });
 
     it('should handle selector parameter routing logic', () => {
       // Test the logic that determines which screenshot method to use
       const testCases = [
-        { selector: '#main-header', fullPage: false, expectedMethod: 'takeElementScreenshot' },
-        { selector: '.content-box', fullPage: true, expectedMethod: 'takeElementScreenshot' },
-        { selector: undefined, fullPage: true, expectedMethod: 'takeFullPageScreenshot' },
-        { selector: undefined, fullPage: false, expectedMethod: 'takeScreenshot' }
+        {
+          selector: '#main-header',
+          fullPage: false,
+          expectedMethod: 'takeElementScreenshot',
+        },
+        {
+          selector: '.content-box',
+          fullPage: true,
+          expectedMethod: 'takeElementScreenshot',
+        },
+        {
+          selector: undefined,
+          fullPage: true,
+          expectedMethod: 'takeFullPageScreenshot',
+        },
+        {
+          selector: undefined,
+          fullPage: false,
+          expectedMethod: 'takeScreenshot',
+        },
       ];
 
-      testCases.forEach(testCase => {
+      testCases.forEach((testCase) => {
         let expectedMethod;
         if (testCase.selector) {
           expectedMethod = 'takeElementScreenshot';
@@ -246,8 +338,11 @@ describe('MCP Server Integration', () => {
           expectedMethod = 'takeScreenshot';
         }
 
-        assert.strictEqual(expectedMethod, testCase.expectedMethod,
-          `selector=${testCase.selector}, fullPage=${testCase.fullPage} should route to ${testCase.expectedMethod}`);
+        assert.strictEqual(
+          expectedMethod,
+          testCase.expectedMethod,
+          `selector=${testCase.selector}, fullPage=${testCase.fullPage} should route to ${testCase.expectedMethod}`
+        );
       });
     });
 
@@ -257,8 +352,11 @@ describe('MCP Server Integration', () => {
       assert.ok(screenshotService, 'Screenshot service exists');
 
       // Verify element screenshot method exists
-      assert.strictEqual(typeof screenshotService.takeElementScreenshot, 'function',
-        'takeElementScreenshot method exists');
+      assert.strictEqual(
+        typeof screenshotService.takeElementScreenshot,
+        'function',
+        'takeElementScreenshot method exists'
+      );
     });
 
     it('should prioritize selector over fullPage when both are provided', () => {
@@ -268,8 +366,11 @@ describe('MCP Server Integration', () => {
       // When both selector and fullPage are provided, selector should take precedence
       const expectedMethod = 'takeElementScreenshot';
 
-      assert.strictEqual(expectedMethod, 'takeElementScreenshot',
-        'selector should take precedence over fullPage parameter');
+      assert.strictEqual(
+        expectedMethod,
+        'takeElementScreenshot',
+        'selector should take precedence over fullPage parameter'
+      );
     });
 
     it('should include element dimensions in response metadata', () => {
@@ -281,22 +382,37 @@ describe('MCP Server Integration', () => {
         url: 'http://localhost:3000/element-test.html',
         viewport: {
           width: 1280,
-          height: 720
+          height: 720,
         },
         configuration: {
           retryCount: 3,
-          userAgent: 'default'
-        }
+          userAgent: 'default',
+        },
       };
 
       // Verify metadata structure for element screenshots
-      assert.ok(mockElementMetadata.width <= mockElementMetadata.viewport.width,
-        'Element width should be <= viewport width');
-      assert.ok(mockElementMetadata.height <= mockElementMetadata.viewport.height,
-        'Element height should be <= viewport height');
-      assert.strictEqual(typeof mockElementMetadata.width, 'number', 'Width should be number');
-      assert.strictEqual(typeof mockElementMetadata.height, 'number', 'Height should be number');
-      assert.ok(mockElementMetadata.viewport, 'Viewport info should be included');
+      assert.ok(
+        mockElementMetadata.width <= mockElementMetadata.viewport.width,
+        'Element width should be <= viewport width'
+      );
+      assert.ok(
+        mockElementMetadata.height <= mockElementMetadata.viewport.height,
+        'Element height should be <= viewport height'
+      );
+      assert.strictEqual(
+        typeof mockElementMetadata.width,
+        'number',
+        'Width should be number'
+      );
+      assert.strictEqual(
+        typeof mockElementMetadata.height,
+        'number',
+        'Height should be number'
+      );
+      assert.ok(
+        mockElementMetadata.viewport,
+        'Viewport info should be included'
+      );
     });
   });
 
@@ -312,14 +428,22 @@ describe('MCP Server Integration', () => {
       assert.ok(serverInstance, 'Server instance exists for MCP communication');
 
       // Verify the server has proper methods for MCP protocol
-      assert.ok(typeof serverInstance.connect === 'function', 'Server has connect method for MCP transport');
-      assert.ok(typeof serverInstance.tool === 'function', 'Server has tool registration method');
+      assert.ok(
+        typeof serverInstance.connect === 'function',
+        'Server has connect method for MCP transport'
+      );
+      assert.ok(
+        typeof serverInstance.tool === 'function',
+        'Server has tool registration method'
+      );
 
       // Verify the server is using the official MCP implementation
       // (not a custom/manual implementation that caused the original error)
       const constructorName = serverInstance.constructor.name;
-      assert.ok(constructorName === 'McpServer' || constructorName.includes('Mcp'),
-                `Server is using official MCP implementation (${constructorName})`);
+      assert.ok(
+        constructorName === 'McpServer' || constructorName.includes('Mcp'),
+        `Server is using official MCP implementation (${constructorName})`
+      );
     });
 
     it('should have zod validation to prevent invalid requests', () => {
@@ -332,15 +456,32 @@ describe('MCP Server Integration', () => {
         const booleanSchema = z.boolean();
 
         // Test valid cases
-        assert.ok(urlSchema.safeParse('https://example.com').success, 'URL validation works');
-        assert.ok(numberSchema.safeParse(50).success, 'Number validation works');
-        assert.ok(booleanSchema.safeParse(true).success, 'Boolean validation works');
+        assert.ok(
+          urlSchema.safeParse('https://example.com').success,
+          'URL validation works'
+        );
+        assert.ok(
+          numberSchema.safeParse(50).success,
+          'Number validation works'
+        );
+        assert.ok(
+          booleanSchema.safeParse(true).success,
+          'Boolean validation works'
+        );
 
         // Test invalid cases
-        assert.ok(!urlSchema.safeParse('invalid-url').success, 'URL validation rejects invalid URLs');
-        assert.ok(!numberSchema.safeParse(150).success, 'Number validation rejects out-of-range values');
-        assert.ok(!booleanSchema.safeParse('not-boolean').success, 'Boolean validation rejects non-booleans');
-
+        assert.ok(
+          !urlSchema.safeParse('invalid-url').success,
+          'URL validation rejects invalid URLs'
+        );
+        assert.ok(
+          !numberSchema.safeParse(150).success,
+          'Number validation rejects out-of-range values'
+        );
+        assert.ok(
+          !booleanSchema.safeParse('not-boolean').success,
+          'Boolean validation rejects non-booleans'
+        );
       } catch (error) {
         assert.fail(`Zod validation should be available: ${error}`);
       }
@@ -358,10 +499,14 @@ describe('MCP Server Integration', () => {
 
       // The original error was caused by not using the McpServer class
       // This test ensures we're using it
-      assert.ok(typeof serverInstance.tool === 'function',
-                'Server has tool method from McpServer class');
-      assert.ok(typeof serverInstance.connect === 'function',
-                'Server has connect method from McpServer class');
+      assert.ok(
+        typeof serverInstance.tool === 'function',
+        'Server has tool method from McpServer class'
+      );
+      assert.ok(
+        typeof serverInstance.connect === 'function',
+        'Server has connect method from McpServer class'
+      );
     });
   });
 
@@ -415,51 +560,88 @@ describe('MCP Server Integration', () => {
       const expectedImageContentStructure = {
         type: 'image',
         data: 'string', // base64 data
-        mimeType: 'string' // like image/webp
+        mimeType: 'string', // like image/webp
       };
 
       const expectedTextContentStructure = {
         type: 'text',
-        text: 'string' // JSON metadata
+        text: 'string', // JSON metadata
       };
 
       const expectedResponseStructure = {
         content: [expectedImageContentStructure, expectedTextContentStructure],
-        isError: false
+        isError: false,
       };
 
       // Verify structure types
-      assert.strictEqual(typeof expectedResponseStructure.content, 'object', 'content should be array');
-      assert.strictEqual(Array.isArray(expectedResponseStructure.content), true, 'content should be array');
-      assert.strictEqual(typeof expectedResponseStructure.isError, 'boolean', 'isError should be boolean');
+      assert.strictEqual(
+        typeof expectedResponseStructure.content,
+        'object',
+        'content should be array'
+      );
+      assert.strictEqual(
+        Array.isArray(expectedResponseStructure.content),
+        true,
+        'content should be array'
+      );
+      assert.strictEqual(
+        typeof expectedResponseStructure.isError,
+        'boolean',
+        'isError should be boolean'
+      );
 
       // Verify content array structure
-      assert.ok(expectedResponseStructure.content.length >= 2, 'content should have at least 2 items');
+      assert.ok(
+        expectedResponseStructure.content.length >= 2,
+        'content should have at least 2 items'
+      );
       const firstContent = expectedResponseStructure.content[0];
       const secondContent = expectedResponseStructure.content[1];
 
       assert.ok(firstContent, 'first content item should exist');
       assert.ok(secondContent, 'second content item should exist');
-      assert.strictEqual(firstContent.type, 'image', 'first content should be image type');
-      assert.strictEqual(secondContent.type, 'text', 'second content should be text type');
+      assert.strictEqual(
+        firstContent.type,
+        'image',
+        'first content should be image type'
+      );
+      assert.strictEqual(
+        secondContent.type,
+        'text',
+        'second content should be text type'
+      );
     });
 
     it('should handle error responses with correct format', () => {
       // Test error response format
       const expectedErrorResponse = {
-        content: [{
-          type: 'text',
-          text: 'Error message'
-        }],
-        isError: true
+        content: [
+          {
+            type: 'text',
+            text: 'Error message',
+          },
+        ],
+        isError: true,
       };
 
-      assert.strictEqual(typeof expectedErrorResponse.isError, 'boolean', 'isError should be boolean');
-      assert.strictEqual(expectedErrorResponse.isError, true, 'isError should be true for errors');
+      assert.strictEqual(
+        typeof expectedErrorResponse.isError,
+        'boolean',
+        'isError should be boolean'
+      );
+      assert.strictEqual(
+        expectedErrorResponse.isError,
+        true,
+        'isError should be true for errors'
+      );
 
       const errorContent = expectedErrorResponse.content[0];
       assert.ok(errorContent, 'error content should exist');
-      assert.strictEqual(errorContent.type, 'text', 'error content should be text type');
+      assert.strictEqual(
+        errorContent.type,
+        'text',
+        'error content should be text type'
+      );
     });
 
     it('should include proper metadata for full page screenshots', () => {
@@ -471,21 +653,28 @@ describe('MCP Server Integration', () => {
         url: 'http://localhost:3000/long-page.html',
         viewport: {
           width: 1280,
-          height: 720
+          height: 720,
         },
         configuration: {
           retryCount: 3,
-          userAgent: 'default'
-        }
+          userAgent: 'default',
+        },
       };
 
       // Verify metadata structure
-      assert.ok(fullPageMetadata.height > fullPageMetadata.viewport.height,
-        'Full page metadata should show height exceeding viewport');
-      assert.ok(fullPageMetadata.url.includes('long-page'),
-        'URL should reference long page test fixture');
-      assert.strictEqual(typeof fullPageMetadata.timestamp, 'number',
-        'Timestamp should be number');
+      assert.ok(
+        fullPageMetadata.height > fullPageMetadata.viewport.height,
+        'Full page metadata should show height exceeding viewport'
+      );
+      assert.ok(
+        fullPageMetadata.url.includes('long-page'),
+        'URL should reference long page test fixture'
+      );
+      assert.strictEqual(
+        typeof fullPageMetadata.timestamp,
+        'number',
+        'Timestamp should be number'
+      );
     });
   });
 
@@ -493,8 +682,11 @@ describe('MCP Server Integration', () => {
     it('should include jpeg in format schema validation', () => {
       const validFormats = ['webp', 'png', 'jpeg'];
 
-      validFormats.forEach(format => {
-        assert.ok(['webp', 'png', 'jpeg'].includes(format), `${format} should be supported`);
+      validFormats.forEach((format) => {
+        assert.ok(
+          ['webp', 'png', 'jpeg'].includes(format),
+          `${format} should be supported`
+        );
       });
     });
 
@@ -502,7 +694,7 @@ describe('MCP Server Integration', () => {
       const mockRequest = {
         url: 'https://example.com',
         format: 'jpeg' as const,
-        quality: 85
+        quality: 85,
       };
 
       assert.strictEqual(mockRequest.format, 'jpeg');
@@ -513,7 +705,7 @@ describe('MCP Server Integration', () => {
       const jpegOptions = {
         url: 'https://example.com',
         format: 'jpeg' as const,
-        quality: 90
+        quality: 90,
       };
 
       assert.strictEqual(jpegOptions.format, 'jpeg');
