@@ -131,6 +131,29 @@ npm test
 npm run docker:dev
 ```
 
+### Quick Start Commands
+```bash
+# Install dependencies
+npm install
+
+# Install Playwright browsers (required for screenshots)
+npx playwright install chromium
+# OR use the convenient script:
+npm run install-browsers
+
+# Build project
+npm run build
+
+# Start MCP server
+npm start
+
+# Run all tests
+npm test
+
+# Docker development
+npm run docker:dev
+```
+
 ## Project Structure
 
 ```
@@ -311,6 +334,11 @@ The MCP screenshot server is now **complete** and ready for production use with 
 ```bash
 # Install dependencies
 npm install
+
+# Install Playwright browsers (required for screenshots)
+npx playwright install chromium
+# OR use the convenient script:
+npm run install-browsers
 
 # Build project
 npm run build

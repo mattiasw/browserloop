@@ -15,6 +15,7 @@
     "dev": "tsc --watch",
     "dev:ts": "node --experimental-strip-types --watch src/index.ts",
     "check-node": "node check-node.js",
+    "install-browsers": "npx playwright install chromium",
     "test": "npm run build && npm run test:unit && npm run test:integration && npm run test:e2e:format && npm run test:e2e:built",
     "test:unit": "node --test dist/tests/unit/test-utils.test.js dist/tests/unit/screenshot-service.test.js dist/tests/unit/config.test.js dist/tests/unit/image-processor.test.js dist/tests/unit/logger.test.js",
     "test:integration": "node --test dist/tests/integration/mcp-server.test.js",

@@ -38,9 +38,16 @@ cd browserloop
 # Install dependencies
 npm install
 
+# Install Playwright browsers (required for screenshots)
+npx playwright install chromium
+# OR use the convenient script:
+npm run install-browsers
+
 # Build the project
 npm run build
 ```
+
+**Note:** The Playwright browser installation is required for taking screenshots. If you skip this step, you'll get an "Executable doesn't exist" error when trying to capture screenshots.
 
 ### MCP Configuration
 
@@ -218,6 +225,12 @@ Reference in MCP config:
 - Can't pass cookies via MCP protocol? Use default cookies configuration
 - Screenshots show login pages? Check cookie expiration and domain settings
 - Need to debug cookie loading? Enable debug logging
+
+### Playwright Browser Issues
+- **"Executable doesn't exist" error**: Run `npx playwright install chromium` or `npm run install-browsers`
+- **CI/CD failures**: Ensure the workflow includes `npx playwright install --with-deps chromium`
+- **Permission issues**: Check that the user has write access to the Playwright cache directory
+- **Network issues during install**: Use `npx playwright install chromium --force` to retry download
 
 **📖 See [docs/API.md#error-handling](docs/API.md#error-handling) for detailed error troubleshooting.**
 
