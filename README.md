@@ -2,7 +2,11 @@
 
 [![CI/CD Pipeline](https://github.com/[USERNAME]/browserloop/actions/workflows/ci.yml/badge.svg)](https://github.com/[USERNAME]/browserloop/actions/workflows/ci.yml)
 
-A Model Context Protocol (MCP) server for taking screenshots of web pages using Playwright. This tool allows AI agents to automatically capture and analyze screenshots for UI verification tasks.
+A Model Context Protocol (MCP) server for taking screenshots of web pages using Playwright. This tool allows AI agents to automatically capture and analyze screenshots for UI verification or other tasks.
+
+**NOTE:** Almost all of the code in this repository has been auto-generated. That means you should probably not trust it too much. That being said, it does work and I'm using it myself.
+
+**NOTE:** If the documentation is incorrect, please let me know or send a PR. If you too want to use a code generation tool to update the code for this project, `PROJECT_CONTEXT.md` has been used as context to give a good overview of the various parts of the project. It might be a bit messy now but it's a good starting point and you're welcome to update it.
 
 ## Features
 
@@ -92,9 +96,7 @@ Common development use cases:
 ## Documentation
 
 - **[🔐 Cookie Authentication Guide](docs/COOKIE_AUTHENTICATION.md)** - Complete guide for authenticated screenshots
-- **[🐛 Debugging Guide](docs/DEBUGGING.md)** - Troubleshooting cookie issues and general debugging
 - **[📚 Complete API Reference](docs/API.md)** - Detailed parameter documentation, examples, and response formats
-- **[🔧 Project Context](PROJECT_CONTEXT.md)** - Architecture decisions and technical details
 
 ### Key API Parameters
 
@@ -218,3 +220,38 @@ Reference in MCP config:
 - Need to debug cookie loading? Enable debug logging
 
 **📖 See [docs/API.md#error-handling](docs/API.md#error-handling) for detailed error troubleshooting.**
+
+## License
+
+BrowserLoop is licensed under the **GNU Affero General Public License v3.0 or later (AGPL-3.0-or-later)**.
+
+### What this means:
+
+- ✅ **Free to use** - Personal and commercial use allowed
+- ✅ **Free to modify** - You can adapt the code to your needs
+- ✅ **Free to distribute** - Share copies with others
+- ✅ **Patent protection** - Contributors provide patent grants
+- ⚠️ **Copyleft** - Derivative works must also be open source under AGPL-3.0
+- ⚠️ **Network clause** - If you run a modified version on a server, you must provide source code to users
+
+### For Network Services
+
+**Important**: If you modify BrowserLoop and run it as a network service (e.g., web app, API server, or cloud service), the AGPL requires you to:
+
+1. Offer the complete source code to all users of your service
+2. Include a prominent notice about how users can access the source
+3. Use a compatible license for the entire service
+
+### License Files
+
+- [LICENSE](LICENSE) - Full license text
+
+### Commercial Use
+
+Organizations can use BrowserLoop under the AGPL for commercial purposes, but must comply with the copyleft requirements. If you need to keep modifications private, consider:
+
+1. Using BrowserLoop without modifications
+2. Contributing improvements back to the community
+3. Contacting the maintainers about potential alternative licensing arrangements
+
+For questions about licensing, please open an issue or contact the maintainers.

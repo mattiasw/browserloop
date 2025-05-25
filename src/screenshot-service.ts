@@ -1,3 +1,20 @@
+/*
+ * This file is part of BrowserLoop.
+ *
+ * BrowserLoop is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * BrowserLoop is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import { chromium, type Browser, type Page } from 'playwright';
 import { ImageProcessor, type ImageConversionOptions } from './image-processor.js';
 import { Logger, categorizeError } from './logger.js';

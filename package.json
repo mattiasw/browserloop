@@ -57,10 +57,10 @@
     "browser",
     "typescript"
   ],
-  "author": "",
-  "license": "MIT",
+  "author": "Mattias Wallander <mattias@wallander.eu>",
+  "license": "AGPL-3.0-or-later",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.6",
