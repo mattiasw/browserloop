@@ -12,6 +12,7 @@ A Model Context Protocol (MCP) server for taking screenshots of web pages using 
 
 - 📸 High-quality screenshot capture using Playwright
 - 🌐 Support for localhost and remote URLs
+- 🍪 Cookie-based authentication for protected pages
 - 🐳 Docker containerization for consistent environments
 - ⚡ PNG, JPEG, and WebP format support with configurable quality
 - 🛡️ Secure non-root container execution
