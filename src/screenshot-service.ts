@@ -775,7 +775,7 @@ export class ScreenshotService {
 
         if (!this.isDomainValid(cookieDomain, targetDomain)) {
           throw new Error(
-            `Cookie domain '${cookie.name}' domain mismatch: URL domain is '${targetDomain}'`
+            `Cookie '${cookie.name}' domain mismatch: cookie domain '${cookieDomain}' vs URL domain '${targetDomain}'`
           );
         }
       }
