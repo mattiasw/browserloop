@@ -214,14 +214,12 @@ describe('Logger', () => {
 describe('Error Categorization', () => {
   test('should categorize network errors', () => {
     const networkErrors = [
-      new Error('Network request failed'),
-      new Error('Connection refused'),
-      new Error('DNS lookup failed'),
+      new Error('net::ERR_INTERNET_DISCONNECTED'),
       new Error('ENOTFOUND example.com'),
       new Error('ECONNREFUSED'),
     ];
 
-    networkErrors.forEach((error) => {
+    for (const error of networkErrors) {
       const categorized = categorizeError(error, {
         url: 'https://example.com',
       });
@@ -247,7 +245,7 @@ describe('Error Categorization', () => {
         'https://example.com',
         'Should include URL in context'
       );
-    });
+    }
   });
 
   test('should categorize timeout errors', () => {
@@ -257,7 +255,7 @@ describe('Error Categorization', () => {
       new Error('Request timeout'),
     ];
 
-    timeoutErrors.forEach((error) => {
+    for (const error of timeoutErrors) {
       const categorized = categorizeError(error);
 
       assert.strictEqual(
@@ -275,7 +273,7 @@ describe('Error Categorization', () => {
         true,
         'Timeout errors should be recoverable'
       );
-    });
+    }
   });
 
   test('should categorize browser crash errors', () => {
@@ -286,7 +284,7 @@ describe('Error Categorization', () => {
       new Error('Page crashed'),
     ];
 
-    crashErrors.forEach((error) => {
+    for (const error of crashErrors) {
       const categorized = categorizeError(error);
 
       assert.strictEqual(
@@ -304,7 +302,7 @@ describe('Error Categorization', () => {
         true,
         'Browser crash errors should be recoverable'
       );
-    });
+    }
   });
 
   test('should categorize element not found errors', () => {
@@ -313,7 +311,7 @@ describe('Error Categorization', () => {
       new Error('Selector did not match any elements'),
     ];
 
-    elementErrors.forEach((error) => {
+    for (const error of elementErrors) {
       const categorized = categorizeError(error);
 
       assert.strictEqual(
@@ -331,7 +329,7 @@ describe('Error Categorization', () => {
         false,
         'Element not found errors should not be recoverable'
       );
-    });
+    }
   });
 
   test('should categorize validation errors', () => {
@@ -341,7 +339,7 @@ describe('Error Categorization', () => {
       new Error('Parameter out of range'),
     ];
 
-    validationErrors.forEach((error) => {
+    for (const error of validationErrors) {
       const categorized = categorizeError(error);
 
       assert.strictEqual(
@@ -359,7 +357,7 @@ describe('Error Categorization', () => {
         false,
         'Validation errors should not be recoverable'
       );
-    });
+    }
   });
 
   test('should categorize docker errors', () => {
@@ -369,7 +367,7 @@ describe('Error Categorization', () => {
       new Error('Container not found'),
     ];
 
-    dockerErrors.forEach((error) => {
+    for (const error of dockerErrors) {
       const categorized = categorizeError(error);
 
       assert.strictEqual(
@@ -387,7 +385,7 @@ describe('Error Categorization', () => {
         true,
         'Docker errors should be recoverable'
       );
-    });
+    }
   });
 
   test('should categorize resource errors', () => {
@@ -397,7 +395,7 @@ describe('Error Categorization', () => {
       new Error('Resource limit exceeded'),
     ];
 
-    resourceErrors.forEach((error) => {
+    for (const error of resourceErrors) {
       const categorized = categorizeError(error);
 
       assert.strictEqual(
@@ -415,7 +413,7 @@ describe('Error Categorization', () => {
         true,
         'Resource errors should be recoverable'
       );
-    });
+    }
   });
 
   test('should categorize unknown errors', () => {

@@ -270,7 +270,7 @@ export interface LoggingConfig {
 }
 
 /**
- * Timeout configuration for different operations
+ * Timeout configuration for various operations
  */
 export interface TimeoutConfig {
   /** Browser initialization timeout */
@@ -283,4 +283,96 @@ export interface TimeoutConfig {
   screenshot: number;
   /** Network request timeout */
   network: number;
+}
+
+/**
+ * Log context for structured logging
+ */
+export interface LogContext {
+  /** URL being processed */
+  url?: string;
+  /** Request ID for tracking */
+  requestId?: string;
+  /** Attempt number for retries */
+  attempt?: number;
+  /** Maximum attempts allowed */
+  maxAttempts?: number;
+  /** Error message */
+  error?: string;
+  /** Reason for operation */
+  reason?: string;
+  /** Delay in milliseconds */
+  delay?: number;
+  /** Timestamp of operation */
+  timestamp?: number;
+  /** Browser status */
+  browserStatus?: string;
+  /** Memory usage information */
+  memoryUsage?: number;
+  /** Additional context data - allows common serializable values including arrays */
+  [key: string]: unknown;
+}
+
+/**
+ * Extended screenshot options that includes cookies with proper typing
+ * Used in MCP server to avoid type casting
+ */
+export interface ScreenshotOptionsWithCookies extends ScreenshotOptions {
+  /** Cookies for authentication (properly typed) */
+  cookies?: Cookie[];
+  /** Full page screenshot flag */
+  fullPage?: boolean;
+}
+
+/**
+ * Mock cookie interface for testing
+ * Provides proper typing for test mock objects
+ */
+export interface MockCookie {
+  /** Cookie name */
+  name: string;
+  /** Cookie value */
+  value: string;
+  /** Cookie domain (optional) */
+  domain?: string;
+  /** Cookie path (optional) */
+  path?: string;
+  /** Whether cookie is HTTP-only (optional) */
+  httpOnly?: boolean;
+  /** Whether cookie is secure (optional) */
+  secure?: boolean;
+  /** Cookie expiration time (optional, supports -1 for session cookies) */
+  expires?: number;
+  /** Cookie same-site policy (optional) */
+  sameSite?: 'Strict' | 'Lax' | 'None';
+}
+
+/**
+ * Mock page interface for testing browser interactions
+ * Provides proper typing for test mock objects
+ */
+export interface MockPage {
+  /** Mock browser context */
+  context: () => MockBrowserContext;
+  /** Mock viewport setting */
+  setViewportSize: (size: { width: number; height: number }) => Promise<void>;
+  /** Mock timeout setting */
+  setDefaultTimeout: (timeout: number) => void;
+  /** Mock navigation */
+  goto: (url: string) => Promise<void>;
+  /** Mock screenshot capture */
+  screenshot: (options?: unknown) => Promise<Buffer>;
+  /** Mock page status */
+  isClosed: () => boolean;
+  /** Mock page cleanup */
+  close: () => Promise<void>;
+}
+
+/**
+ * Mock browser context interface for testing
+ * Provides proper typing for cookie injection tests
+ */
+export interface MockBrowserContext {
+  /** Mock cookie addition */
+  addCookies: (cookies: MockCookie[]) => Promise<void>;
 }

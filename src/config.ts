@@ -15,9 +15,9 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { z } from 'zod';
 import { readFileSync } from 'node:fs';
-import { CookieUtils } from './cookie-utils.js';
+import { z } from 'zod';
+import { parseCookies } from './cookie-utils.js';
 import type { Cookie } from './types.js';
 
 /**
@@ -68,13 +68,11 @@ const ConfigSchema = z.object({
   }),
 });
 
-export type BrowserloopConfig = z.infer<typeof ConfigSchema>;
-
 /**
  * Configuration manager that loads settings from environment variables
  */
 export class ConfigManager {
-  private config: BrowserloopConfig;
+  private config: z.infer<typeof ConfigSchema>;
 
   constructor() {
     this.config = this.loadConfig();
@@ -83,7 +81,7 @@ export class ConfigManager {
   /**
    * Get the complete configuration
    */
-  getConfig(): BrowserloopConfig {
+  getConfig(): z.infer<typeof ConfigSchema> {
     return this.config;
   }
 
@@ -129,7 +127,7 @@ export class ConfigManager {
     return this.config.timeouts;
   }
 
-  private loadConfig(): BrowserloopConfig {
+  private loadConfig(): z.infer<typeof ConfigSchema> {
     const envConfig = {
       viewport: {
         defaultWidth: this.parseNumber('BROWSERLOOP_DEFAULT_WIDTH', 1280),
@@ -238,7 +236,7 @@ export class ConfigManager {
         // Treat as file path - read the file
         try {
           const fileContent = readFileSync(value, 'utf-8');
-          cookies = CookieUtils.parseCookies(fileContent);
+          cookies = parseCookies(fileContent);
           source = `file: ${value}`;
 
           if (
@@ -262,7 +260,7 @@ export class ConfigManager {
         }
       } else {
         // Treat as JSON string (backward compatibility)
-        cookies = CookieUtils.parseCookies(value);
+        cookies = parseCookies(value);
         source = 'environment variable JSON';
 
         if (

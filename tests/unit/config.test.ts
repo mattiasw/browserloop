@@ -373,7 +373,7 @@ describe('ConfigManager - Default Cookies', () => {
     const jsonStrings = ['[{"name":"session","value":"123"}]', '[]'];
 
     // Test valid file paths
-    validFilePaths.forEach((filePath) => {
+    for (const filePath of validFilePaths) {
       // Create a valid test file
       writeFileSync(filePath, '[]', 'utf-8');
 
@@ -398,10 +398,10 @@ describe('ConfigManager - Default Cookies', () => {
           /* ignore */
         }
       }
-    });
+    }
 
     // Test JSON strings (not file paths)
-    jsonStrings.forEach((jsonString) => {
+    for (const jsonString of jsonStrings) {
       process.env.BROWSERLOOP_DEFAULT_COOKIES = jsonString;
       process.env.BROWSERLOOP_SILENT = 'true';
 
@@ -416,7 +416,7 @@ describe('ConfigManager - Default Cookies', () => {
         expectedCount,
         `JSON string ${jsonString} should be parsed correctly`
       );
-    });
+    }
 
     // Test file with actual cookies
     const cookiesFile = '/tmp/test-cookies-with-data.json';

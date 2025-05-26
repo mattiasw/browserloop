@@ -17,7 +17,11 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { CookieUtils } from '../../src/cookie-utils.js';
+import {
+  parseCookies,
+  validateAndSanitize,
+  isValidCookieInput,
+} from '../../src/cookie-utils.js';
 import type { Cookie } from '../../src/types.js';
 
 describe('CookieUtils', () => {
@@ -31,7 +35,7 @@ describe('CookieUtils', () => {
         },
       ];
 
-      const result = CookieUtils.parseCookies(cookies);
+      const result = parseCookies(cookies);
 
       assert.strictEqual(result.length, 1);
       assert.ok(result[0], 'Cookie should exist');
@@ -48,7 +52,7 @@ describe('CookieUtils', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.parseCookies(cookies as Cookie[]);
+        parseCookies(cookies as Cookie[]);
       }, /Cookie validation failed.*Cookie name cannot be empty/);
     });
   });
@@ -63,7 +67,7 @@ describe('CookieUtils', () => {
         },
       ]);
 
-      const result = CookieUtils.parseCookies(cookiesJson);
+      const result = parseCookies(cookiesJson);
 
       assert.strictEqual(result.length, 1);
       assert.ok(result[0], 'Cookie should exist');
@@ -75,7 +79,7 @@ describe('CookieUtils', () => {
       const invalidJson = '{"invalid": json}';
 
       assert.throws(() => {
-        CookieUtils.parseCookies(invalidJson);
+        parseCookies(invalidJson);
       }, /Invalid JSON format in cookies parameter/);
     });
 
@@ -86,7 +90,7 @@ describe('CookieUtils', () => {
       });
 
       assert.throws(() => {
-        CookieUtils.parseCookies(nonArrayJson);
+        parseCookies(nonArrayJson);
       }, /Cookie JSON must be an array of cookie objects/);
     });
   });
@@ -100,7 +104,7 @@ describe('CookieUtils', () => {
 
       for (const cookie of invalidCookies) {
         assert.throws(() => {
-          CookieUtils.parseCookies([cookie] as Cookie[]);
+          parseCookies([cookie] as Cookie[]);
         }, /Cookie validation failed/);
       }
     });
@@ -115,7 +119,7 @@ describe('CookieUtils', () => {
         },
       ];
 
-      const result = CookieUtils.validateAndSanitize(cookies);
+      const result = validateAndSanitize(cookies);
 
       assert.ok(result.cookies, 'Should return cookies');
       assert.ok(result.sanitizedForLogging, 'Should return sanitized version');
@@ -138,7 +142,7 @@ describe('CookieUtils', () => {
 
       for (const input of validInputs) {
         assert.ok(
-          CookieUtils.isValidCookieInput(input),
+          isValidCookieInput(input),
           'Should accept valid input'
         );
       }
@@ -148,7 +152,7 @@ describe('CookieUtils', () => {
       const invalidInputs = [null, undefined, 123];
 
       invalidInputs.forEach((input, index) => {
-        const isValid = CookieUtils.isValidCookieInput(input);
+        const isValid = isValidCookieInput(input);
         assert.ok(
           !isValid,
           `Should reject invalid input at index ${index}: ${JSON.stringify(input)}`
@@ -188,7 +192,7 @@ describe('CookieUtils', () => {
       ];
 
       // Should not throw an error
-      const result = CookieUtils.parseCookies(modernCookies);
+      const result = parseCookies(modernCookies);
 
       assert.strictEqual(result.length, 5, 'Should parse all 5 cookies');
       assert.strictEqual(
@@ -241,7 +245,7 @@ describe('CookieUtils', () => {
         };
 
         // Should not throw an error
-        const result = CookieUtils.parseCookies([cookie]);
+        const result = parseCookies([cookie]);
         assert.strictEqual(
           result.length,
           1,
@@ -278,7 +282,7 @@ describe('CookieUtils', () => {
         };
 
         assert.throws(
-          () => CookieUtils.parseCookies([cookie]),
+          () => parseCookies([cookie]),
           /Cookie name contains invalid characters/,
           `Should reject cookie name: ${name}`
         );
@@ -297,7 +301,7 @@ describe('CookieUtils', () => {
       ];
 
       const { cookies, sanitizedForLogging } =
-        CookieUtils.validateAndSanitize(modernCookies);
+        validateAndSanitize(modernCookies);
 
       assert.strictEqual(cookies.length, 1, 'Should validate modern cookie');
       assert.strictEqual(
@@ -306,7 +310,16 @@ describe('CookieUtils', () => {
         'Should preserve modern cookie name'
       );
 
-      const sanitized = sanitizedForLogging[0] as any;
+      const sanitized = sanitizedForLogging[0] as {
+        name: string;
+        valueLength: number;
+        hasValue: boolean;
+        domain?: string;
+        path?: string;
+        secure?: boolean;
+        httpOnly?: boolean;
+        sameSite?: string;
+      };
       assert.ok(sanitized, 'Should have sanitized version');
       assert.strictEqual(
         sanitized.name,

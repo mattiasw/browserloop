@@ -15,7 +15,7 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { chromium, type Browser, type Page } from 'playwright';
+import { chromium, type Browser, type Page, type Cookie as PlaywrightCookie, type Locator } from 'playwright';
 import {
   convertImage,
   getMimeType,
@@ -23,7 +23,7 @@ import {
   type ImageConversionOptions,
 } from './image-processor.js';
 import { Logger, categorizeError } from './logger.js';
-import { CookieUtils } from './cookie-utils.js';
+import { parseCookies, validateAndSanitize, validateCookieSecurity } from './cookie-utils.js';
 import type {
   ScreenshotOptions,
   ScreenshotResult,
@@ -173,10 +173,7 @@ export class ScreenshotService {
     options: ScreenshotOptions
   ): Promise<ScreenshotResult> {
     if (!options.selector) {
-      const error = new Error('Selector is required for element screenshot');
-      const categorizedError = categorizeError(error, { url: options.url });
-      this.logger.error('Element screenshot failed', categorizedError);
-      throw error;
+      throw new Error('Selector is required for element screenshots');
     }
 
     return await this.executeWithRetry(async () => {
@@ -187,7 +184,7 @@ export class ScreenshotService {
 
       try {
         await this.navigateToUrl(page, config);
-        const element = await this.findElement(page, options.selector!);
+        const element = await this.findElement(page, options.selector as string);
         const screenshotBuffer = await this.captureElementScreenshot(
           page,
           element,
@@ -226,7 +223,7 @@ export class ScreenshotService {
         !this.initializationInProgress,
       browser: {
         initialized: this.isInitialized,
-        connected: this.browser !== null && this.browser.isConnected(),
+        connected: this.browser?.isConnected() ?? false,
         ...(metrics.lastError?.message && {
           lastError: metrics.lastError.message,
         }),
@@ -354,14 +351,14 @@ export class ScreenshotService {
       // Parse request cookies if they're a string
       const parsedRequestCookies =
         typeof requestCookies === 'string'
-          ? CookieUtils.parseCookies(requestCookies)
+          ? parseCookies(requestCookies)
           : requestCookies;
 
       // Create a map of request cookies by name for fast lookup
       const requestCookieMap = new Map<string, Cookie>();
-      parsedRequestCookies.forEach((cookie) => {
+      for (const cookie of parsedRequestCookies) {
         requestCookieMap.set(cookie.name, cookie);
-      });
+      }
 
       // Start with default cookies and override with request cookies
       const mergedCookies: Cookie[] = [];
@@ -369,19 +366,19 @@ export class ScreenshotService {
       const addedDefaultCookies: string[] = [];
 
       // Add default cookies that aren't overridden by request cookies
-      defaultCookies.forEach((defaultCookie) => {
+      for (const defaultCookie of defaultCookies) {
         if (!requestCookieMap.has(defaultCookie.name)) {
           mergedCookies.push(defaultCookie);
           addedDefaultCookies.push(defaultCookie.name);
         } else {
           overriddenCookies.push(defaultCookie.name);
         }
-      });
+      }
 
       // Add all request cookies (these take priority)
-      parsedRequestCookies.forEach((requestCookie) => {
+      for (const requestCookie of parsedRequestCookies) {
         mergedCookies.push(requestCookie);
-      });
+      }
 
       // Log the merge results
       if (this.serviceConfig.logging.debug) {
@@ -409,7 +406,10 @@ export class ScreenshotService {
     config: ReturnType<typeof this.createScreenshotConfig>
   ): Promise<Page> {
     const pageOptions = config.userAgent ? { userAgent: config.userAgent } : {};
-    const page = await this.browser!.newPage(pageOptions);
+    if (!this.browser) {
+      throw new Error('Browser not initialized');
+    }
+    const page = await this.browser.newPage(pageOptions);
 
     await page.setViewportSize({ width: config.width, height: config.height });
     page.setDefaultTimeout(this.serviceConfig.timeouts.navigation);
@@ -473,12 +473,12 @@ export class ScreenshotService {
     url: string
   ): Promise<void> {
     let cookies: Cookie[] = [];
-    let playwrightCookies: any[] = [];
+    let playwrightCookies: PlaywrightCookie[] = [];
 
     try {
       // Parse and validate cookies using existing utilities
       const { cookies: parsedCookies, sanitizedForLogging } =
-        CookieUtils.validateAndSanitize(cookiesInput);
+        validateAndSanitize(cookiesInput);
       cookies = parsedCookies;
 
       if (cookies.length === 0) {
@@ -501,7 +501,7 @@ export class ScreenshotService {
       }
 
       // Additional security validation to prevent injection attacks
-      CookieUtils.validateCookieSecurity(cookies);
+      validateCookieSecurity(cookies);
 
       this.logger.debug('Injecting cookies into browser context', {
         url,
@@ -529,9 +529,14 @@ export class ScreenshotService {
 
       // Convert cookies to Playwright format with proper prefix handling
       playwrightCookies = cookies.map((cookie) => {
-        const playwrightCookie: any = {
+        const playwrightCookie: Partial<PlaywrightCookie> = {
           name: cookie.name,
           value: cookie.value,
+          path: cookie.path || '/',
+          expires: cookie.expires || -1,
+          httpOnly: cookie.httpOnly || false,
+          secure: cookie.secure || false,
+          sameSite: cookie.sameSite || 'Lax',
         };
 
         // Handle __Host- prefix requirements (RFC 6265bis)
@@ -540,13 +545,9 @@ export class ScreenshotService {
           // 1. Have secure flag set
           // 2. Have path="/"
           // 3. NOT have a domain attribute (use host-only)
-          // For Playwright: use base URL (protocol + hostname only) instead of full URL
-          // Full URLs with paths cause "Invalid cookie fields" errors
           playwrightCookie.secure = true;
-          const urlObj = new URL(url);
-          playwrightCookie.url = `${urlObj.protocol}//${urlObj.hostname}`;
-          // Don't set domain or path for __Host- cookies when using url
-          // Note: DO NOT add any other domain/path related fields
+          playwrightCookie.path = '/';
+          // For __Host- cookies, don't set domain (host-only)
         } else if (cookie.name.startsWith('__Secure-')) {
           // __Secure- cookies MUST:
           // 1. Have secure flag set
@@ -581,7 +582,7 @@ export class ScreenshotService {
           playwrightCookie.sameSite = cookie.sameSite;
         }
 
-        return playwrightCookie;
+        return playwrightCookie as PlaywrightCookie;
       });
 
       // Add all cookies in a single call (Playwright will handle URL vs domain/path internally)
@@ -596,7 +597,6 @@ export class ScreenshotService {
             name: c.name,
             domain: c.domain,
             path: c.path,
-            url: c.url,
             secure: c.secure,
             httpOnly: c.httpOnly,
             sameSite: c.sameSite,
@@ -628,7 +628,7 @@ export class ScreenshotService {
       this.clearCookieMemory(cookies, playwrightCookies);
 
       // Categorize cookie-specific errors without exposing cookie values
-      let categorizedError;
+      let categorizedError: BrowserloopError;
       if (error instanceof Error) {
         if (error.message.includes('timeout')) {
           categorizedError = categorizeError(error, { url });
@@ -679,12 +679,12 @@ export class ScreenshotService {
     }));
 
     // Update needs enhancement flag
-    cookieAnalysis.forEach((analysis) => {
+    for (const analysis of cookieAnalysis) {
       const missingSecurityFlags =
         analysis.missingSecure && analysis.isAuthCookie;
       analysis.needsEnhancement =
         analysis.missingExpires || missingSecurityFlags;
-    });
+    }
 
     const needsEnhancement = cookieAnalysis.some(
       (analysis) => analysis.needsEnhancement
@@ -724,11 +724,15 @@ export class ScreenshotService {
         if (enhanced.secure === undefined) enhanced.secure = true;
         if (enhanced.httpOnly === undefined) enhanced.httpOnly = true;
         if (enhanced.path === undefined) enhanced.path = '/';
-        delete enhanced.domain; // __Host- cookies must not have domain
+        // __Host- cookies must not have domain - remove it if present
+        if (enhanced.domain !== undefined) {
+          const { domain, ...cookieWithoutDomain } = enhanced;
+          return cookieWithoutDomain as Cookie;
+        }
       } else if (cookie.name.startsWith('__Secure-')) {
         if (enhanced.secure === undefined) enhanced.secure = true;
         if (enhanced.httpOnly === undefined) enhanced.httpOnly = true;
-        if (enhanced.path === undefined) enhanced.path = enhanced.path || '/';
+        if (enhanced.path === undefined) enhanced.path = '/';
       } else if (
         cookie.name.includes('auth') ||
         cookie.name.includes('session')
@@ -736,11 +740,11 @@ export class ScreenshotService {
         // Authentication cookies
         if (enhanced.secure === undefined) enhanced.secure = true;
         if (enhanced.httpOnly === undefined) enhanced.httpOnly = true;
-        if (enhanced.path === undefined) enhanced.path = enhanced.path || '/';
+        if (enhanced.path === undefined) enhanced.path = '/';
       } else if (cookie.name.includes('ajs_')) {
         // Analytics cookies (don't set httpOnly so they can be accessed by JS)
         if (enhanced.secure === undefined) enhanced.secure = true;
-        if (enhanced.path === undefined) enhanced.path = enhanced.path || '/';
+        if (enhanced.path === undefined) enhanced.path = '/';
       } else {
         // Other cookies - set secure but be conservative with httpOnly
         if (enhanced.secure === undefined) enhanced.secure = true;
@@ -814,12 +818,12 @@ export class ScreenshotService {
       }
 
       // Check if target domain is a subdomain of the cookie domain
-      return targetDomain.endsWith('.' + parentDomain);
+      return targetDomain.endsWith(`.${parentDomain}`);
     }
 
     // Handle subdomain cookie for exact domain match
     if (targetDomain.startsWith('.')) {
-      return targetDomain === '.' + cookieDomain;
+      return targetDomain === `.${cookieDomain}`;
     }
 
     return false;
@@ -828,31 +832,31 @@ export class ScreenshotService {
   /**
    * Clear sensitive cookie data from memory
    */
-  private clearCookieMemory(cookies: Cookie[], playwrightCookies: any[]): void {
+  private clearCookieMemory(cookies: Cookie[], playwrightCookies: PlaywrightCookie[]): void {
     // Clear cookie values from original array
     if (cookies && Array.isArray(cookies)) {
-      cookies.forEach((cookie) => {
+      for (const cookie of cookies) {
         if (cookie && typeof cookie === 'object') {
           // Overwrite sensitive fields with empty strings
-          (cookie as any).value = '';
-          if ((cookie as any).expires) {
-            (cookie as any).expires = 0;
+          (cookie as Cookie).value = '';
+          if ((cookie as Cookie).expires) {
+            (cookie as Cookie).expires = 0;
           }
         }
-      });
+      }
     }
 
     // Clear playwright cookies array
     if (playwrightCookies && Array.isArray(playwrightCookies)) {
-      playwrightCookies.forEach((cookie) => {
+      for (const cookie of playwrightCookies) {
         if (cookie && typeof cookie === 'object') {
           // Overwrite sensitive fields with empty strings
-          (cookie as any).value = '';
-          if ((cookie as any).expires) {
-            (cookie as any).expires = 0;
+          (cookie as PlaywrightCookie).value = '';
+          if ((cookie as PlaywrightCookie).expires) {
+            (cookie as PlaywrightCookie).expires = 0;
           }
         }
-      });
+      }
       // Clear the array
       playwrightCookies.length = 0;
     }
@@ -902,8 +906,8 @@ export class ScreenshotService {
     page: Page
   ): Promise<{ width: number; height: number }> {
     return await page.evaluate(() => ({
-      width: (globalThis as any).document.documentElement.scrollWidth,
-      height: (globalThis as any).document.documentElement.scrollHeight,
+      width: (globalThis as unknown as { document: { documentElement: { scrollWidth: number } } }).document.documentElement.scrollWidth,
+      height: (globalThis as unknown as { document: { documentElement: { scrollHeight: number } } }).document.documentElement.scrollHeight,
     }));
   }
 
@@ -922,7 +926,7 @@ export class ScreenshotService {
 
   private async captureElementScreenshot(
     page: Page,
-    element: any,
+    element: Locator,
     config: ReturnType<typeof this.createScreenshotConfig>
   ): Promise<Buffer> {
     // Always capture as PNG for best quality, then convert if needed
@@ -944,7 +948,7 @@ export class ScreenshotService {
   }
 
   private async getElementDimensions(
-    element: any
+    element: Locator
   ): Promise<{ width: number; height: number }> {
     const boundingBox = await element.boundingBox();
     if (!boundingBox) {
@@ -1113,11 +1117,11 @@ export class ScreenshotService {
       // Reset page state for reuse
       await page.evaluate(() => {
         // Clear any JavaScript state
-        if ((globalThis as any).localStorage) {
-          (globalThis as any).localStorage.clear();
+        if ((globalThis as unknown as { localStorage?: Storage }).localStorage) {
+          (globalThis as unknown as { localStorage: Storage }).localStorage.clear();
         }
-        if ((globalThis as any).sessionStorage) {
-          (globalThis as any).sessionStorage.clear();
+        if ((globalThis as unknown as { sessionStorage?: Storage }).sessionStorage) {
+          (globalThis as unknown as { sessionStorage: Storage }).sessionStorage.clear();
         }
       });
 
@@ -1179,7 +1183,7 @@ export class ScreenshotService {
             : cookie.domain;
           return (
             urlObj.hostname === cookieDomain ||
-            urlObj.hostname.endsWith('.' + cookieDomain)
+            urlObj.hostname.endsWith(`.${cookieDomain}`)
           );
         }
         return true;

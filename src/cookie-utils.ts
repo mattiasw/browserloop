@@ -191,7 +191,7 @@ export function validateCookieSecurity(cookies: Cookie[]): void {
 /**
  * Check for suspicious patterns that might indicate injection attacks
  */
-function containsSuspiciousPatterns(value: string): boolean {
+export function containsSuspiciousPatterns(value: string): boolean {
   const suspiciousPatterns = [
     /<script/i,
     /javascript:/i,
@@ -206,15 +206,4 @@ function containsSuspiciousPatterns(value: string): boolean {
   ];
 
   return suspiciousPatterns.some((pattern) => pattern.test(value));
-}
-
-// Legacy class wrapper for backward compatibility
-export class CookieUtils {
-  static parseCookies = parseCookies;
-  static sanitizeCookiesForLogging = sanitizeCookiesForLogging;
-  static validateAndSanitize = validateAndSanitize;
-  static isValidCookieInput = isValidCookieInput;
-  static clearCookieMemory = clearCookieMemory;
-  static validateCookieSecurity = validateCookieSecurity;
-  static containsSuspiciousPatterns = containsSuspiciousPatterns;
 }

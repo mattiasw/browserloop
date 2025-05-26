@@ -17,7 +17,12 @@
 
 import { test, describe } from 'node:test';
 import assert from 'node:assert';
-import { CookieUtils } from '../../src/cookie-utils.js';
+import {
+  validateCookieSecurity,
+  parseCookies,
+  clearCookieMemory,
+  sanitizeCookiesForLogging
+} from '../../src/cookie-utils.js';
 import type { Cookie } from '../../src/types.js';
 
 describe('Cookie Security', () => {
@@ -31,7 +36,7 @@ describe('Cookie Security', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.validateCookieSecurity(maliciousCookies);
+        validateCookieSecurity(maliciousCookies);
       }, /Cookie contains suspicious patterns/);
     });
 
@@ -45,7 +50,7 @@ describe('Cookie Security', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.validateCookieSecurity(maliciousCookies);
+        validateCookieSecurity(maliciousCookies);
       }, /Cookie contains suspicious patterns/);
     });
 
@@ -58,7 +63,7 @@ describe('Cookie Security', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.validateCookieSecurity(maliciousCookies);
+        validateCookieSecurity(maliciousCookies);
       }, /Cookie contains suspicious patterns/);
     });
 
@@ -66,7 +71,7 @@ describe('Cookie Security', () => {
       const oversizedCookie = 'x'.repeat(5000); // Exceeds 4096 byte limit
 
       assert.throws(() => {
-        CookieUtils.parseCookies([
+        parseCookies([
           {
             name: 'test',
             value: oversizedCookie,
@@ -82,7 +87,7 @@ describe('Cookie Security', () => {
       }));
 
       assert.throws(() => {
-        CookieUtils.parseCookies(manyCookies as Cookie[]);
+        parseCookies(manyCookies as Cookie[]);
       }, /Too many cookies/);
     });
 
@@ -95,7 +100,7 @@ describe('Cookie Security', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.parseCookies(invalidNameCookies);
+        parseCookies(invalidNameCookies);
       }, /Cookie name contains invalid characters/);
     });
 
@@ -109,7 +114,7 @@ describe('Cookie Security', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.parseCookies(invalidDomainCookies);
+        parseCookies(invalidDomainCookies);
       }, /Cookie domain contains invalid characters/);
     });
   });
@@ -130,7 +135,7 @@ describe('Cookie Security', () => {
       assert.strictEqual(cookies[0].expires, 1234567890);
 
       // Clear memory
-      CookieUtils.clearCookieMemory(cookies);
+      clearCookieMemory(cookies);
 
       // Verify values are cleared
       assert.ok(cookies[0], 'Cookie should still exist after clearing');
@@ -140,9 +145,9 @@ describe('Cookie Security', () => {
 
     test('should handle null/undefined arrays gracefully', () => {
       // Should not throw - testing guard clause behavior
-      CookieUtils.clearCookieMemory(null as unknown as Cookie[]);
-      CookieUtils.clearCookieMemory(undefined as unknown as Cookie[]);
-      CookieUtils.clearCookieMemory([] as Cookie[]);
+      clearCookieMemory(null as unknown as Cookie[]);
+      clearCookieMemory(undefined as unknown as Cookie[]);
+      clearCookieMemory([] as Cookie[]);
     });
 
     test('should handle malformed cookie objects', () => {
@@ -155,7 +160,7 @@ describe('Cookie Security', () => {
 
       // Should not throw when clearing memory
       assert.doesNotThrow(() => {
-        CookieUtils.clearCookieMemory(malformedCookies as unknown as Cookie[]);
+        clearCookieMemory(malformedCookies as unknown as Cookie[]);
       });
     });
   });
@@ -171,7 +176,7 @@ describe('Cookie Security', () => {
         },
       ];
 
-      const sanitized = CookieUtils.sanitizeCookiesForLogging(cookies);
+      const sanitized = sanitizeCookiesForLogging(cookies);
 
       // Verify no actual values are in sanitized output
       const sanitizedStr = JSON.stringify(sanitized);
@@ -200,7 +205,7 @@ describe('Cookie Security', () => {
         },
       ];
 
-      const sanitized = CookieUtils.sanitizeCookiesForLogging(cookies);
+      const sanitized = sanitizeCookiesForLogging(cookies);
 
       assert.strictEqual(sanitized.length, 1);
       const sanitizedCookie = sanitized[0] as Record<string, unknown>;
@@ -226,7 +231,7 @@ describe('Cookie Security', () => {
         },
       ];
 
-      const sanitized = CookieUtils.sanitizeCookiesForLogging(cookies);
+      const sanitized = sanitizeCookiesForLogging(cookies);
       const sanitizedCookie = sanitized[0] as Record<string, unknown>;
 
       assert.strictEqual(sanitizedCookie.domain, '[auto-derived]');
@@ -240,7 +245,7 @@ describe('Cookie Security', () => {
         '{"__proto__": {"name": "evil", "value": "payload"}}';
 
       assert.throws(() => {
-        CookieUtils.parseCookies(maliciousJson);
+        parseCookies(maliciousJson);
       }, /Cookie parsing failed.*Cookie JSON must be an array/);
     });
 
@@ -257,7 +262,7 @@ describe('Cookie Security', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.validateCookieSecurity(mixedCookies as Cookie[]);
+        validateCookieSecurity(mixedCookies as Cookie[]);
       }, /Cookie contains suspicious patterns/);
     });
 
@@ -271,7 +276,7 @@ describe('Cookie Security', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.parseCookies(invalidExpiresCookie as Cookie[]);
+        parseCookies(invalidExpiresCookie as Cookie[]);
       }, /Cookie expires timestamp too large/);
     });
 
@@ -286,7 +291,7 @@ describe('Cookie Security', () => {
 
       // Should not throw for session cookies
       assert.doesNotThrow(() => {
-        CookieUtils.parseCookies(sessionCookie as Cookie[]);
+        parseCookies(sessionCookie as Cookie[]);
       });
     });
 
@@ -300,7 +305,7 @@ describe('Cookie Security', () => {
       ];
 
       assert.throws(() => {
-        CookieUtils.parseCookies(invalidExpiresCookie as Cookie[]);
+        parseCookies(invalidExpiresCookie as Cookie[]);
       }, /Cookie expires must be -1 \(session\) or positive timestamp/);
     });
   });

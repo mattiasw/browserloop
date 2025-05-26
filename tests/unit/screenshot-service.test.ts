@@ -25,6 +25,14 @@ import {
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 import { createTestServer } from '../../src/test-utils.js';
 
+// Type for the test server returned by createTestServer
+interface TestServer {
+  readonly port: number;
+  readonly url: string;
+  start(): Promise<void>;
+  stop(): Promise<void>;
+}
+
 describe('ScreenshotService', () => {
   let serviceInstances: ScreenshotService[] = [];
 
@@ -218,7 +226,7 @@ describe('ScreenshotService', () => {
 
 describe('Domain Validation', () => {
   let domainServiceInstances: ScreenshotService[] = [];
-  let testServer: any;
+  let testServer: TestServer;
 
   function createDomainTestConfig(): ScreenshotServiceConfig {
     return createTestScreenshotServiceConfig();

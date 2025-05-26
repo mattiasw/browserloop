@@ -22,16 +22,17 @@ import type {
   BrowserloopError,
   ErrorCategory,
   ErrorSeverity,
+  LogContext,
 } from './types.js';
 
 /**
- * Log entry interface
+ * Log entry structure
  */
 export interface LogEntry {
   timestamp: number;
   level: 'debug' | 'info' | 'warn' | 'error';
   message: string;
-  context?: Record<string, any>;
+  context?: LogContext;
   error?: BrowserloopError;
 }
 
@@ -88,7 +89,7 @@ export class Logger {
   /**
    * Log debug information
    */
-  debug(message: string, context?: Record<string, any>): void {
+  debug(message: string, context?: LogContext): void {
     if (this.config.debug) {
       this.log('debug', message, context);
     }
@@ -97,14 +98,14 @@ export class Logger {
   /**
    * Log general information
    */
-  info(message: string, context?: Record<string, any>): void {
+  info(message: string, context?: LogContext): void {
     this.log('info', message, context);
   }
 
   /**
    * Log warning
    */
-  warn(message: string, context?: Record<string, any>): void {
+  warn(message: string, context?: LogContext): void {
     this.log('warn', message, context);
   }
 
@@ -114,7 +115,7 @@ export class Logger {
   error(
     message: string,
     error?: BrowserloopError,
-    context?: Record<string, any>
+    context?: LogContext
   ): void {
     this.log('error', message, context, error);
 
@@ -130,7 +131,7 @@ export class Logger {
     attempt: number,
     maxAttempts: number,
     error: Error,
-    context?: Record<string, any>
+    context?: LogContext
   ): void {
     this.warn(`Retry attempt ${attempt}/${maxAttempts}`, {
       ...context,
@@ -143,7 +144,7 @@ export class Logger {
   /**
    * Log browser reset
    */
-  browserReset(reason: string, context?: Record<string, any>): void {
+  browserReset(reason: string, context?: LogContext): void {
     this.warn('Browser reset triggered', {
       ...context,
       reason,
@@ -187,7 +188,7 @@ export class Logger {
   private log(
     level: LogEntry['level'],
     message: string,
-    context?: Record<string, any>,
+    context?: LogContext,
     error?: BrowserloopError
   ): void {
     const entry: LogEntry = {
@@ -282,7 +283,12 @@ export function categorizeError(
     message.includes('connection') ||
     message.includes('dns') ||
     message.includes('enotfound') ||
-    message.includes('econnrefused')
+    message.includes('econnrefused') ||
+    message.includes('net::err_') ||
+    message.includes('net::err_internet_disconnected') ||
+    message.includes('net::err_network_changed') ||
+    message.includes('net::err_connection_refused') ||
+    message.includes('net::err_name_not_resolved')
   ) {
     return {
       originalError: error,

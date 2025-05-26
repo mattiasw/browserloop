@@ -25,6 +25,20 @@ import {
 } from '../../src/test-utils.js';
 import type { Cookie } from '../../src/types.js';
 
+interface MockBrowserContext {
+  addCookies: (cookies: Cookie[]) => Promise<void>;
+}
+
+interface MockPage {
+  context: () => MockBrowserContext;
+  setViewportSize: () => Promise<void>;
+  setDefaultTimeout: () => void;
+  goto: () => Promise<void>;
+  screenshot: () => Promise<Buffer>;
+  isClosed: () => boolean;
+  close: () => Promise<void>;
+}
+
 describe('Cookie Injection Integration', () => {
   describe('Cookie Context Injection', () => {
     test('should inject cookies into browser context before navigation', async () => {
@@ -323,9 +337,9 @@ describe('Cookie Injection Integration', () => {
         ];
 
         // Use a mock page to verify cookie injection without network calls
-        const mockPage = {
+        const mockPage: MockPage = {
           context: () => ({
-            addCookies: (cookies: any[]) => {
+            addCookies: (cookies: Cookie[]) => {
               // Verify merged cookies
               const cookieNames = cookies.map((c) => c.name);
               const cookieValues = new Map(
@@ -387,8 +401,9 @@ describe('Cookie Injection Integration', () => {
         };
 
         // Mock the createPage method to return our mock page
-        const originalCreatePage = (service as any).createPage;
-        (service as any).createPage = () => Promise.resolve(mockPage);
+        const serviceWithMock = service as unknown as { createPage: () => Promise<MockPage> };
+        const originalCreatePage = serviceWithMock.createPage;
+        serviceWithMock.createPage = () => Promise.resolve(mockPage);
 
         try {
           await service.takeScreenshot({
@@ -400,7 +415,7 @@ describe('Cookie Injection Integration', () => {
           assert.ok(true, 'Cookie merging completed successfully');
         } finally {
           // Restore original method
-          (service as any).createPage = originalCreatePage;
+          serviceWithMock.createPage = originalCreatePage;
         }
       } finally {
         await service.cleanup();
