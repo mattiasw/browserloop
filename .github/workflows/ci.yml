@@ -175,6 +175,13 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: [lint-and-format]
+    permissions:
+      # Required for CodeQL to upload SARIF results
+      security-events: write
+      # Required for actions to read repository contents
+      contents: read
+      # Required for pull request comments (if needed)
+      pull-requests: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
