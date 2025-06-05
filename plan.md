@@ -204,3 +204,46 @@
 - [x] Fix MCP server API issues
 - [x] Add missing imports and exports
 - [x] Update test files with proper typing
+
+## Git Pre-commit Hooks with lint-staged and Husky
+
+- [ ] **Environment and Version Verification**
+  - [ ] Verify Node.js version compatibility with lint-staged 16.1.0 and Husky 9.1.7
+  - [ ] Check current git status and ensure repository is clean
+  - [ ] Verify existing npm scripts (`lint` and `format`) work correctly
+  - [ ] Document current state of .git/hooks directory
+
+- [x] **Package Installation**
+  - [x] Install lint-staged version 16.1.0 as dev dependency
+  - [x] Install Husky version 9.1.7 as dev dependency
+  - [x] Verify package-lock.json is updated with exact versions
+  - [x] Confirm no version conflicts with existing dependencies
+
+- [x] **Husky Initialization and Setup**
+  - [x] Run `npx husky init` to set up Husky configuration
+  - [x] Verify .husky directory is created with correct structure
+  - [x] Check that .husky/_/husky.sh script is created
+  - [x] Ensure package.json prepare script is added for Husky installation
+  - [x] Test Husky setup with `npm run prepare`
+
+- [x] **lint-staged Configuration**
+  - [x] Create lint-staged configuration in package.json
+  - [x] Configure lint-staged to run `npm run lint` on staged files
+  - [x] Configure lint-staged to run `npm run format` on staged files
+  - [x] Set up proper file matching patterns for TypeScript/JavaScript files
+  - [x] Add ignore patterns for generated files and node_modules
+  - [x] Verify lint-staged config follows v16.1.0 syntax and features
+
+- [x] **Pre-commit Hook Setup**
+  - [x] Create .husky/pre-commit hook script
+  - [x] Add `npx lint-staged` command to pre-commit hook
+  - [x] Make pre-commit hook executable (chmod +x)
+  - [x] Test pre-commit hook execution manually
+  - [x] Verify hook script uses proper shebang and error handling
+
+- [x] **Security Considerations**
+  - [x] Review lint-staged configuration for potential command injection
+  - [x] Ensure only trusted commands are executed in hooks
+  - [x] Verify file pattern matching doesn't expose sensitive files
+  - [x] Add safeguards against hook bypassing (document --no-verify usage)
+  - [x] Test hook behavior with various file states (renamed, deleted, etc.)

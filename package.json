@@ -39,12 +39,21 @@
     "docker:dev:shell": "docker exec -it browserloop-dev /bin/bash",
     "docker:test": "docker run --rm -it browserloop",
     "docker:test:stop": "cd docker && docker compose --profile testing down",
-    "lint": "biome lint src/ tests/",
+    "lint": "biome lint --error-on-warnings --write src/ tests/",
+    "lint:check": "biome lint --error-on-warnings src/ tests/",
     "format": "biome format --write src/ tests/",
     "format:check": "biome format src/ tests/",
     "check": "biome check --write src/",
     "clean": "rm -rf dist",
-    "build:clean": "npm run clean && npm run build"
+    "build:clean": "npm run clean && npm run build",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "biome lint --error-on-warnings --write",
+      "biome format --write"
+    ],
+    "*.{json,md}": ["biome format --write"]
   },
   "keywords": [
     "mcp",
@@ -74,6 +83,8 @@
     "@biomejs/biome": "^1.9.4",
     "@types/assert": "^1.5.11",
     "@types/node": "^22.10.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0",
     "typescript": "^5.7.2"
   }
 }

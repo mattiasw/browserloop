@@ -66,19 +66,13 @@ test('Docker Integration - Application responds to help', async () => {
       helpOutput.includes('BrowserLoop - MCP Screenshot Server'),
       'Should show help message'
     );
-    assert(
-      helpOutput.includes('--help'),
-      'Should show help option'
-    );
+    assert(helpOutput.includes('--help'), 'Should show help option');
 
     // Test that the application responds to --version
     const { stdout: versionOutput } = await execAsync(
       'docker run --rm browserloop:test --version'
     );
-    assert(
-      versionOutput.includes('BrowserLoop v'),
-      'Should show version'
-    );
+    assert(versionOutput.includes('BrowserLoop v'), 'Should show version');
 
     console.log('✅ Application CLI tests passed');
   } catch (error) {
@@ -94,7 +88,10 @@ test('Docker Integration - Application files are correctly built', async () => {
       'docker run --rm --entrypoint=ls browserloop:test -la /app/dist/src'
     );
     assert(lsOutput.includes('index.js'), 'Built index.js should exist');
-    assert(lsOutput.includes('mcp-server.js'), 'Built mcp-server.js should exist');
+    assert(
+      lsOutput.includes('mcp-server.js'),
+      'Built mcp-server.js should exist'
+    );
 
     // Test that package.json exists
     const { stdout: packageOutput } = await execAsync(

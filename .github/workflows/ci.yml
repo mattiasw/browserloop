@@ -286,36 +286,3 @@ jobs:
           name: performance-results
           path: performance-results.txt
           retention-days: 30
-
-      - name: Comment PR with performance results
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-
-            // Check if performance results file exists
-            if (!fs.existsSync('performance-results.txt')) {
-              console.log('Performance results file not found');
-              return;
-            }
-
-            const results = fs.readFileSync('performance-results.txt', 'utf8');
-
-            // Extract key metrics from performance results
-            const metrics = results.match(/Performance Summary[\s\S]*?(?=\n\n|\n$|$)/);
-
-            if (metrics && metrics[0]) {
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `## 📊 Performance Benchmark Results\n\n\`\`\`\n${metrics[0]}\n\`\`\``
-              });
-            } else {
-              github.rest.issues.createComment({
-                issue_number: context.issue.number,
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                body: `## 📊 Performance Benchmark Results\n\nPerformance tests completed but no summary found. Check the uploaded artifacts for detailed results.`
-              });
-            }
