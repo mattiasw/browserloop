@@ -51,7 +51,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm ci --omit=dev --frozen-lockfile && npm cache clean --force
+RUN npm ci --omit=dev --frozen-lockfile --ignore-scripts && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist

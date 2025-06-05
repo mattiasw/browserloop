@@ -53,9 +53,9 @@ describe('Element Screenshots E2E', () => {
       let filePath: string;
 
       if (req.url === '/element-test.html' || req.url === '/') {
-        filePath = join(__dirname, '../fixtures/element-test.html');
+        filePath = join(__dirname, '../../../tests/fixtures/element-test.html');
       } else if (req.url === '/simple-page.html') {
-        filePath = join(__dirname, '../fixtures/simple-page.html');
+        filePath = join(__dirname, '../../../tests/fixtures/simple-page.html');
       } else {
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');

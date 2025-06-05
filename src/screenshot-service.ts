@@ -951,10 +951,12 @@ export class ScreenshotService {
   }
 
   private async findElement(page: Page, selector: string) {
-    const element = await page.locator(selector).first();
+    const element = page.locator(selector).first();
 
-    const count = await element.count();
-    if (count === 0) {
+    // Wait for the element to be attached to the DOM before checking count
+    try {
+      await element.waitFor({ state: 'attached', timeout: 5000 });
+    } catch (error) {
       throw new Error(`Element not found: ${selector}`);
     }
 
