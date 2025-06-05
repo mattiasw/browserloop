@@ -21,7 +21,12 @@ import { z } from 'zod';
 import { ScreenshotService } from './screenshot-service.js';
 import { validateAndSanitize } from './cookie-utils.js';
 import { config } from './config.js';
-import type { ScreenshotServiceConfig, ScreenshotResult, ScreenshotOptions, Cookie } from './types.js';
+import type {
+  ScreenshotServiceConfig,
+  ScreenshotResult,
+  ScreenshotOptions,
+  Cookie,
+} from './types.js';
 
 // Extended screenshot options that include all possible MCP properties
 interface McpScreenshotOptions extends ScreenshotOptions {
@@ -167,9 +172,7 @@ export class McpScreenshotServer {
           // Add cookies if provided
           if (request.cookies) {
             try {
-              const { cookies } = validateAndSanitize(
-                request.cookies
-              );
+              const { cookies } = validateAndSanitize(request.cookies);
               finalOptions.cookies = cookies;
             } catch (cookieError) {
               const cookieErrorMessage =
@@ -191,17 +194,13 @@ export class McpScreenshotServer {
           // Take screenshot using appropriate method
           let result: ScreenshotResult;
           if (request.selector) {
-            result = await this.screenshotService.takeElementScreenshot(
-              finalOptions
-            );
+            result =
+              await this.screenshotService.takeElementScreenshot(finalOptions);
           } else if (request.fullPage) {
-            result = await this.screenshotService.takeFullPageScreenshot(
-              finalOptions
-            );
+            result =
+              await this.screenshotService.takeFullPageScreenshot(finalOptions);
           } else {
-            result = await this.screenshotService.takeScreenshot(
-              finalOptions
-            );
+            result = await this.screenshotService.takeScreenshot(finalOptions);
           }
 
           // Format response for MCP

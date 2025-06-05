@@ -112,11 +112,7 @@ export class Logger {
   /**
    * Log error with categorization
    */
-  error(
-    message: string,
-    error?: BrowserloopError,
-    context?: LogContext
-  ): void {
+  error(message: string, error?: BrowserloopError, context?: LogContext): void {
     this.log('error', message, context, error);
 
     if (error && this.config.enableMetrics) {
@@ -213,21 +209,20 @@ export class Logger {
     try {
       await mkdir(dirname(this.config.logFile), { recursive: true });
 
-      const logLine =
-        `${JSON.stringify({
-          timestamp: new Date(entry.timestamp).toISOString(),
-          level: entry.level,
-          message: entry.message,
-          context: entry.context,
-          error: entry.error
-            ? {
-                category: entry.error.category,
-                severity: entry.error.severity,
-                message: entry.error.originalError.message,
-                isRecoverable: entry.error.isRecoverable,
-              }
-            : undefined,
-        })}\n`;
+      const logLine = `${JSON.stringify({
+        timestamp: new Date(entry.timestamp).toISOString(),
+        level: entry.level,
+        message: entry.message,
+        context: entry.context,
+        error: entry.error
+          ? {
+              category: entry.error.category,
+              severity: entry.error.severity,
+              message: entry.error.originalError.message,
+              isRecoverable: entry.error.isRecoverable,
+            }
+          : undefined,
+      })}\n`;
 
       await appendFile(this.config.logFile, logLine);
     } catch {

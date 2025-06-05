@@ -141,10 +141,7 @@ describe('CookieUtils', () => {
       ];
 
       for (const input of validInputs) {
-        assert.ok(
-          isValidCookieInput(input),
-          'Should accept valid input'
-        );
+        assert.ok(isValidCookieInput(input), 'Should accept valid input');
       }
     });
 

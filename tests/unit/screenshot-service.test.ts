@@ -15,7 +15,15 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test, mock, describe, beforeEach, afterEach, before, after } from 'node:test';
+import {
+  test,
+  mock,
+  describe,
+  beforeEach,
+  afterEach,
+  before,
+  after,
+} from 'node:test';
 import assert from 'node:assert';
 import { ScreenshotService } from '../../src/screenshot-service.js';
 import {

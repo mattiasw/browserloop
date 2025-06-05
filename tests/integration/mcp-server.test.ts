@@ -28,7 +28,8 @@ function getServerInstance(server: McpScreenshotServer): McpServer {
 }
 
 function getScreenshotService(server: McpScreenshotServer): ScreenshotService {
-  return (server as unknown as { screenshotService: ScreenshotService }).screenshotService;
+  return (server as unknown as { screenshotService: ScreenshotService })
+    .screenshotService;
 }
 
 describe('MCP Server Integration', () => {

@@ -227,8 +227,7 @@ export class PerformanceTester {
     const avg = sum / sorted.length;
 
     const variance =
-      sorted.reduce((acc, val) => acc + (val - avg) ** 2, 0) /
-      sorted.length;
+      sorted.reduce((acc, val) => acc + (val - avg) ** 2, 0) / sorted.length;
     const stdDev = Math.sqrt(variance);
 
     return {

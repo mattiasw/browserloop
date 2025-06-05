@@ -15,7 +15,13 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { chromium, type Browser, type Page, type Cookie as PlaywrightCookie, type Locator } from 'playwright';
+import {
+  chromium,
+  type Browser,
+  type Page,
+  type Cookie as PlaywrightCookie,
+  type Locator,
+} from 'playwright';
 import {
   convertImage,
   getMimeType,
@@ -23,7 +29,11 @@ import {
   type ImageConversionOptions,
 } from './image-processor.js';
 import { Logger, categorizeError } from './logger.js';
-import { parseCookies, validateAndSanitize, validateCookieSecurity } from './cookie-utils.js';
+import {
+  parseCookies,
+  validateAndSanitize,
+  validateCookieSecurity,
+} from './cookie-utils.js';
 import type {
   ScreenshotOptions,
   ScreenshotResult,
@@ -185,7 +195,10 @@ export class ScreenshotService {
 
       try {
         await this.navigateToUrl(page, config);
-        const element = await this.findElement(page, options.selector as string);
+        const element = await this.findElement(
+          page,
+          options.selector as string
+        );
         const screenshotBuffer = await this.captureElementScreenshot(
           page,
           element,
@@ -287,7 +300,9 @@ export class ScreenshotService {
     }
   }
 
-  private createScreenshotConfig(options: ScreenshotOptions): InternalScreenshotConfig {
+  private createScreenshotConfig(
+    options: ScreenshotOptions
+  ): InternalScreenshotConfig {
     // Merge default cookies with request cookies
     const mergedCookies = this.mergeCookies(
       this.serviceConfig.authentication?.defaultCookies || [],
@@ -845,7 +860,10 @@ export class ScreenshotService {
   /**
    * Clear sensitive cookie data from memory
    */
-  private clearCookieMemory(cookies: Cookie[], playwrightCookies: PlaywrightCookie[]): void {
+  private clearCookieMemory(
+    cookies: Cookie[],
+    playwrightCookies: PlaywrightCookie[]
+  ): void {
     // Clear cookie values from original array
     if (cookies && Array.isArray(cookies)) {
       for (const cookie of cookies) {
@@ -919,8 +937,16 @@ export class ScreenshotService {
     page: Page
   ): Promise<{ width: number; height: number }> {
     return await page.evaluate(() => ({
-      width: (globalThis as unknown as { document: { documentElement: { scrollWidth: number } } }).document.documentElement.scrollWidth,
-      height: (globalThis as unknown as { document: { documentElement: { scrollHeight: number } } }).document.documentElement.scrollHeight,
+      width: (
+        globalThis as unknown as {
+          document: { documentElement: { scrollWidth: number } };
+        }
+      ).document.documentElement.scrollWidth,
+      height: (
+        globalThis as unknown as {
+          document: { documentElement: { scrollHeight: number } };
+        }
+      ).document.documentElement.scrollHeight,
     }));
   }
 
@@ -1130,11 +1156,19 @@ export class ScreenshotService {
       // Reset page state for reuse
       await page.evaluate(() => {
         // Clear any JavaScript state
-        if ((globalThis as unknown as { localStorage?: Storage }).localStorage) {
-          (globalThis as unknown as { localStorage: Storage }).localStorage.clear();
+        if (
+          (globalThis as unknown as { localStorage?: Storage }).localStorage
+        ) {
+          (
+            globalThis as unknown as { localStorage: Storage }
+          ).localStorage.clear();
         }
-        if ((globalThis as unknown as { sessionStorage?: Storage }).sessionStorage) {
-          (globalThis as unknown as { sessionStorage: Storage }).sessionStorage.clear();
+        if (
+          (globalThis as unknown as { sessionStorage?: Storage }).sessionStorage
+        ) {
+          (
+            globalThis as unknown as { sessionStorage: Storage }
+          ).sessionStorage.clear();
         }
       });
 

@@ -70,7 +70,9 @@ export function getMimeType(format: 'webp' | 'png' | 'jpeg'): string {
 /**
  * Check if format conversion is needed based on Playwright's native support
  */
-export function needsConversion(requestedFormat: 'webp' | 'png' | 'jpeg'): boolean {
+export function needsConversion(
+  requestedFormat: 'webp' | 'png' | 'jpeg'
+): boolean {
   // Playwright natively supports PNG for all browsers
   // JPEG and WebP need conversion for consistent cross-browser support
   return requestedFormat !== 'png';

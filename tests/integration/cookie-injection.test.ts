@@ -381,7 +381,9 @@ describe('Cookie Injection Integration', () => {
             },
           }),
           setViewportSize: () => Promise.resolve(),
-          setDefaultTimeout: () => { /* Mock method - no implementation needed */ },
+          setDefaultTimeout: () => {
+            /* Mock method - no implementation needed */
+          },
           goto: () => Promise.resolve(),
           screenshot: () => {
             // Return a minimal valid PNG buffer (1x1 pixel transparent PNG)
@@ -401,7 +403,9 @@ describe('Cookie Injection Integration', () => {
         };
 
         // Mock the createPage method to return our mock page
-        const serviceWithMock = service as unknown as { createPage: () => Promise<MockPage> };
+        const serviceWithMock = service as unknown as {
+          createPage: () => Promise<MockPage>;
+        };
         const originalCreatePage = serviceWithMock.createPage;
         serviceWithMock.createPage = () => Promise.resolve(mockPage);
 

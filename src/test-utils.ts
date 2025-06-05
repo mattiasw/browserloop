@@ -19,7 +19,11 @@
  * Test utilities for the browserloop project
  */
 
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';

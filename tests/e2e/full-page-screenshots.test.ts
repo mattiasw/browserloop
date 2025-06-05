@@ -105,21 +105,28 @@ describe('Full Page Screenshots E2E', () => {
 
       // Create a test instance to access page dimensions directly
       // Note: Accessing private browser property for testing purposes only
-      const browser = (screenshotService as unknown as { browser: Browser }).browser;
+      const browser = (screenshotService as unknown as { browser: Browser })
+        .browser;
       const page = await browser.newPage();
       await page.setViewportSize({ width: 800, height: 600 });
       await page.goto(url, { waitUntil: 'domcontentloaded' });
 
       // Get actual page dimensions using the same pattern as ScreenshotService
       const actualPageDimensions = await page.evaluate(() => {
-        const globalDoc = (globalThis as unknown as { document: { documentElement: {
-          scrollWidth: number;
-          scrollHeight: number;
-          clientWidth: number;
-          clientHeight: number;
-          offsetWidth: number;
-          offsetHeight: number;
-        } } }).document.documentElement;
+        const globalDoc = (
+          globalThis as unknown as {
+            document: {
+              documentElement: {
+                scrollWidth: number;
+                scrollHeight: number;
+                clientWidth: number;
+                clientHeight: number;
+                offsetWidth: number;
+                offsetHeight: number;
+              };
+            };
+          }
+        ).document.documentElement;
         return {
           scrollWidth: globalDoc.scrollWidth,
           scrollHeight: globalDoc.scrollHeight,

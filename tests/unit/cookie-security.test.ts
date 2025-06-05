@@ -21,7 +21,7 @@ import {
   validateCookieSecurity,
   parseCookies,
   clearCookieMemory,
-  sanitizeCookiesForLogging
+  sanitizeCookiesForLogging,
 } from '../../src/cookie-utils.js';
 import type { Cookie } from '../../src/types.js';
 
