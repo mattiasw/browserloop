@@ -24,6 +24,49 @@
 
 import { mcpServer } from './mcp-server.js';
 
+function showHelp() {
+  console.log(`
+BrowserLoop - MCP Screenshot Server
+
+A Model Context Protocol server for automated web page screenshot capture.
+
+USAGE:
+  browserloop [OPTIONS]
+
+OPTIONS:
+  --help      Show this help message
+  --version   Show version information
+
+DESCRIPTION:
+  BrowserLoop is an MCP server that provides screenshot capabilities to AI agents
+  and development tools. It communicates via stdin/stdout using the MCP protocol.
+
+  The server supports:
+  - High-quality screenshots using Playwright Chromium
+  - Multiple image formats (WebP, PNG, JPEG)
+  - Full page and element-specific capture
+  - Cookie-based authentication
+  - Configurable viewport sizes
+
+EXAMPLES:
+  # Start the MCP server (normal usage)
+  browserloop
+
+  # Show help
+  browserloop --help
+
+  # Show version
+  browserloop --version
+
+For more information, visit: https://github.com/yourusername/browserloop
+`);
+}
+
+function showVersion() {
+  // Show version - we'll use a fixed version since package.json import is complex in ES modules
+  console.log('BrowserLoop v1.0.0');
+}
+
 async function startMcpServer() {
   try {
     await mcpServer.start();
@@ -38,6 +81,18 @@ async function gracefulShutdown() {
   } catch (error) {
     // Silent cleanup
   }
+  process.exit(0);
+}
+
+// Handle command line arguments
+const args = process.argv.slice(2);
+if (args.includes('--help') || args.includes('-h')) {
+  showHelp();
+  process.exit(0);
+}
+
+if (args.includes('--version') || args.includes('-v')) {
+  showVersion();
   process.exit(0);
 }
 

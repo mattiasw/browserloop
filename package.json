@@ -24,7 +24,7 @@
     "test:e2e:element": "node --test dist/tests/e2e/element-screenshots.test.js",
     "test:e2e:format": "node --test dist/tests/e2e/format-support.test.js",
     "test:e2e:built": "node --test dist/tests/e2e/built-server.test.js",
-    "test:e2e:ts": "node --experimental-strip-types --test tests/e2e/docker-integration.test.ts",
+    "test:e2e:docker": "npm run build && node --test dist/tests/e2e/docker-integration.test.js",
     "test:all": "npm run test && npm run test:e2e",
     "test:watch": "tsc --watch &",
     "test:ts": "npm run test:unit:ts && npm run test:integration:ts",

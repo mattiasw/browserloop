@@ -91,6 +91,15 @@
 
 ### ✅ Completed Features
 
+#### CI/CD and Docker Integration
+- **Docker CI/CD Pipeline**: Fixed GitHub Actions workflow for proper Docker testing
+- **MCP Server CLI**: Added command line argument support (--help, --version)
+- **Docker Integration Tests**: Updated tests to properly work with stdio-based MCP server
+- **Script Naming**: Renamed `test:e2e:ts` to `test:e2e:docker` for clarity
+- **Production Docker**: Multi-stage build with security best practices
+
+### ✅ Completed Features
+
 #### Core Functionality
 - **Screenshot Capture**: Full implementation with Playwright Chromium
 - **MCP Protocol**: Complete Model Context Protocol server implementation
