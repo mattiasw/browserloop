@@ -32,6 +32,7 @@ import type {
   HealthCheck,
   BrowserloopError,
   Cookie,
+  InternalScreenshotConfig,
 } from './types.js';
 
 export class ScreenshotService {
@@ -286,14 +287,14 @@ export class ScreenshotService {
     }
   }
 
-  private createScreenshotConfig(options: ScreenshotOptions) {
+  private createScreenshotConfig(options: ScreenshotOptions): InternalScreenshotConfig {
     // Merge default cookies with request cookies
     const mergedCookies = this.mergeCookies(
       this.serviceConfig.authentication?.defaultCookies || [],
       options.cookies
     );
 
-    return {
+    const result: InternalScreenshotConfig = {
       url: options.url,
       width: options.width ?? this.serviceConfig.viewport.defaultWidth,
       height: options.height ?? this.serviceConfig.viewport.defaultHeight,
@@ -303,9 +304,21 @@ export class ScreenshotService {
         options.waitForNetworkIdle ??
         this.serviceConfig.screenshot.defaultWaitForNetworkIdle,
       timeout: options.timeout ?? this.serviceConfig.screenshot.defaultTimeout,
-      userAgent: options.userAgent ?? this.serviceConfig.browser.userAgent,
       cookies: mergedCookies,
     };
+
+    // Add userAgent only if it exists
+    const userAgent = options.userAgent ?? this.serviceConfig.browser.userAgent;
+    if (userAgent) {
+      result.userAgent = userAgent;
+    }
+
+    // Add selector only if it exists
+    if (options.selector) {
+      result.selector = options.selector;
+    }
+
+    return result;
   }
 
   /**

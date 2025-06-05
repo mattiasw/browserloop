@@ -18,8 +18,18 @@
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
 import { McpScreenshotServer } from '../../src/mcp-server.js';
-import { isValidBase64Image } from '../../src/test-utils.js';
+import type { ScreenshotService } from '../../src/screenshot-service.js';
 import { z } from 'zod';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+
+// Helper functions to access private properties for testing
+function getServerInstance(server: McpScreenshotServer): McpServer {
+  return (server as unknown as { server: McpServer }).server;
+}
+
+function getScreenshotService(server: McpScreenshotServer): ScreenshotService {
+  return (server as unknown as { screenshotService: ScreenshotService }).screenshotService;
+}
 
 describe('MCP Server Integration', () => {
   let server: McpScreenshotServer;
@@ -50,7 +60,7 @@ describe('MCP Server Integration', () => {
     it('should use official McpServer class (prevents "No server info found" error)', () => {
       // This test ensures we're using the official McpServer class
       // which properly implements the MCP protocol handshake
-      const serverInstance = (server as any).server;
+      const serverInstance = getServerInstance(server);
       assert.ok(serverInstance, 'Server instance exists');
 
       // Check that the server has the expected MCP methods
@@ -76,7 +86,7 @@ describe('MCP Server Integration', () => {
     it('should register screenshot tool with proper schema', () => {
       // This test verifies that tools are properly registered
       // which is required for MCP clients to discover them
-      const serverInstance = (server as any).server;
+      const serverInstance = getServerInstance(server);
 
       // The McpServer should have internal tool registry
       // We can't directly access it, but we can verify the tool was registered
@@ -174,7 +184,7 @@ describe('MCP Server Integration', () => {
         { fullPage: undefined, expectedMethod: 'takeScreenshot' },
       ];
 
-      testCases.forEach((testCase) => {
+      for (const testCase of testCases) {
         const expectedMethod = testCase.fullPage
           ? 'takeFullPageScreenshot'
           : 'takeScreenshot';
@@ -184,12 +194,12 @@ describe('MCP Server Integration', () => {
           testCase.expectedMethod,
           `fullPage=${testCase.fullPage} should route to ${testCase.expectedMethod}`
         );
-      });
+      }
     });
 
     it('should properly configure screenshot service for full page mode', () => {
       // Test that the screenshot service has both methods available
-      const screenshotService = (server as any).screenshotService;
+      const screenshotService = getScreenshotService(server);
       assert.ok(screenshotService, 'Screenshot service exists');
 
       // Verify both methods exist
@@ -328,8 +338,8 @@ describe('MCP Server Integration', () => {
         },
       ];
 
-      testCases.forEach((testCase) => {
-        let expectedMethod;
+      for (const testCase of testCases) {
+        let expectedMethod: string;
         if (testCase.selector) {
           expectedMethod = 'takeElementScreenshot';
         } else if (testCase.fullPage) {
@@ -343,12 +353,12 @@ describe('MCP Server Integration', () => {
           testCase.expectedMethod,
           `selector=${testCase.selector}, fullPage=${testCase.fullPage} should route to ${testCase.expectedMethod}`
         );
-      });
+      }
     });
 
     it('should properly configure screenshot service for element mode', () => {
       // Test that the screenshot service has the element screenshot method
-      const screenshotService = (server as any).screenshotService;
+      const screenshotService = getScreenshotService(server);
       assert.ok(screenshotService, 'Screenshot service exists');
 
       // Verify element screenshot method exists
@@ -422,7 +432,7 @@ describe('MCP Server Integration', () => {
       // The error occurred because the server wasn't properly implementing
       // the MCP protocol initialization sequence
 
-      const serverInstance = (server as any).server;
+      const serverInstance = getServerInstance(server);
 
       // Verify the server exists and is properly configured
       assert.ok(serverInstance, 'Server instance exists for MCP communication');
@@ -494,7 +504,7 @@ describe('MCP Server Integration', () => {
 
       // We can't easily test the imports directly, but we can test
       // that the server is constructed properly with the MCP SDK
-      const serverInstance = (server as any).server;
+      const serverInstance = getServerInstance(server);
       assert.ok(serverInstance, 'Server uses MCP SDK classes');
 
       // The original error was caused by not using the McpServer class
@@ -546,7 +556,7 @@ describe('MCP Server Integration', () => {
 
       // We can't easily test the actual tool execution without a full MCP setup,
       // but we can verify the response structure by examining the tool handler
-      const serverInstance = (server as any).server;
+      const serverInstance = getServerInstance(server);
       assert.ok(serverInstance, 'Server instance exists');
 
       // Verify the response will have the correct structure
@@ -682,12 +692,12 @@ describe('MCP Server Integration', () => {
     it('should include jpeg in format schema validation', () => {
       const validFormats = ['webp', 'png', 'jpeg'];
 
-      validFormats.forEach((format) => {
+      for (const format of validFormats) {
         assert.ok(
           ['webp', 'png', 'jpeg'].includes(format),
           `${format} should be supported`
         );
-      });
+      }
     });
 
     it('should handle jpeg format parameter routing logic', () => {

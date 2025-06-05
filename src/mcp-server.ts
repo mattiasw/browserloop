@@ -19,13 +19,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { ScreenshotService } from './screenshot-service.js';
-import { CookieUtils } from './cookie-utils.js';
+import { validateAndSanitize } from './cookie-utils.js';
 import { config } from './config.js';
-import type { ScreenshotServiceConfig, ScreenshotResult, ScreenshotOptions } from './types.js';
+import type { ScreenshotServiceConfig, ScreenshotResult, ScreenshotOptions, Cookie } from './types.js';
 
-// Extended screenshot options that include all possible properties
-interface ExtendedScreenshotOptions extends ScreenshotOptions {
+// Extended screenshot options that include all possible MCP properties
+interface McpScreenshotOptions extends ScreenshotOptions {
   fullPage?: boolean;
+  cookies?: Cookie[];
 }
 
 export class McpScreenshotServer {
@@ -155,18 +156,21 @@ export class McpScreenshotServer {
             ? { ...baseOptions, userAgent }
             : baseOptions;
 
+          // Build final options with all possible properties
+          const finalOptions: McpScreenshotOptions = { ...options };
+
           // Add selector if provided
-          let finalOptions = request.selector
-            ? { ...options, selector: request.selector }
-            : options;
+          if (request.selector) {
+            finalOptions.selector = request.selector;
+          }
 
           // Add cookies if provided
           if (request.cookies) {
             try {
-              const { cookies } = CookieUtils.validateAndSanitize(
+              const { cookies } = validateAndSanitize(
                 request.cookies
               );
-              finalOptions = { ...finalOptions, cookies } as any;
+              finalOptions.cookies = cookies;
             } catch (cookieError) {
               const cookieErrorMessage =
                 cookieError instanceof Error
@@ -188,15 +192,15 @@ export class McpScreenshotServer {
           let result: ScreenshotResult;
           if (request.selector) {
             result = await this.screenshotService.takeElementScreenshot(
-              finalOptions as any
+              finalOptions
             );
           } else if (request.fullPage) {
             result = await this.screenshotService.takeFullPageScreenshot(
-              finalOptions as any
+              finalOptions
             );
           } else {
             result = await this.screenshotService.takeScreenshot(
-              finalOptions as any
+              finalOptions
             );
           }
 

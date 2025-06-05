@@ -62,12 +62,12 @@ describe('ConfigManager', () => {
     assert.strictEqual(result.browser.retryCount, 5);
 
     // Clean up environment variables
-    delete process.env.BROWSERLOOP_DEFAULT_WIDTH;
-    delete process.env.BROWSERLOOP_DEFAULT_HEIGHT;
-    delete process.env.BROWSERLOOP_DEFAULT_FORMAT;
-    delete process.env.BROWSERLOOP_DEFAULT_QUALITY;
-    delete process.env.BROWSERLOOP_USER_AGENT;
-    delete process.env.BROWSERLOOP_RETRY_COUNT;
+    process.env.BROWSERLOOP_DEFAULT_WIDTH = undefined;
+    process.env.BROWSERLOOP_DEFAULT_HEIGHT = undefined;
+    process.env.BROWSERLOOP_DEFAULT_FORMAT = undefined;
+    process.env.BROWSERLOOP_DEFAULT_QUALITY = undefined;
+    process.env.BROWSERLOOP_USER_AGENT = undefined;
+    process.env.BROWSERLOOP_RETRY_COUNT = undefined;
   });
 
   test('should handle invalid environment variables gracefully', () => {
@@ -85,9 +85,9 @@ describe('ConfigManager', () => {
     assert.strictEqual(result.browser.retryCount, 3); // fallback
 
     // Clean up
-    delete process.env.BROWSERLOOP_DEFAULT_WIDTH;
-    delete process.env.BROWSERLOOP_DEFAULT_FORMAT;
-    delete process.env.BROWSERLOOP_RETRY_COUNT;
+    process.env.BROWSERLOOP_DEFAULT_WIDTH = undefined;
+    process.env.BROWSERLOOP_DEFAULT_FORMAT = undefined;
+    process.env.BROWSERLOOP_RETRY_COUNT = undefined;
   });
 
   test('should provide convenience getters', () => {

@@ -1,401 +1,209 @@
-# BrowserLoop - MCP Screenshot Server
-
-## What This Is
-An **MCP (Model Context Protocol) server** that provides screenshot capabilities for AI agents using Playwright. Allows AI tools to capture and analyze web page screenshots, especially useful for verifying UI changes on localhost development servers.
-
-**Current Status**: 🔧 **NEEDS LINTING FIXES** - Core functionality is production ready but requires code quality improvements
-
-## Key Use Cases
-- AI agent verification of localhost development servers
-- Automated UI testing and validation
-- Screenshot capture for web development workflows
-- Integration with AI development tools (Cursor, Claude Desktop, etc.)
-
-## Technical Stack
-- **Node.js 20+ with TypeScript**
-- **Playwright** for browser automation
-- **Sharp** for image processing (PNG, JPEG, WebP)
-- **Docker** for containerized deployment
-- **MCP Protocol** for AI tool integration
-
-## What's Complete ✅
-
-### Core Features
-- ✅ **MCP Server**: Full protocol compliance with stdio transport
-- ✅ **Screenshot Service**: Playwright-based with page pooling and browser session reuse
-- ✅ **Multiple Formats**: PNG, JPEG, WebP with quality controls
-- ✅ **Advanced Features**: Full page, viewport, element-specific screenshots
-- ✅ **Docker**: Optimized production container (1.01GB, 58% size reduction)
-
-### Performance & Reliability
-- ✅ **Performance**: 13.70 concurrent shots/sec (2x improvement)
-- ✅ **Caching**: LRU cache with TTL for repeated requests
-- ✅ **Error Handling**: Comprehensive logging with categorization and recovery
-- ✅ **Browser Management**: Session reuse, crash recovery, resource cleanup
-
-### Testing & CI/CD
-- ✅ **143 Tests Passing**: Unit, integration, E2E, and performance tests
-- ✅ **CI/CD Pipeline**: GitHub Actions with multi-version testing, security scanning
-- ✅ **Multi-platform**: amd64 and arm64 Docker builds
-- ✅ **Quality Gates**: Linting, formatting, security audits
-
-### Documentation
-- ✅ **Complete API Docs**: Parameter reference, examples, troubleshooting
-- ✅ **Setup Guides**: README with MCP configuration for AI tools
-- ✅ **Architecture Docs**: Technical decisions and implementation details
-
-## What Needs Fixing 🔧
-
-### Code Quality Issues (Linting Errors)
-- 🔧 **Type Safety**: 18 instances of `any` type usage that need proper typing
-- 🔧 **Static Class**: CookieUtils class should be converted to exported functions
-- 🔧 **Performance**: 2 instances of `forEach` that should use `for...of`
-- 🔧 **Type Casting**: 4 instances of unsafe `as any` type assertions
-
-**Impact**: These are code quality issues that don't affect functionality but should be fixed for maintainability and type safety.
-
-**Linting Command**: `npm run lint` currently fails with 36 errors and 40 warnings
-
-## What's Next (Optional Enhancements)
-
-### Authentication Support ✅
-**Complete**: Cookie-based authentication for login-protected pages
-
-- [x] Cookie parameter support in MCP tool
-- [x] Cookie validation and parsing utilities with security measures
-- [x] Zod schema validation for cookie arrays and JSON strings
-- [x] Cookie sanitization (never logs sensitive values)
-- [x] Comprehensive testing (50 new cookie/auth tests, 143 total tests passing)
-- [x] Browser context cookie injection
-- [x] Proper domain and path handling with auto-derivation from URL
-- [x] Timeout handling for cookie operations with network timeout
-- [x] Error categorization for cookie-specific failures
-- [x] Integration testing with cookie injection scenarios
-- [x] **Security & Privacy Implementation**
-  - [x] Memory cleanup: Cookie values automatically cleared after use
-  - [x] Sanitized logging: Cookie values never appear in logs
-  - [x] Input validation: Prevents cookie injection attacks
-  - [x] Domain validation: Prevents cross-domain cookie attacks
-  - [x] Size limits: Prevents DoS via large cookie payloads
-- [x] **Documentation & Examples**
-  - [x] Comprehensive Cookie Authentication Guide (docs/COOKIE_AUTHENTICATION.md)
-  - [x] Step-by-step extraction guides for popular sites
-  - [x] Browser extension recommendations
-  - [x] Security best practices and troubleshooting
-  - [x] API documentation with detailed examples
-- [x] **Error Handling & User Experience**
-  - [x] Helpful error messages for invalid cookies
-  - [x] Authentication failure detection and guidance
-  - [x] Cookie expiration handling
-  - [x] User-friendly validation error messages
-  - [x] Parameter validation with clear feedback
-- [x] **Default Cookies Configuration** ⭐ NEW
-  - [x] BROWSERLOOP_DEFAULT_COOKIES environment variable support
-  - [x] JSON string parsing for MCP configuration
-  - [x] Cookie merging: Request cookies override defaults
-  - [x] Persistent authentication across all requests
-  - [x] Secure environment-based storage
-  - [x] Comprehensive testing and documentation
-
-### Future Enhancements (Not Started)
-- Multiple browser engines (Firefox, Safari)
-- Mobile device emulation
-- Video recording capabilities
-- Batch screenshot operations
-- Enterprise features (auth, rate limiting)
-
-## Quick Start
-
-### Prerequisites
-- Node.js 20+
-- Docker with compose support
-
-### Installation
-```bash
-git clone <repo>
-cd browserloop
-npm install
-npm run build
-```
-
-### MCP Configuration
-Add to your AI tool's MCP settings:
-```json
-{
-  "mcpServers": {
-    "browserloop": {
-      "command": "node",
-      "args": ["/path/to/browserloop/dist/src/index.js"]
-    }
-  }
-}
-```
-
-### Usage
-```bash
-# Start MCP server
-npm start
-
-# Run tests
-npm test
-
-# Docker development
-npm run docker:dev
-```
-
-### Quick Start Commands
-```bash
-# Install dependencies
-npm install
-
-# Install Playwright browsers (required for screenshots)
-npx playwright install chromium
-# OR use the convenient script:
-npm run install-browsers
-
-# Build project
-npm run build
-
-# Start MCP server
-npm start
-
-# Run all tests
-npm test
-
-# Docker development
-npm run docker:dev
-```
-
-## Project Structure
-
-```
-browserloop/
-├── src/
-│   ├── index.ts (MCP server entry point) ✅
-│   ├── mcp-server.ts (MCP server implementation) ✅
-│   ├── screenshot-service.ts (Core Playwright Service) ✅
-│   ├── config.ts (Configuration management) ✅
-│   ├── types.ts (screenshot interfaces) ✅
-│   └── test-utils.ts (testing utilities) ✅
-├── tests/
-│   ├── unit/ (test utilities + screenshot service tests) ✅
-│   ├── integration/ (MCP server tests with response format verification) ✅
-│   ├── e2e/ (Docker integration tests) ✅
-│   └── fixtures/ (HTML test pages) ✅
-├── docs/
-│   └── API.md (Complete API reference documentation) ✅
-├── docker/
-│   ├── Dockerfile (production) ✅
-│   └── docker-compose.yml (development) ✅
-├── README.md (User-friendly setup and usage guide) ✅
-├── PROJECT_CONTEXT.md (Architecture and technical decisions) ✅
-└── config files (package.json, tsconfig.json, biome.json) ✅
-```
-
-**Dependencies Installed**:
-- Production: `@modelcontextprotocol/sdk@^1.0.6`, `playwright@^1.48.2`, `sharp@^0.34.2`, `zod@^3.25.28`
-- Development: TypeScript, Biome, Node.js types
-
-**Docker Environment** ✅:
-- **Optimized Production Image**: Multi-stage Alpine Linux build (1.01GB, reduced from 2.39GB - 58% savings)
-- System Chromium integration (no Playwright browser downloads)
-- Development: Live code mounting, persistent browser cache
-- Security: Non-root playwright user with proper permissions
-- Health checks and container monitoring
-
-**Core Playwright Service** ✅:
-- **ScreenshotService class with advanced optimizations**
-- **Page pooling system** with configurable pool size (default: 3 pages)
-- **Browser session reuse** for improved performance (2x concurrent improvement)
-- Support for different viewport sizes (configurable width/height)
-- PNG, JPEG, and WebP format support with Sharp-based conversion
-- Configurable page load strategies (networkidle/domcontentloaded)
-- **Comprehensive error handling and logging** with categorization
-- **Enhanced retry logic** with exponential backoff and browser crash recovery
-- Full page and viewport screenshot capabilities
-- Element-specific screenshot capture with CSS selectors
-- **Intelligent browser lifecycle management** with automatic cleanup
-- Advanced timeout handling for different operations
-- **Cookie injection for authentication** with domain auto-derivation and timeout handling
-
-**Performance & Caching** ✅:
-- **ScreenshotCache class** with LRU eviction and configurable TTL
-- **Performance testing suite** with benchmarking capabilities
-- **Concurrent operation support** (13.70 shots/sec vs 6.64 sequential)
-- **Memory efficiency optimization** (negative memory growth in tests)
-- **Format performance optimization** (JPEG: 15.00 shots/sec, PNG: 13.95, WebP: 10.03)
-- Cache hit ratio tracking and statistics
-- Automatic expired entry cleanup
-
-**Error Handling & Reliability** ✅:
-- **Comprehensive logging system** with structured error categorization
-- **Error severity classification** (low, medium, high, critical)
-- **Recovery strategies** for different error types
-- **Health monitoring** with detailed metrics collection
-- **Browser crash recovery** with automatic reinitialization
-- **Network and Docker error handling** with appropriate retry logic
-- **Silent operation** (no console output to maintain MCP protocol compliance)
-
-**Image Processing Service** ✅:
-- Sharp-based format conversion for JPEG and WebP
-- Quality-first capture strategy (PNG → conversion)
-- Configurable quality settings for lossy formats
-- Proper MIME type generation for all formats
-- Optimal Playwright format selection
-
-**MCP Server Implementation** ✅:
-- Complete MCP protocol server setup with stdio transport
-- Screenshot tool registered with proper schema and Zod validation
-- Support for PNG, JPEG, and WebP format parameters
-- Correct MCP response format with image content type and isError field
-- Base64 image encoding with proper MIME types
-- Parameter validation with reasonable defaults and limits
-- Clean JSON-RPC communication (no console output interference)
-
-**Testing Infrastructure** ✅:
-- **143 tests passing** across all suites
-- **76 unit tests** (including Logger, ImageProcessor, ScreenshotService, Cookie Utils, and Cookie Security tests)
-- **46 integration tests** (including JPEG format support, error handling, cookie injection, and cookie security)
-- **21 E2E tests** (format support, built server, full page, element screenshots, authentication scenarios)
-- **6 performance benchmark tests** (sequential, concurrent, format comparison)
-- Test fixtures with beautiful HTML pages
-- Screenshot validation utilities
-- Response format compliance testing
-- **Comprehensive performance measurement** and memory efficiency testing
-- **Cookie injection and security testing** with 24 comprehensive security tests
-
-### Configuration Cleanup ✅
-
-**Removed Unnecessary Files**:
-- `install-global.sh` (global installation approach discontinued)
-- `mcp-config.json` and `mcp-config-npm.json` (example configs removed)
-- `CURSOR_CONFIG.md` (content moved to README.md)
-
-**Simplified Configuration**:
-- README.md now contains essential MCP setup instructions
-- Removed NODE_ENV requirement (not used in code)
-- Corrected package.json bin path to `dist/src/index.js`
-
-**Comprehensive Documentation** ✅:
-- Complete API reference with detailed parameter documentation (`docs/API.md`)
-- 7 practical usage examples covering common scenarios
-- Detailed MCP configuration instructions with environment variables
-- Troubleshooting guide with common errors and solutions
-- Performance optimization guidelines and format selection advice
-- Response processing examples (base64 handling, metadata parsing)
-- Development integration examples for CI/CD and testing
-- User-friendly README.md with quick start guide
-- Cross-referenced documentation with clear navigation
-
-### Current Status: COMPLETE & PRODUCTION READY ✅
-
-The MCP screenshot server is now **complete** and ready for production use with comprehensive CI/CD automation:
-
-1. **MCP Protocol Compliance**: Fully compliant with MCP specification 2025-03-26
-2. **Response Format**: Correct image content type with metadata
-3. **Advanced Error Handling**: Comprehensive logging, categorization, and recovery strategies
-4. **Clean Communication**: No console output interference (MCP stdio compatibility)
-5. **Extensive Testing**: **143 tests passing** across all suites with performance benchmarks
-6. **Multiple Format Support**: PNG, JPEG, and WebP with quality controls and performance optimization
-7. **Complete Documentation**: API reference, usage examples, configuration guides, and troubleshooting
-8. **Docker Optimization**: **58% image size reduction** (2.39GB → 1.01GB)
-9. **Performance Optimization**: **2x concurrent improvement** (6.64 → 13.70 shots/sec)
-10. **Advanced Features**: Page pooling, caching, browser session reuse, comprehensive monitoring
-11. **CI/CD Pipeline**: Automated testing, security scanning, multi-platform builds, and release management
-12. **Cookie Authentication**: Secure cookie-based authentication with comprehensive security measures
-
-### CI/CD Pipeline ✅
-
-**GitHub Actions Workflow** (`.github/workflows/ci.yml`):
-- **Multi-version testing**: Node.js 20, 22, and 23 compatibility
-- **Quality gates**: Linting, formatting, and security scanning
-- **Docker integration**: Container builds and E2E testing
-- **Performance monitoring**: Automated benchmarking on pull requests
-- **Security scanning**: npm audit and GitHub CodeQL analysis
-- **Multi-architecture builds**: amd64 and arm64 Docker images
-- **Release automation**: Automated GitHub releases with build artifacts
-- **Build status badge**: Visible pipeline status in README
-
-**Pipeline Features**:
-- Cross-platform compatibility testing
-- Comprehensive test coverage validation
-- Docker image optimization and caching
-- Performance regression detection
-- Automated security vulnerability scanning
-- Clean artifact generation for releases
-
-### Performance Metrics ✅
-
-| Feature | Measurement | Achievement |
-|---------|-------------|-------------|
-| **Docker Image Size** | 1.01GB (was 2.39GB) | **58% reduction** |
-| **Sequential Performance** | 6.64 shots/sec | 33% improvement |
-| **Concurrent Performance** | 13.70 shots/sec | **170% improvement** |
-| **Memory Efficiency** | Negative growth (-1.58MB) | **Excellent** |
-| **Format Performance** | JPEG: 15.00, PNG: 13.95, WebP: 10.03 shots/sec | **Optimized** |
-| **Test Coverage** | 143 tests passing | **Comprehensive** |
-
-## Development Environment Setup
-
-### Prerequisites
-- Node.js 20+
-- Docker with compose support
-- Git
-
-### Quick Start Commands
-```bash
-# Install dependencies
-npm install
-
-# Install Playwright browsers (required for screenshots)
-npx playwright install chromium
-# OR use the convenient script:
-npm run install-browsers
-
-# Build project
-npm run build
-
-# Start MCP server
-npm start
-
-# Run all tests
-npm test
-
-# Docker development
-npm run docker:dev
-```
-
-## Current Status
-
-**All linting errors have been successfully resolved!** 🎉
-
-The codebase now passes all linting checks with zero errors and zero warnings. Key improvements made:
-
-### Type Safety Improvements
-- **Replaced all `any` types** with proper TypeScript interfaces and types
-- **Created comprehensive type definitions** in `src/types.ts`:
-  - `LogContext` interface for structured logging (replaces `Record<string, any>`)
-  - `TimeoutConfig`, `ScreenshotOptionsWithCookies`, `MockTestObjects` interfaces
-  - Proper cookie and browser-related type definitions
-
-### Code Quality Fixes
-- **Removed static-only classes**: Converted `CookieUtils` class to exported functions
-- **Eliminated `delete` operators**: Replaced with proper undefined assignments
-- **Replaced `forEach` loops**: Converted all to `for...of` loops for better performance
-- **Fixed import/export issues**: Added proper type imports and cleaned up module structure
-
-### File-by-File Improvements
-- **`src/logger.ts`**: Updated all method signatures to use `LogContext` instead of `any`
-- **`src/cookie-utils.ts`**: Converted from static class to exported functions
-- **`src/config.ts`**: Fixed syntax errors and removed `delete` operators
-- **`src/mcp-server.ts`**: Replaced type casting with proper interfaces
-- **`src/screenshot-service.ts`**: Fixed all `any` types with proper Playwright types
-- **All test files**: Added proper interfaces and replaced `any` types with specific mocks
-
-### Security & Maintainability
-- **Enhanced type safety** prevents runtime errors and improves IDE support
-- **Improved code readability** with explicit type definitions
-- **Better error handling** with properly typed error objects
-- **Maintained backward compatibility** while improving internal structure
-
-The codebase is now in excellent condition with modern TypeScript best practices applied throughout.
+# BrowserLoop Project Context
+
+## Project Overview
+
+**BrowserLoop** is a Model Context Protocol (MCP) server for automated web page screenshot capture using Playwright. It enables AI agents and development tools to programmatically capture screenshots for UI verification, testing, and analysis tasks.
+
+### Key Characteristics
+- **License**: GNU Affero General Public License v3.0 or later (AGPL-3.0+)
+- **Language**: TypeScript with Node.js 20+
+- **Main Purpose**: MCP server for AI-driven screenshot automation
+- **Target Users**: AI development tools, automated testing, UI verification
+
+### Core Functionality
+- High-quality screenshot capture using Playwright Chromium
+- Support for viewport-specific and full-page screenshots
+- Element-specific capture using CSS selectors
+- Cookie-based authentication for protected pages
+- Multiple image formats (WebP, PNG, JPEG) with quality control
+- Comprehensive error handling and retry mechanisms
+- Docker containerization for consistent environments
+
+## Architecture Overview
+
+### Core Components
+
+1. **MCP Server (`mcp-server.ts`)** - Main Model Context Protocol server implementation
+   - Handles tool registration and request routing
+   - Validates and sanitizes input parameters
+   - Manages the screenshot tool interface
+
+2. **Screenshot Service (`screenshot-service.ts`)** - Core screenshot capture functionality
+   - Browser automation using Playwright
+   - Cookie injection for authenticated sessions
+   - Multiple capture modes (viewport, full-page, element-specific)
+   - Error handling and retry logic
+
+3. **Configuration System (`config.ts`)** - Environment-based configuration management
+   - Default values for all screenshot parameters
+   - Validation using Zod schemas
+   - Support for environment variable overrides
+
+4. **Type System (`types.ts`)** - Comprehensive TypeScript definitions
+   - All interfaces and types for the entire system
+   - Error categorization and logging structures
+   - Configuration and request/response types
+
+5. **Cookie System (`cookie-utils.ts`)** - Authentication cookie handling
+   - Cookie parsing and validation
+   - Support for JSON files and direct JSON strings
+   - Security-focused sanitization (no cookie values in logs)
+
+6. **Logging System (`logger.ts`)** - Structured logging and metrics
+   - Error categorization and tracking
+   - Performance metrics collection
+   - Debug and production logging modes
+
+## Important Files and Their Roles
+
+### Entry Points
+- **`src/index.ts`** - Main application entry point with graceful shutdown handling
+- **`package.json`** - Dependencies, scripts, and project metadata
+
+### Core Implementation
+- **`src/mcp-server.ts`** (293 lines) - MCP protocol implementation and tool registration
+- **`src/screenshot-service.ts`** (1263 lines) - Main screenshot capture service with browser automation
+- **`src/config.ts`** (294 lines) - Configuration management with environment variable support
+- **`src/types.ts`** (406 lines) - Complete type definitions for the entire system
+
+### Supporting Modules
+- **`src/cookie-utils.ts`** (210 lines) - Cookie parsing, validation, and security utilities
+- **`src/logger.ts`** (402 lines) - Logging system with error categorization and metrics
+- **`src/cache.ts`** (247 lines) - Caching system for performance optimization
+- **`src/image-processor.ts`** (89 lines) - Image processing utilities using Sharp
+- **`src/performance.ts`** (286 lines) - Performance monitoring and optimization
+- **`src/test-utils.ts`** (208 lines) - Testing utilities and mock objects
+
+### Configuration & Documentation
+- **`docker/Dockerfile`** - Multi-stage Docker build for production deployment
+- **`biome.json`** - Linting and formatting configuration
+- **`tsconfig.json`** - TypeScript compilation configuration
+- **`docs/`** - Complete API documentation and usage guides
+
+### Testing Infrastructure
+- **`tests/unit/`** - Unit tests for all core modules
+- **`tests/integration/`** - Integration tests for MCP server functionality
+- **`tests/e2e/`** - End-to-end tests including Docker integration
+- **`tests/performance/`** - Performance benchmarking tests
+- **`tests/fixtures/`** - Test HTML pages and mock data
+
+## Current Implementation Status
+
+### ✅ Completed Features
+
+#### Core Functionality
+- **Screenshot Capture**: Full implementation with Playwright Chromium
+- **MCP Protocol**: Complete Model Context Protocol server implementation
+- **Multiple Formats**: WebP, PNG, JPEG support with quality control
+- **Viewport Control**: Configurable width/height (200-4000px)
+- **Full Page Screenshots**: Complete page capture beyond viewport
+- **Element Screenshots**: CSS selector-based element capture
+
+#### Authentication & Security
+- **Cookie Authentication**: Complete cookie injection system
+- **Security Hardening**: Cookie sanitization, no sensitive data in logs
+- **Input Validation**: Comprehensive parameter validation with Zod
+- **Error Handling**: Categorized error system with recovery strategies
+
+#### Configuration & Environment
+- **Environment Variables**: All parameters configurable via environment
+- **Default Cookie Support**: BROWSERLOOP_DEFAULT_COOKIES with file/JSON support
+- **Retry Configuration**: Configurable retry count and delay
+- **Timeout Management**: Multiple timeout configurations
+
+#### Docker & Deployment
+- **Production Docker**: Multi-stage build with security best practices
+- **Non-root Execution**: Secure container execution
+- **System Chromium**: Uses system-installed Chromium for efficiency
+- **Health Checks**: Container health monitoring
+
+#### Testing & Quality
+- **Comprehensive Testing**: Unit, integration, e2e, and performance tests
+- **Node.js Test Runner**: Using built-in test framework
+- **CI/CD Ready**: All tests designed for automated pipelines
+- **Code Quality**: Biome linting and formatting
+
+### Key Technical Achievements
+
+#### Advanced Cookie System
+- **Modern Cookie Support**: Handles RFC 6265 compliant cookies including __Host- and __Secure- prefixes
+- **Browser Extension Compatibility**: Direct import of cookie files from browser extensions
+- **Domain Validation**: Correct parent domain matching (e.g., .example.com on subdomain.example.com)
+- **Cookie Merging**: Request cookies override default cookies with same name
+- **Session Cookie Support**: Handles both persistent and session cookies
+
+#### Error Handling & Reliability
+- **Error Categorization**: 8 error categories (network, timeout, browser_crash, etc.)
+- **Severity Levels**: 4 severity levels (low, medium, high, critical)
+- **Recovery Strategies**: Automatic retry with exponential backoff
+- **Metrics Collection**: Error tracking and performance monitoring
+
+#### Performance Optimization
+- **Browser Session Reuse**: Efficient browser instance management
+- **Caching System**: Intelligent caching for repeated requests
+- **Memory Management**: Proper cleanup and garbage collection
+- **Timeout Optimization**: Multiple timeout configurations for different operations
+
+## Development Workflow
+
+### Available Scripts
+- **Build**: `npm run build` - TypeScript compilation
+- **Development**: `npm run dev` - Watch mode compilation
+- **Testing**: `npm run test` - Full test suite (unit + integration + e2e)
+- **Docker**: `npm run docker:build` / `npm run docker:run` - Container operations
+- **Linting**: `npm run lint` / `npm run format` - Code quality
+
+### Testing Strategy
+- **Unit Tests**: Individual module testing with mocks
+- **Integration Tests**: MCP server functionality testing
+- **E2E Tests**: Real browser automation testing
+- **Performance Tests**: Benchmarking and optimization verification
+
+### Development Guidelines
+- **TypeScript First**: Strict typing throughout the codebase
+- **Error Handling**: Comprehensive error categorization and recovery
+- **Security Focus**: No sensitive data in logs, proper input validation
+- **Docker Ready**: All features tested in containerized environment
+
+## Next Steps & Maintenance
+
+The project is in a **production-ready state** with all core features implemented and thoroughly tested. Key areas for potential enhancement:
+
+1. **Performance Monitoring**: Enhanced metrics collection and alerting
+2. **Additional Formats**: Support for additional image formats if needed
+3. **Advanced Selectors**: XPath or more complex selector support
+4. **Batch Operations**: Multiple screenshots in single request
+5. **Storage Backends**: Alternative storage options beyond base64 responses
+
+## Usage in AI Development
+
+BrowserLoop is designed to integrate seamlessly with AI development tools that support MCP:
+
+1. **Cursor IDE**: Add to `~/.cursor/mcp.json` configuration
+2. **Claude Desktop**: Configure in MCP settings
+3. **Custom AI Tools**: Use via MCP protocol directly
+
+The tool enables AI agents to:
+- Verify UI implementations against designs
+- Capture screenshots for debugging
+- Test responsive design across viewport sizes
+- Document visual changes during development
+- Automate visual regression testing
+
+## Technical Dependencies
+
+### Runtime Dependencies
+- **@modelcontextprotocol/sdk**: MCP protocol implementation
+- **playwright**: Browser automation (Chromium)
+- **sharp**: Image processing and optimization
+- **zod**: Runtime type validation
+
+### Development Dependencies
+- **@biomejs/biome**: Fast linting and formatting
+- **typescript**: Type system and compilation
+- **@types/node**: Node.js type definitions
+
+### System Requirements
+- **Node.js 20+**: Runtime environment
+- **Docker**: For containerized deployment
+- **Chromium**: Browser engine (installed via Playwright or system package)

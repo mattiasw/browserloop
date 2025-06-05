@@ -64,6 +64,33 @@ export interface ScreenshotOptions {
 }
 
 /**
+ * Internal screenshot configuration with all resolved properties
+ * This is used internally by ScreenshotService after merging defaults
+ */
+export interface InternalScreenshotConfig {
+  /** URL to screenshot */
+  url: string;
+  /** Viewport width (resolved from defaults) */
+  width: number;
+  /** Viewport height (resolved from defaults) */
+  height: number;
+  /** Image format (resolved from defaults) */
+  format: 'webp' | 'png' | 'jpeg';
+  /** Image quality (resolved from defaults) */
+  quality: number;
+  /** Wait for network idle before screenshot (resolved from defaults) */
+  waitForNetworkIdle: boolean;
+  /** Timeout in milliseconds (resolved from defaults) */
+  timeout: number;
+  /** User agent string (resolved from defaults) */
+  userAgent?: string;
+  /** CSS selector for element screenshot (optional) */
+  selector?: string;
+  /** Cookies for authentication (merged and resolved) */
+  cookies?: Cookie[] | string | undefined;
+}
+
+/**
  * Screenshot capture configuration with retry options
  */
 export interface ScreenshotServiceConfig {

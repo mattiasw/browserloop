@@ -17,7 +17,7 @@
 
 import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
-import { createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -27,12 +27,13 @@ import {
   isValidBase64Image,
 } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
+import type { Browser } from 'playwright';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 describe('Full Page Screenshots E2E', () => {
-  let server: any;
+  let server: Server;
   let screenshotService: ScreenshotService;
   const port = 3001;
   const baseUrl = `http://localhost:${port}`;
@@ -103,20 +104,31 @@ describe('Full Page Screenshots E2E', () => {
       };
 
       // Create a test instance to access page dimensions directly
-      const browser = await (screenshotService as any).browser;
+      // Note: Accessing private browser property for testing purposes only
+      const browser = (screenshotService as unknown as { browser: Browser }).browser;
       const page = await browser.newPage();
       await page.setViewportSize({ width: 800, height: 600 });
       await page.goto(url, { waitUntil: 'domcontentloaded' });
 
-      // Get actual page dimensions
-      const actualPageDimensions = await page.evaluate(() => ({
-        scrollWidth: (globalThis as any).document.documentElement.scrollWidth,
-        scrollHeight: (globalThis as any).document.documentElement.scrollHeight,
-        clientWidth: (globalThis as any).document.documentElement.clientWidth,
-        clientHeight: (globalThis as any).document.documentElement.clientHeight,
-        offsetWidth: (globalThis as any).document.documentElement.offsetWidth,
-        offsetHeight: (globalThis as any).document.documentElement.offsetHeight,
-      }));
+      // Get actual page dimensions using the same pattern as ScreenshotService
+      const actualPageDimensions = await page.evaluate(() => {
+        const globalDoc = (globalThis as unknown as { document: { documentElement: {
+          scrollWidth: number;
+          scrollHeight: number;
+          clientWidth: number;
+          clientHeight: number;
+          offsetWidth: number;
+          offsetHeight: number;
+        } } }).document.documentElement;
+        return {
+          scrollWidth: globalDoc.scrollWidth,
+          scrollHeight: globalDoc.scrollHeight,
+          clientWidth: globalDoc.clientWidth,
+          clientHeight: globalDoc.clientHeight,
+          offsetWidth: globalDoc.offsetWidth,
+          offsetHeight: globalDoc.offsetHeight,
+        };
+      });
 
       console.log('Actual page dimensions:', actualPageDimensions);
 
