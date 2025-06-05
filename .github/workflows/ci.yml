@@ -162,7 +162,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          outputs: type=docker,dest=/tmp/browserloop.tar
+          outputs: type=oci,dest=/tmp/browserloop.tar
 
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
@@ -238,7 +238,9 @@ jobs:
           path: /tmp
 
       - name: Load Docker image
-        run: docker load -i /tmp/browserloop.tar
+        run: |
+          # Load OCI image and convert to Docker format
+          docker buildx imagetools create --tag browserloop:latest /tmp/browserloop.tar
 
       - name: Create release assets
         run: |
