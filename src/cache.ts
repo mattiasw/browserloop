@@ -19,7 +19,7 @@
  * Simple caching strategies for screenshot results
  */
 
-import type { ScreenshotResult, ScreenshotOptions } from './types.js';
+import type { ScreenshotOptions, ScreenshotResult } from './types.js';
 
 export interface CacheEntry {
   /** Cached screenshot result */

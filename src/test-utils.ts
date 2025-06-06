@@ -19,13 +19,13 @@
  * Test utilities for the browserloop project
  */
 
+import { readFile } from 'node:fs/promises';
 import {
-  createServer,
   type IncomingMessage,
   type ServerResponse,
+  createServer,
 } from 'node:http';
-import { readFile } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ScreenshotServiceConfig } from './types.js';
 

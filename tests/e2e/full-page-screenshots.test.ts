@@ -15,19 +15,19 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
-import { createServer, type Server } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { join, dirname } from 'node:path';
+import { type Server, createServer } from 'node:http';
+import { dirname, join } from 'node:path';
+import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import type { Browser } from 'playwright';
 import { ScreenshotService } from '../../src/screenshot-service.js';
 import {
   createTestScreenshotServiceConfig,
   isValidBase64Image,
 } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
-import type { Browser } from 'playwright';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

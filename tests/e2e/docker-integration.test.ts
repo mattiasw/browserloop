@@ -15,9 +15,9 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test } from 'node:test';
 import assert from 'node:assert';
 import { exec, spawn } from 'node:child_process';
+import { test } from 'node:test';
 import { promisify } from 'node:util';
 
 const execAsync = promisify(exec);
@@ -63,7 +63,7 @@ test('Docker Integration - Application responds to help', async () => {
       'docker run --rm browserloop:test --help'
     );
     assert(
-      helpOutput.includes('BrowserLoop - MCP Screenshot Server'),
+      /BrowserLoop v\d+\.\d+\.\d+ - MCP Screenshot Server/.test(helpOutput),
       'Should show help message'
     );
     assert(helpOutput.includes('--help'), 'Should show help option');

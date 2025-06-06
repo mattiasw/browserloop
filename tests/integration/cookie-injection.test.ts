@@ -16,12 +16,12 @@
  */
 
 import { strict as assert } from 'node:assert';
-import { test, describe } from 'node:test';
+import { describe, test } from 'node:test';
 import { ScreenshotService } from '../../src/screenshot-service.js';
 import {
-  createTestServer,
   createTestScreenshotOptions,
   createTestScreenshotServiceConfig,
+  createTestServer,
 } from '../../src/test-utils.js';
 import type { Cookie } from '../../src/types.js';
 

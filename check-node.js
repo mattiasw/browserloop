@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const nodeVersion = process.version;
-const major = parseInt(nodeVersion.slice(1).split('.')[0]);
-const minor = parseInt(nodeVersion.slice(1).split('.')[1]);
+const major = Number.parseInt(nodeVersion.slice(1).split('.')[0]);
+const minor = Number.parseInt(nodeVersion.slice(1).split('.')[1]);
 
 console.log(`Node.js version: ${nodeVersion}`);
 

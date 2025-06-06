@@ -15,8 +15,8 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test } from 'node:test';
 import * as assert from 'node:assert';
+import { test } from 'node:test';
 import { ScreenshotService } from '../../src/screenshot-service.js';
 import { createTestScreenshotServiceConfig } from '../../src/test-utils.js';
 import type { Cookie } from '../../src/types.js';

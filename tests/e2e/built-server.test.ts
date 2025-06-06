@@ -15,11 +15,11 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { describe, it } from 'node:test';
 import assert from 'node:assert';
 import { spawn } from 'node:child_process';
-import { join } from 'node:path';
 import { stat } from 'node:fs/promises';
+import { join } from 'node:path';
+import { describe, it } from 'node:test';
 
 describe('Built Server E2E', () => {
   describe('MCP Server Startup', () => {

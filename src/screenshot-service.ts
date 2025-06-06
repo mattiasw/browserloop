@@ -16,35 +16,35 @@
  */
 
 import {
-  chromium,
   type Browser,
+  type Locator,
   type Page,
   type Cookie as PlaywrightCookie,
-  type Locator,
+  chromium,
 } from 'playwright';
+import { config } from './config.js';
 import {
-  convertImage,
-  getMimeType,
-  needsConversion,
-  type ImageConversionOptions,
-} from './image-processor.js';
-import { Logger, categorizeError } from './logger.js';
-import {
+  filterCookiesByDomain,
   parseCookies,
   validateAndSanitize,
   validateCookieSecurity,
-  filterCookiesByDomain,
 } from './cookie-utils.js';
-import { config } from './config.js';
+import {
+  type ImageConversionOptions,
+  convertImage,
+  getMimeType,
+  needsConversion,
+} from './image-processor.js';
+import { Logger, categorizeError } from './logger.js';
 import type {
+  BrowserloopError,
+  Cookie,
+  HealthCheck,
+  InternalScreenshotConfig,
+  RetryAttempt,
   ScreenshotOptions,
   ScreenshotResult,
   ScreenshotServiceConfig,
-  RetryAttempt,
-  HealthCheck,
-  BrowserloopError,
-  Cookie,
-  InternalScreenshotConfig,
 } from './types.js';
 
 export class ScreenshotService {

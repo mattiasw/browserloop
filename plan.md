@@ -321,3 +321,30 @@
   - [x] **Updated documentation for file-based logging**: README.md and Cookie Authentication Guide now reflect new `/tmp/browserloop.log` logging
   - [x] **Removed BROWSERLOOP_SILENT environment variable**: No longer needed since file logging doesn't interfere with MCP protocol
   - [x] **COMPLETE**: Automatic file watching resolves MCP caching issues and works correctly in production MCP environments
+
+## NPX Distribution Implementation
+
+- [x] Check npm package name availability (`browserloop` or scoped alternative)
+- [x] Configure package.json for npm publishing (bin, files, publishConfig)
+- [x] ~~Add runtime browser detection with helpful error messaging (stderr + log file)~~ - REMOVED: Relying on documentation instead of complex detection
+- [x] Enhance README with clear browser installation instructions for MCP users
+- [x] Pre-build TypeScript to include dist/ folder in package
+- [x] Update CLI to handle npx usage patterns and help text
+- [x] Test complete npx workflow: `npx -y browserloop@latest`
+- [x] Create npx-specific documentation and setup guides
+- [x] Security audit: dependencies, browser installation, package integrity
+- [x] Publish to npm registry with proper versioning
+- [x] **Set up automated CI/CD publishing pipeline**
+  - [x] Add npm publishing to GitHub Actions release workflow
+  - [x] Configure NPM_TOKEN secret requirement
+  - [x] Add pre-publish validation and post-publish verification steps
+  - [x] Create automated versioning scripts (patch/minor/major)
+  - [x] Document complete release automation process
+- [x] **Update README with npx installation instructions**
+  - [x] Add npm package badges and links
+  - [x] Enhance Quick Start with global installation option
+  - [x] Update MCP configuration examples for both npx and global install
+  - [x] Add package information section with npm registry links
+  - [x] Improve troubleshooting with npm-specific diagnostics
+  - [x] Add update instructions for both installation methods
+  - [x] Include Docker alternative for containerized environments

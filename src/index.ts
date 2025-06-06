@@ -22,16 +22,73 @@
  * A Model Context Protocol server for taking screenshots of web pages
  */
 
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { mcpServer } from './mcp-server.js';
 
+// Dynamic version reading
+function getPackageInfo() {
+  try {
+    const currentDir = dirname(fileURLToPath(import.meta.url));
+    // Try multiple paths to find package.json (handles both dev and dist)
+    const possiblePaths = [
+      join(currentDir, '../../package.json'), // From dist/src/
+      join(currentDir, '../package.json'), // From src/
+      join(currentDir, 'package.json'), // Same directory
+    ];
+
+    for (const path of possiblePaths) {
+      try {
+        const packageJson = JSON.parse(readFileSync(path, 'utf8'));
+        return {
+          version: packageJson.version || '1.0.0',
+          homepage:
+            packageJson.homepage ||
+            'https://github.com/mattiasw/browserloop#readme',
+          repository:
+            packageJson.repository?.url
+              ?.replace('git+', '')
+              .replace('.git', '') || 'https://github.com/mattiasw/browserloop',
+        };
+      } catch {
+        // Silently ignore JSON parsing errors and use fallback
+      }
+    }
+
+    // Fallback if package.json not found
+    return {
+      version: '1.0.0',
+      homepage: 'https://github.com/mattiasw/browserloop#readme',
+      repository: 'https://github.com/mattiasw/browserloop',
+    };
+  } catch {
+    return {
+      version: '1.0.0',
+      homepage: 'https://github.com/mattiasw/browserloop#readme',
+      repository: 'https://github.com/mattiasw/browserloop',
+    };
+  }
+}
+
+function detectNpxUsage() {
+  // Detect if running via NPX by checking environment and process arguments
+  const npm_execpath = process.env.npm_execpath || '';
+  const npm_command = process.env.npm_command || '';
+  return npm_execpath.includes('npx') || npm_command === 'exec';
+}
+
 function showHelp() {
+  const { version, homepage, repository } = getPackageInfo();
+  const isNpx = detectNpxUsage();
+
   console.log(`
-BrowserLoop - MCP Screenshot Server
+BrowserLoop v${version} - MCP Screenshot Server
 
 A Model Context Protocol server for automated web page screenshot capture.
 
 USAGE:
-  browserloop [OPTIONS]
+  ${isNpx ? 'npx browserloop@latest [OPTIONS]' : 'browserloop [OPTIONS]'}
 
 OPTIONS:
   --help      Show this help message
@@ -45,32 +102,153 @@ DESCRIPTION:
   - High-quality screenshots using Playwright Chromium
   - Multiple image formats (WebP, PNG, JPEG)
   - Full page and element-specific capture
-  - Cookie-based authentication
-  - Configurable viewport sizes
+  - Cookie-based authentication with automatic file reloading
+  - Configurable viewport sizes and quality settings
 
-EXAMPLES:
-  # Start the MCP server (normal usage)
-  browserloop
+${
+  isNpx
+    ? `NPX USAGE:
+  When using NPX, BrowserLoop will be downloaded and run directly:
+
+  # Start the MCP server (recommended for AI tools)
+  npx browserloop@latest
 
   # Show help
-  browserloop --help
+  npx browserloop@latest --help
 
   # Show version
-  browserloop --version
+  npx browserloop@latest --version
 
-For more information, visit: https://github.com/yourusername/browserloop
+BROWSER REQUIREMENTS:
+  BrowserLoop requires Chromium browser to be installed. If you encounter
+  "Executable doesn't exist" errors, install the browser:
+
+  # Install Chromium via Playwright (recommended)
+  npx playwright install chromium
+
+`
+    : ''
+}MCP INTEGRATION:
+  Configure BrowserLoop in your AI development tool's MCP settings:
+
+  For Cursor (~/.cursor/mcp.json):
+  {
+    "mcpServers": {
+      "browserloop": {
+        ${isNpx ? '"command": "npx",' : '"command": "browserloop",'}
+        ${isNpx ? '"args": ["-y", "browserloop@latest"],' : '"args": [],'}
+        "env": {
+          "BROWSERLOOP_DEFAULT_COOKIES": "/path/to/cookies.json",
+          "BROWSERLOOP_DEBUG": "true"
+        }
+      }
+    }
+  }
+
+  For Claude Desktop:
+  Add similar configuration to your MCP settings file.
+
+  Note: The "-y" flag in NPX commands automatically accepts prompts,
+  which is essential for MCP servers since they run non-interactively.
+
+EXAMPLES:
+  ${isNpx ? '# Start MCP server with NPX (most common usage)\n  npx browserloop@latest\n' : '# Start MCP server\n  browserloop\n'}
+  # The server will communicate via stdin/stdout with your AI tool
+  # Use cookie files for authenticated screenshots:
+  # Set BROWSERLOOP_DEFAULT_COOKIES=/path/to/cookies.json
+
+ENVIRONMENT VARIABLES:
+  BROWSERLOOP_DEFAULT_COOKIES    Path to cookie file for authentication
+  BROWSERLOOP_DEBUG             Enable debug logging to /tmp/browserloop.log
+  BROWSERLOOP_DEFAULT_FORMAT    Image format (webp, png, jpeg)
+  BROWSERLOOP_DEFAULT_QUALITY   Image quality 0-100 (default: 80)
+  BROWSERLOOP_DEFAULT_WIDTH     Viewport width (default: 1280)
+  BROWSERLOOP_DEFAULT_HEIGHT    Viewport height (default: 720)
+
+For complete documentation and examples:
+  ${homepage}
+
+Issues and support:
+  ${repository}/issues
 `);
 }
 
 function showVersion() {
-  // Show version - we'll use a fixed version since package.json import is complex in ES modules
-  console.log('BrowserLoop v1.0.0');
+  const { version } = getPackageInfo();
+  const isNpx = detectNpxUsage();
+
+  console.log(`BrowserLoop v${version}`);
+  if (isNpx) {
+    console.log('Running via NPX - latest version downloaded automatically');
+  }
 }
 
 async function startMcpServer() {
   try {
     await mcpServer.start();
   } catch (error) {
+    const isNpx = detectNpxUsage();
+
+    // Enhanced error messaging for common issues
+    if (error instanceof Error) {
+      // Check for browser-related errors
+      if (
+        error.message.includes("Executable doesn't exist") ||
+        error.message.includes('Failed to launch browser') ||
+        error.message.includes('chromium')
+      ) {
+        console.error(`
+❌ Browser Installation Required
+
+BrowserLoop requires Chromium browser to be installed.
+
+${isNpx ? 'QUICK FIX for NPX users:' : 'QUICK FIX:'}
+  ${isNpx ? 'npx playwright install chromium' : 'npm run install-browsers'}
+
+${isNpx ? 'After installing, try again:' : 'After installing, restart the server:'}
+  ${isNpx ? 'npx browserloop@latest' : 'browserloop'}
+
+For more help: https://github.com/mattiasw/browserloop#readme
+`);
+        process.exit(1);
+      }
+
+      // Check for permission-related errors
+      if (
+        error.message.includes('EACCES') ||
+        error.message.includes('permission denied')
+      ) {
+        console.error(`
+❌ Permission Error
+
+Unable to start BrowserLoop due to permission issues.
+
+${isNpx ? 'For NPX users:' : 'Solutions:'}
+  • Check file permissions in your working directory
+  • Ensure you have write access to /tmp/browserloop.log
+  ${isNpx ? '• Try running: npx browserloop@latest (without sudo)' : '• Avoid running with sudo unless necessary'}
+
+For more help: https://github.com/mattiasw/browserloop#readme
+`);
+        process.exit(1);
+      }
+
+      // Generic error with helpful guidance
+      console.error(`
+❌ Failed to start BrowserLoop
+
+Error: ${error.message}
+
+${isNpx ? 'For NPX users:' : 'Troubleshooting:'}
+  1. Ensure Chromium is installed: ${isNpx ? 'npx playwright install chromium' : 'npm run install-browsers'}
+  2. Check Node.js version (requires 20+): node --version
+  3. Verify file permissions in current directory
+  4. ${isNpx ? 'Try latest version: npx browserloop@latest' : 'Try rebuilding: npm run build:clean'}
+
+For detailed troubleshooting: https://github.com/mattiasw/browserloop#readme
+`);
+    }
+
     process.exit(1);
   }
 }
@@ -79,21 +257,54 @@ async function gracefulShutdown() {
   try {
     await mcpServer.cleanup();
   } catch (error) {
-    // Silent cleanup
+    // Silent cleanup - don't spam console during shutdown
   }
   process.exit(0);
 }
 
-// Handle command line arguments
-const args = process.argv.slice(2);
-if (args.includes('--help') || args.includes('-h')) {
-  showHelp();
-  process.exit(0);
-}
+// Enhanced command line argument parsing
+function parseArguments() {
+  const args = process.argv.slice(2);
 
-if (args.includes('--version') || args.includes('-v')) {
-  showVersion();
-  process.exit(0);
+  // Handle help flags
+  if (args.includes('--help') || args.includes('-h')) {
+    showHelp();
+    process.exit(0);
+  }
+
+  // Handle version flags
+  if (args.includes('--version') || args.includes('-v')) {
+    showVersion();
+    process.exit(0);
+  }
+
+  // Handle unknown arguments
+  const unknownArgs = args.filter(
+    (arg) =>
+      !arg.startsWith('--help') &&
+      !arg.startsWith('-h') &&
+      !arg.startsWith('--version') &&
+      !arg.startsWith('-v')
+  );
+
+  if (unknownArgs.length > 0) {
+    const isNpx = detectNpxUsage();
+    console.error(`
+❌ Unknown arguments: ${unknownArgs.join(', ')}
+
+${isNpx ? 'NPX Usage:' : 'Usage:'}
+  ${isNpx ? 'npx browserloop@latest [OPTIONS]' : 'browserloop [OPTIONS]'}
+
+Available options:
+  --help, -h      Show help message
+  --version, -v   Show version information
+
+${isNpx ? 'Example:' : 'Examples:'}
+  ${isNpx ? 'npx browserloop@latest --help' : 'browserloop --help'}
+  ${isNpx ? 'npx browserloop@latest' : 'browserloop'}
+`);
+    process.exit(1);
+  }
 }
 
 // Handle shutdown signals
@@ -107,8 +318,24 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
+  const isNpx = detectNpxUsage();
+  console.error(`
+❌ Unexpected Error
+
+An unexpected error occurred while running BrowserLoop.
+
+${isNpx ? 'For NPX users:' : 'Troubleshooting:'}
+  1. Try reinstalling: ${isNpx ? 'npx browserloop@latest' : 'npm install'}
+  2. Check system requirements: Node.js 20+, Chromium browser
+  3. Report the issue: https://github.com/mattiasw/browserloop/issues
+
+Error details: ${error.message}
+`);
   process.exit(1);
 });
+
+// Parse command line arguments first
+parseArguments();
 
 // Start the MCP server
 startMcpServer().catch((error) => {

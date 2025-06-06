@@ -15,23 +15,23 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import assert from 'node:assert';
 import {
-  test,
-  mock,
-  describe,
-  beforeEach,
+  after,
   afterEach,
   before,
-  after,
+  beforeEach,
+  describe,
+  mock,
+  test,
 } from 'node:test';
-import assert from 'node:assert';
 import { ScreenshotService } from '../../src/screenshot-service.js';
 import {
-  isValidBase64Image,
   createTestScreenshotServiceConfig,
+  isValidBase64Image,
 } from '../../src/test-utils.js';
-import type { ScreenshotServiceConfig } from '../../src/types.js';
 import { createTestServer } from '../../src/test-utils.js';
+import type { ScreenshotServiceConfig } from '../../src/types.js';
 
 // Type for the test server returned by createTestServer
 interface TestServer {
