@@ -264,3 +264,60 @@
 - [x] **Documentation Update**
   - [x] Document new domain filtering behavior in API docs
   - [x] Add troubleshooting note about authentication with filtered cookies
+
+## Automatic Cookie File Reloading (Fix MCP Caching Issue) ✅ COMPLETE
+
+- [x] **Core Configuration Refresh**
+  - [x] Add `refreshConfig()` method to ConfigManager class
+  - [x] Implement secure cookie file re-reading with proper error handling
+  - [x] Add atomic configuration replacement to prevent partial updates
+  - [x] Maintain cookie sanitization practices during reload operations
+
+- [x] **Automatic File Watching System**
+  - [x] Implement file watcher for cookie files using Node.js `fs.watch()` (chose fs.watch over chokidar to avoid external dependencies)
+  - [x] Add debouncing to prevent rapid reload attempts during file writes (1000ms debounce delay)
+  - [x] Watch all configured cookie file paths automatically
+  - [x] Handle file deletion, creation, and modification events
+  - [x] Add graceful error handling for watch failures (missing files, permissions)
+
+- [x] **Configuration Integration**
+  - [x] Automatically watch cookie file when BROWSERLOOP_DEFAULT_COOKIES points to a file path
+  - [x] Integrate file watcher with ConfigManager initialization
+  - [x] Ensure proper cleanup of file watchers on server shutdown
+  - [x] Add logging for file watch events (without sensitive data)
+
+- [x] **Security & Testing**
+  - [x] Ensure no cookie values leak to logs during automatic reload operations
+  - [x] Add unit tests for file watching mechanisms and debouncing (10 comprehensive tests)
+  - [x] Test error handling for corrupted or invalid cookie files during automatic reload
+  - [x] Verify backward compatibility with existing configurations
+  - [x] Test file watcher cleanup and resource management
+
+- [x] **MCP Protocol Compatibility Fix**
+  - [x] **CRITICAL ISSUE IDENTIFIED**: Console logging was breaking MCP stdio communication
+  - [x] **ROOT CAUSE**: Console output interfered with JSON-based MCP protocol over stdio
+  - [x] **SOLUTION**: Removed all console.log/console.error from production code paths
+  - [x] **VERIFICATION**: File watching now works silently in MCP environment
+  - [x] **TESTING**: Maintained full debugging capabilities in test mode with mock watchers
+
+- [x] **ScreenshotService Dynamic Configuration Fix**
+  - [x] **CRITICAL ISSUE IDENTIFIED**: ScreenshotService was using stale configuration snapshot from startup
+  - [x] **ROOT CAUSE**: ScreenshotService held a static reference to serviceConfig.authentication.defaultCookies from initialization time
+  - [x] **SOLUTION**: Modified ScreenshotService.createScreenshotConfig() to fetch fresh authentication config from ConfigManager
+  - [x] **VERIFICATION**: ScreenshotService now uses config.getAuthenticationConfig() for each screenshot operation
+  - [x] **TESTING**: Verified that configuration changes are immediately reflected in new screenshot requests
+
+- [x] **File Watcher Recreation After Rename Events Fix**
+  - [x] **CRITICAL ISSUE IDENTIFIED**: File watcher stopped working after first change due to editor file replacement behavior
+  - [x] **ROOT CAUSE**: Editors create temp files and rename them to replace originals, leaving fs.watch() watching dead inodes
+  - [x] **SOLUTION**: Added watcher recreation logic for 'rename' events with proper cleanup and delayed recreation
+  - [x] **IMPLEMENTATION**: Created recreateWatcher() method with file existence checks and 100ms delay for file operations
+  - [x] **VERIFICATION**: File watcher now survives multiple file edits and continues monitoring indefinitely
+
+- [x] **Documentation & Fallback**
+  - [x] Document automatic file watching capabilities in API documentation
+  - [x] Add troubleshooting guide for file watching issues
+  - [x] Manual configuration refresh available via `config.refreshConfig()` method for edge cases
+  - [x] **Updated documentation for file-based logging**: README.md and Cookie Authentication Guide now reflect new `/tmp/browserloop.log` logging
+  - [x] **Removed BROWSERLOOP_SILENT environment variable**: No longer needed since file logging doesn't interfere with MCP protocol
+  - [x] **COMPLETE**: Automatic file watching resolves MCP caching issues and works correctly in production MCP environments

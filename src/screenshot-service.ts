@@ -35,6 +35,7 @@ import {
   validateCookieSecurity,
   filterCookiesByDomain,
 } from './cookie-utils.js';
+import { config } from './config.js';
 import type {
   ScreenshotOptions,
   ScreenshotResult,
@@ -304,9 +305,12 @@ export class ScreenshotService {
   private createScreenshotConfig(
     options: ScreenshotOptions
   ): InternalScreenshotConfig {
+    // Get fresh authentication config to ensure we use the latest default cookies
+    const authConfig = config.getAuthenticationConfig();
+
     // Merge default cookies with request cookies
     const mergedCookies = this.mergeCookies(
-      this.serviceConfig.authentication?.defaultCookies || [],
+      authConfig.defaultCookies || [],
       options.cookies
     );
 
@@ -352,6 +356,7 @@ export class ScreenshotService {
         defaultCookieNames: defaultCookies?.map((c) => c.name) || [],
         hasRequestCookies: !!requestCookies,
         requestCookiesType: typeof requestCookies,
+        note: 'Using fresh config data from ConfigManager',
       });
     }
 
