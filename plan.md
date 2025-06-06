@@ -207,11 +207,11 @@
 
 ## Git Pre-commit Hooks with lint-staged and Husky
 
-- [ ] **Environment and Version Verification**
-  - [ ] Verify Node.js version compatibility with lint-staged 16.1.0 and Husky 9.1.7
-  - [ ] Check current git status and ensure repository is clean
-  - [ ] Verify existing npm scripts (`lint` and `format`) work correctly
-  - [ ] Document current state of .git/hooks directory
+- [x] **Environment and Version Verification**
+  - [x] Verify Node.js version compatibility with lint-staged 16.1.0 and Husky 9.1.7
+  - [x] Check current git status and ensure repository is clean
+  - [x] Verify existing npm scripts (`lint` and `format`) work correctly
+  - [x] Document current state of .git/hooks directory
 
 - [x] **Package Installation**
   - [x] Install lint-staged version 16.1.0 as dev dependency
@@ -247,3 +247,20 @@
   - [x] Verify file pattern matching doesn't expose sensitive files
   - [x] Add safeguards against hook bypassing (document --no-verify usage)
   - [x] Test hook behavior with various file states (renamed, deleted, etc.)
+
+## Cookie Domain Filtering for Multi-Site Support
+
+- [x] **Core Cookie Filtering Implementation**
+  - [x] Add cookie domain filtering function using existing RFC 6265 domain matching logic
+  - [x] Filter out cookies that don't match target URL domain before injection
+  - [x] Continue screenshot process even when some/all cookies are filtered out
+  - [x] Add basic debug logging for filtered cookie count (without values)
+
+- [x] **Security Verification**
+  - [x] Test that filtered cookies never leak to wrong domains
+  - [x] Verify RFC 6265 compliance with existing domain matching tests
+  - [x] Test with multi-domain cookie files to ensure proper filtering
+
+- [x] **Documentation Update**
+  - [x] Document new domain filtering behavior in API docs
+  - [x] Add troubleshooting note about authentication with filtered cookies

@@ -50,10 +50,10 @@
   },
   "lint-staged": {
     "*.{ts,js}": [
-      "biome lint --error-on-warnings --write",
-      "biome format --write"
+      "biome lint --error-on-warnings --write --files-ignore-unknown=true",
+      "biome format --write --files-ignore-unknown=true"
     ],
-    "*.{json,md}": ["biome format --write"]
+    "*.{json,md}": ["biome format --write --files-ignore-unknown=true"]
   },
   "keywords": [
     "mcp",
