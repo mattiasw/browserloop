@@ -7,8 +7,24 @@
   "bin": {
     "browserloop": "dist/src/index.js"
   },
+  "files": ["dist/src/**/*", "README.md", "LICENSE", "NOTICE"],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattiasw/browserloop.git"
+  },
+  "homepage": "https://github.com/mattiasw/browserloop#readme",
+  "bugs": {
+    "url": "https://github.com/mattiasw/browserloop/issues"
+  },
   "scripts": {
     "build": "tsc",
+    "prebuild": "npm run clean",
+    "prepublishOnly": "npm run build",
+    "prepack": "npm run build",
     "start": "npm run build && node dist/src/index.js",
     "start:ts": "node --experimental-strip-types src/index.ts",
     "start:native": "node src/index.ts",
@@ -19,11 +35,12 @@
     "test": "npm run build && npm run test:unit && npm run test:integration && npm run test:e2e:format && npm run test:e2e:built",
     "test:unit": "node --test dist/tests/unit/test-utils.test.js dist/tests/unit/screenshot-service.test.js dist/tests/unit/config.test.js dist/tests/unit/image-processor.test.js dist/tests/unit/logger.test.js",
     "test:integration": "node --test dist/tests/integration/mcp-server.test.js",
-    "test:e2e": "npm run test:e2e:full && npm run test:e2e:element && npm run test:e2e:format && npm run test:e2e:built",
+    "test:e2e": "npm run test:e2e:full && npm run test:e2e:element && npm run test:e2e:format && npm run test:e2e:built && npm run test:e2e:npx",
     "test:e2e:full": "node --test dist/tests/e2e/full-page-screenshots.test.js",
     "test:e2e:element": "node --test dist/tests/e2e/element-screenshots.test.js",
     "test:e2e:format": "node --test dist/tests/e2e/format-support.test.js",
     "test:e2e:built": "node --test dist/tests/e2e/built-server.test.js",
+    "test:e2e:npx": "node --test dist/tests/e2e/npx-workflow.test.js",
     "test:e2e:docker": "npm run build && node --test dist/tests/e2e/docker-integration.test.js",
     "test:all": "npm run test && npm run test:e2e",
     "test:watch": "tsc --watch &",
@@ -46,14 +63,21 @@
     "check": "biome check --write src/",
     "clean": "rm -rf dist",
     "build:clean": "npm run clean && npm run build",
+    "validate:build": "npm run build && test -f dist/src/index.js && test -f dist/src/index.d.ts",
+    "validate:security": "npm run build && find dist -name '*.env*' -o -name '*.key' -o -name '*.secret' | wc -l | grep -q '^0$' && echo 'Security validation: PASSED'",
+    "validate:package": "npm run validate:build && npm run validate:security && echo 'Package validation: PASSED'",
+    "version:patch": "npm version patch && git push && git push --tags",
+    "version:minor": "npm version minor && git push && git push --tags",
+    "version:major": "npm version major && git push && git push --tags",
+    "release": "./scripts/release.sh",
+    "release:check": "./scripts/release.sh check",
     "prepare": "husky"
   },
   "lint-staged": {
     "*.{ts,js}": [
       "biome lint --error-on-warnings --write",
       "biome format --write"
-    ],
-    "*.{json,md}": "biome format --write"
+    ]
   },
   "keywords": [
     "mcp",

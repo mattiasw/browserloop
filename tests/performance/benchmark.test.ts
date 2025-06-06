@@ -15,11 +15,11 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert';
-import { createServer, type Server } from 'node:http';
-import { ScreenshotService } from '../../src/screenshot-service.js';
+import { type Server, createServer } from 'node:http';
+import { after, before, describe, test } from 'node:test';
 import { createPerformanceTester } from '../../src/performance.js';
+import { ScreenshotService } from '../../src/screenshot-service.js';
 import { createTestScreenshotServiceConfig } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 

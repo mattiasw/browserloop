@@ -15,10 +15,10 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 import { Logger, categorizeError } from '../../src/logger.js';
-import type { LoggingConfig, BrowserloopError } from '../../src/types.js';
+import type { BrowserloopError, LoggingConfig } from '../../src/types.js';
 
 describe('Logger', () => {
   let logger: Logger;

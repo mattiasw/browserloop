@@ -15,16 +15,16 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { readFileSync, watch, existsSync } from 'node:fs';
+import { existsSync, readFileSync, watch } from 'node:fs';
 import { dirname } from 'node:path';
 import { z } from 'zod';
 import { parseCookies } from './cookie-utils.js';
 import { fileLogger } from './file-logger.js';
 import type {
   Cookie,
-  FileWatcherState,
-  FileWatcherConfig,
   FileWatchEvent,
+  FileWatcherConfig,
+  FileWatcherState,
 } from './types.js';
 
 // Global registry to prevent multiple watchers on the same file

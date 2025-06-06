@@ -15,12 +15,12 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert';
+import { after, before, describe, it } from 'node:test';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { McpScreenshotServer } from '../../src/mcp-server.js';
 import type { ScreenshotService } from '../../src/screenshot-service.js';
-import { z } from 'zod';
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 // Helper functions to access private properties for testing
 function getServerInstance(server: McpScreenshotServer): McpServer {

@@ -15,11 +15,11 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { describe, it } from 'node:test';
 import assert from 'node:assert';
+import { describe, it } from 'node:test';
 import {
-  createTestServer,
   createTestScreenshotOptions,
+  createTestServer,
   isValidBase64Image,
 } from '../../src/test-utils.js';
 

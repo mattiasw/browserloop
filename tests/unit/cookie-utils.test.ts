@@ -15,12 +15,12 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test, describe } from 'node:test';
 import assert from 'node:assert';
+import { describe, test } from 'node:test';
 import {
+  isValidCookieInput,
   parseCookies,
   validateAndSanitize,
-  isValidCookieInput,
 } from '../../src/cookie-utils.js';
 import type { Cookie } from '../../src/types.js';
 

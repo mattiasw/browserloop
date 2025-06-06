@@ -18,15 +18,15 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { ScreenshotService } from './screenshot-service.js';
-import { validateAndSanitize } from './cookie-utils.js';
 import { config } from './config.js';
+import { validateAndSanitize } from './cookie-utils.js';
 import { fileLogger } from './file-logger.js';
+import { ScreenshotService } from './screenshot-service.js';
 import type {
-  ScreenshotServiceConfig,
-  ScreenshotResult,
-  ScreenshotOptions,
   Cookie,
+  ScreenshotOptions,
+  ScreenshotResult,
+  ScreenshotServiceConfig,
 } from './types.js';
 
 // Extended screenshot options that include all possible MCP properties

@@ -15,13 +15,13 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test, describe } from 'node:test';
 import assert from 'node:assert';
+import { describe, test } from 'node:test';
 import {
-  getMimeType,
-  needsConversion,
-  getPlaywrightFormat,
   convertImage,
+  getMimeType,
+  getPlaywrightFormat,
+  needsConversion,
 } from '../../src/image-processor.js';
 
 describe('ImageProcessor Functions', () => {

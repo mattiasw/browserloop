@@ -15,14 +15,14 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { writeFile, appendFile, mkdir } from 'node:fs/promises';
+import { appendFile, mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type {
-  LoggingConfig,
   BrowserloopError,
   ErrorCategory,
   ErrorSeverity,
   LogContext,
+  LoggingConfig,
 } from './types.js';
 
 /**

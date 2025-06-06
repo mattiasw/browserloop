@@ -15,13 +15,13 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { test, describe, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
-import { writeFileSync, unlinkSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { afterEach, beforeEach, describe, test } from 'node:test';
 import {
   ConfigManager,
-  enableFileWatchingTestMode,
   disableFileWatchingTestMode,
+  enableFileWatchingTestMode,
   simulateFileChange,
 } from '../../src/config.js';
 

@@ -1,6 +1,8 @@
 # BrowserLoop
 
 [![CI/CD Pipeline](https://github.com/mattiasw/browserloop/actions/workflows/ci.yml/badge.svg)](https://github.com/mattiasw/browserloop/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/browserloop.svg)](https://www.npmjs.com/package/browserloop)
+[![npm downloads](https://img.shields.io/npm/dm/browserloop.svg)](https://www.npmjs.com/package/browserloop)
 
 A Model Context Protocol (MCP) server for taking screenshots of web pages using Playwright. This tool allows AI agents to automatically capture and analyze screenshots for UI verification or other tasks.
 
@@ -24,12 +26,77 @@ A Model Context Protocol (MCP) server for taking screenshots of web pages using 
 
 ## Quick Start
 
-### Prerequisites
+### 📦 NPX Usage (Recommended)
 
-- Node.js 20+
-- Docker (for browser environment)
+**The easiest way to get started - no installation required!**
 
-### Installation
+```bash
+# Install Chromium browser (one-time setup)
+npx playwright install chromium
+
+# Test that BrowserLoop works
+npx browserloop@latest --version
+```
+
+**That's it!** The latest version of BrowserLoop will be downloaded and executed automatically. Perfect for MCP users who want zero-maintenance screenshots.
+
+#### MCP Configuration
+
+Add BrowserLoop to your MCP configuration file (e.g. `~/.cursor/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "browserloop": {
+      "command": "npx",
+      "args": ["-y", "browserloop@latest"],
+      "description": "Screenshot capture server for web pages using Playwright"
+    }
+  }
+}
+```
+
+**💡 Using `@latest` ensures you always get the newest features and bug fixes automatically.**
+
+### Browser Installation Requirements
+
+**🚨 Critical:** BrowserLoop requires Chromium to be installed via Playwright before it can take screenshots.
+
+#### First-Time Setup (All Users)
+
+**Install Chromium browser:**
+```bash
+npx playwright install chromium
+```
+
+**Verify installation:**
+```bash
+# Check Playwright installation
+npx playwright --version
+
+# Test BrowserLoop (if using NPX)
+npx browserloop@latest --version
+```
+
+
+
+### 🐳 Docker Alternative
+
+**For containerized environments:**
+
+```bash
+# Pull and run with Docker
+docker run --rm --network host browserloop
+
+# Or use docker-compose for development
+git clone <repository-url>
+cd browserloop
+docker-compose -f docker/docker-compose.yml up
+```
+
+### 💻 Development Installation
+
+**For contributors or advanced users who want to build from source:**
 
 ```bash
 # Clone the repository
@@ -48,11 +115,7 @@ npm run install-browsers
 npm run build
 ```
 
-**Note:** The Playwright browser installation is required for taking screenshots. If you skip this step, you'll get an "Executable doesn't exist" error when trying to capture screenshots.
-
-### MCP Configuration
-
-Add to your MCP configuration file (e.g. `~/.cursor/mcp.json`):
+#### MCP Configuration for Development
 
 ```json
 {
@@ -69,6 +132,8 @@ Add to your MCP configuration file (e.g. `~/.cursor/mcp.json`):
 ```
 
 **Replace `/absolute/path/to/browserloop/` with your actual project path.**
+
+
 
 ### Basic Usage
 
@@ -224,32 +289,50 @@ Reference in MCP config:
 
 ## Troubleshooting
 
-### Server Not Starting
-1. Check Node.js version: `node --version` (requires 20+)
-2. Verify build: `npm run build`
-3. Test manually: `npm start`
+### Common Issues
 
-### Network Issues
-- For localhost screenshots, ensure the development server is running
-- Check Docker networking if using containers
+**"Executable doesn't exist" Error**
+```bash
+# Install Chromium browser (most common fix)
+npx playwright install chromium
+```
 
-### Configuration Issues
-- Ensure the path to `dist/src/index.js` is correct in your MCP config
-- Check that the project is built with `npm run build`
+**MCP Server Not Starting**
+1. **Test manually**: `npx browserloop@latest --version`
+2. **Verify requirements**:
+   - Node.js 20+: `node --version`
+   - npm: `npm --version`
+   - npx: `npx --version`
+3. **Check MCP config JSON syntax**
 
-### Cookie Issues
-- Can't pass cookies via MCP protocol? Use default cookies configuration
-- Screenshots show login pages? Check cookie expiration and domain settings
-- Need to debug cookie loading? Enable debug logging with `BROWSERLOOP_DEBUG=true` and monitor `/tmp/browserloop.log`
-- Automatic cookie reloading not working? Check file watcher status in debug logs
+**Screenshots Show Login Pages**
+- Use cookie authentication (see [Cookie Authentication Guide](docs/COOKIE_AUTHENTICATION.md))
+- Check cookie expiration and domain settings
 
-### Playwright Browser Issues
-- **"Executable doesn't exist" error**: Run `npx playwright install chromium` or `npm run install-browsers`
-- **CI/CD failures**: Ensure the workflow includes `npx playwright install --with-deps chromium`
-- **Permission issues**: Check that the user has write access to the Playwright cache directory
-- **Network issues during install**: Use `npx playwright install chromium --force` to retry download
+**Network/Connection Issues**
+- Test with external URLs first: `https://example.com`
+- For localhost: ensure your dev server is running
+- Check firewall settings
 
-**📖 See [docs/API.md#error-handling](docs/API.md#error-handling) for detailed error troubleshooting.**
+**Updating BrowserLoop**
+- **NPX**: Automatically uses latest version with `@latest` - no manual updates needed!
+- **Check current version**: `npx browserloop@latest --version`
+
+### Quick Diagnosis
+
+```bash
+# Test complete setup
+node --version && npm --version
+npx playwright --version
+
+# Test BrowserLoop
+npx browserloop@latest --version
+```
+
+**Enable debug logging:**
+Set `BROWSERLOOP_DEBUG=true` in your MCP config and monitor `/tmp/browserloop.log`
+
+**📖 See [docs/API.md#error-handling](docs/API.md#error-handling) for detailed troubleshooting.**
 
 ## License
 
