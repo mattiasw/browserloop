@@ -403,3 +403,38 @@ export interface MockBrowserContext {
   /** Mock cookie addition */
   addCookies: (cookies: MockCookie[]) => Promise<void>;
 }
+
+/**
+ * File watcher configuration and state
+ */
+export interface FileWatcherConfig {
+  /** File path being watched */
+  filePath: string;
+  /** Whether the watcher is currently active */
+  isActive: boolean;
+  /** Debounce delay in milliseconds */
+  debounceDelay: number;
+  /** Last event timestamp for debouncing */
+  lastEventTimestamp?: number;
+  /** Debounce timeout handle */
+  debounceTimeout?: NodeJS.Timeout;
+  /** The actual file watcher instance for cleanup */
+  watcher?: import('node:fs').FSWatcher;
+}
+
+/**
+ * File watch event types
+ */
+export type FileWatchEvent = 'change' | 'rename';
+
+/**
+ * File watcher state management
+ */
+export interface FileWatcherState {
+  /** Map of file paths to watcher configurations */
+  watchers: Map<string, FileWatcherConfig>;
+  /** Whether file watching is enabled globally */
+  enabled: boolean;
+  /** Global debounce delay for all watchers */
+  defaultDebounceDelay: number;
+}

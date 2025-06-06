@@ -152,9 +152,24 @@ BrowserLoop can be configured using environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `BROWSERLOOP_DEBUG` | `false` | Enable debug logging |
-| `BROWSERLOOP_SILENT` | `true` | Disable console output in production |
+| `BROWSERLOOP_DEBUG` | `false` | Enable debug logging to `/tmp/browserloop.log` |
 | `BROWSERLOOP_ENABLE_METRICS` | `true` | Enable error metrics collection |
+| `BROWSERLOOP_DISABLE_FILE_WATCHING` | `false` | Disable automatic cookie file monitoring |
+
+#### Debug Logging
+
+When `BROWSERLOOP_DEBUG=true`, detailed logs are written to `/tmp/browserloop.log` including:
+- Cookie file loading and automatic refresh events
+- File watching status and recreation events
+- Screenshot operation details
+- Configuration changes and errors
+
+**Monitor logs in real-time:**
+```bash
+tail -f /tmp/browserloop.log
+```
+
+**Note**: Logs are written to a file (not console) to maintain compatibility with MCP's stdio protocol.
 
 ### Example MCP Configuration with Default Cookies
 
@@ -225,7 +240,8 @@ Reference in MCP config:
 ### Cookie Issues
 - Can't pass cookies via MCP protocol? Use default cookies configuration
 - Screenshots show login pages? Check cookie expiration and domain settings
-- Need to debug cookie loading? Enable debug logging
+- Need to debug cookie loading? Enable debug logging with `BROWSERLOOP_DEBUG=true` and monitor `/tmp/browserloop.log`
+- Automatic cookie reloading not working? Check file watcher status in debug logs
 
 ### Playwright Browser Issues
 - **"Executable doesn't exist" error**: Run `npx playwright install chromium` or `npm run install-browsers`

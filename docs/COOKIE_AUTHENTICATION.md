@@ -351,8 +351,20 @@ Enable debug logging to see cookie injection details:
 
 ```bash
 export BROWSERLOOP_DEBUG=true
-export BROWSERLOOP_SILENT=false
 ```
+
+**Monitor debug logs:**
+```bash
+tail -f /tmp/browserloop.log
+```
+
+Debug logs include:
+- Cookie loading and merging process
+- Automatic file watching and refresh events
+- Cookie injection and domain validation
+- Screenshot operation details
+
+**Note**: Logs are written to `/tmp/browserloop.log` (not console) for MCP compatibility.
 
 ## Security Notes
 

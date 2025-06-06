@@ -21,6 +21,7 @@ import { z } from 'zod';
 import { ScreenshotService } from './screenshot-service.js';
 import { validateAndSanitize } from './cookie-utils.js';
 import { config } from './config.js';
+import { fileLogger } from './file-logger.js';
 import type {
   ScreenshotServiceConfig,
   ScreenshotResult,
@@ -39,6 +40,23 @@ export class McpScreenshotServer {
   private screenshotService: ScreenshotService;
 
   constructor() {
+    // Log startup information to file
+    fileLogger.debug('[MCP-Server] Starting BrowserLoop MCP Server...');
+    fileLogger.debug('[MCP-Server] Environment variables:');
+    fileLogger.debug(
+      `[MCP-Server]   BROWSERLOOP_DEFAULT_COOKIES = "${process.env.BROWSERLOOP_DEFAULT_COOKIES}"`
+    );
+    fileLogger.debug(
+      `[MCP-Server]   BROWSERLOOP_DEBUG = "${process.env.BROWSERLOOP_DEBUG}"`
+    );
+    fileLogger.debug(
+      `[MCP-Server]   BROWSERLOOP_SILENT = "${process.env.BROWSERLOOP_SILENT}"`
+    );
+    fileLogger.debug(
+      `[MCP-Server]   BROWSERLOOP_DISABLE_FILE_WATCHING = "${process.env.BROWSERLOOP_DISABLE_FILE_WATCHING}"`
+    );
+    fileLogger.debug(`[MCP-Server]   Working directory = "${process.cwd()}"`);
+
     // Create the MCP server instance
     this.server = new McpServer({
       name: 'browserloop',
@@ -48,6 +66,20 @@ export class McpScreenshotServer {
     // Create screenshot service with configuration
     this.screenshotService = new ScreenshotService(
       config.getConfig() as ScreenshotServiceConfig
+    );
+
+    // Log configuration after creation
+    const authConfig = config.getAuthenticationConfig();
+    const watcherStatus = config.getFileWatcherStatus();
+    fileLogger.debug('[MCP-Server] Configuration loaded:');
+    fileLogger.debug(
+      `[MCP-Server]   Default cookies count = ${authConfig.defaultCookies.length}`
+    );
+    fileLogger.debug(
+      `[MCP-Server]   File watching enabled = ${watcherStatus.enabled}`
+    );
+    fileLogger.debug(
+      `[MCP-Server]   Active watchers = ${watcherStatus.activeWatchers.length}`
     );
 
     this.setupScreenshotTool();
@@ -281,6 +313,12 @@ export class McpScreenshotServer {
   async cleanup(): Promise<void> {
     try {
       await this.screenshotService.cleanup();
+    } catch (error) {
+      // Silent cleanup - don't interfere with stdio
+    }
+
+    try {
+      config.cleanup();
     } catch (error) {
       // Silent cleanup - don't interfere with stdio
     }
