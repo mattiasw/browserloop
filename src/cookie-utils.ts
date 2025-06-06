@@ -207,3 +207,96 @@ export function containsSuspiciousPatterns(value: string): boolean {
 
   return suspiciousPatterns.some((pattern) => pattern.test(value));
 }
+
+/**
+ * Filter cookies based on domain matching with target URL
+ * Uses RFC 6265 domain matching rules to determine valid cookies
+ * @param cookies - Array of cookies to filter
+ * @param targetUrl - Target URL to match against
+ * @returns Object with matching cookies and count of filtered cookies
+ */
+export function filterCookiesByDomain(
+  cookies: Cookie[],
+  targetUrl: string
+): { matchingCookies: Cookie[]; filteredCount: number } {
+  if (!cookies || cookies.length === 0) {
+    return { matchingCookies: [], filteredCount: 0 };
+  }
+
+  const urlObj = new URL(targetUrl);
+  const targetDomain = urlObj.hostname.toLowerCase();
+  const matchingCookies: Cookie[] = [];
+  let filteredCount = 0;
+
+  for (const cookie of cookies) {
+    // Skip domain validation for __Host- cookies (they must not have domains)
+    if (cookie.name.startsWith('__Host-')) {
+      matchingCookies.push(cookie);
+      continue;
+    }
+
+    // If cookie has no domain, it will be auto-derived and is always valid
+    if (!cookie.domain) {
+      matchingCookies.push(cookie);
+      continue;
+    }
+
+    const cookieDomain = cookie.domain.toLowerCase();
+
+    if (isDomainValidForTarget(cookieDomain, targetDomain)) {
+      matchingCookies.push(cookie);
+    } else {
+      filteredCount++;
+    }
+  }
+
+  return { matchingCookies, filteredCount };
+}
+
+/**
+ * Check if a cookie domain is valid for a target domain according to RFC 6265
+ * This is a duplicate of the logic in ScreenshotService.isDomainValid()
+ * to enable cookie filtering without requiring service instance
+ * @param cookieDomain - The domain specified in the cookie
+ * @param targetDomain - The domain from the URL
+ * @returns true if the cookie domain is valid for the target domain
+ */
+function isDomainValidForTarget(
+  cookieDomain: string,
+  targetDomain: string
+): boolean {
+  // Exact match
+  if (cookieDomain === targetDomain) {
+    return true;
+  }
+
+  // Handle localhost and IP addresses specially
+  if (targetDomain === 'localhost' || targetDomain === '127.0.0.1') {
+    return (
+      cookieDomain === 'localhost' ||
+      cookieDomain === '127.0.0.1' ||
+      cookieDomain === '.localhost'
+    );
+  }
+
+  // Handle domain with leading dot (parent domain)
+  if (cookieDomain.startsWith('.')) {
+    const parentDomain = cookieDomain.slice(1); // Remove leading dot
+
+    // Cookie domain ".example.com" is valid for "app.example.com"
+    // but not for "example.com" itself (RFC 6265 requirement)
+    if (targetDomain === parentDomain) {
+      return false; // Parent domain cookie cannot be set on the parent domain itself
+    }
+
+    // Check if target domain is a subdomain of the cookie domain
+    return targetDomain.endsWith(`.${parentDomain}`);
+  }
+
+  // Handle subdomain cookie for exact domain match
+  if (targetDomain.startsWith('.')) {
+    return targetDomain === `.${cookieDomain}`;
+  }
+
+  return false;
+}

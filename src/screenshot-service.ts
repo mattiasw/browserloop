@@ -33,6 +33,7 @@ import {
   parseCookies,
   validateAndSanitize,
   validateCookieSecurity,
+  filterCookiesByDomain,
 } from './cookie-utils.js';
 import type {
   ScreenshotOptions,
@@ -551,15 +552,62 @@ export class ScreenshotService {
       const urlObj = new URL(url);
       const defaultDomain = urlObj.hostname;
 
-      // Validate cookie domains according to RFC 6265 specification
-      // Supports parent domain cookies (e.g., .example.com for app.example.com)
-      this.validateCookieDomains(cookies, urlObj);
+      // Filter cookies by domain instead of validating (to support multi-site cookie files)
+      const { matchingCookies, filteredCount } = filterCookiesByDomain(
+        cookies,
+        url
+      );
+      cookies = matchingCookies;
+
+      // Log domain filtering results (without exposing cookie values)
+      if (filteredCount > 0) {
+        this.logger.debug('Filtered cookies due to domain mismatch', {
+          url,
+          totalCookies: cookies.length + filteredCount,
+          matchingCookies: cookies.length,
+          filteredCount,
+        });
+      }
+
+      // If all cookies were filtered out, continue without cookies
+      if (cookies.length === 0) {
+        this.logger.debug(
+          'No cookies remain after domain filtering, continuing without cookies',
+          {
+            url,
+            filteredCount,
+          }
+        );
+        return;
+      }
 
       // Convert cookies to Playwright format with proper prefix handling
       playwrightCookies = cookies.map((cookie) => {
-        const playwrightCookie: Partial<PlaywrightCookie> = {
+        // Handle __Host- prefix requirements (RFC 6265bis)
+        if (cookie.name.startsWith('__Host-')) {
+          // __Host- cookies MUST:
+          // 1. Have secure flag set
+          // 2. Have path="/"
+          // 3. NOT have a domain attribute (use host-only)
+          // 4. Use URL instead of domain/path for Playwright
+          const playwrightCookie: PlaywrightCookie & { url?: string } = {
+            name: cookie.name,
+            value: cookie.value,
+            url: url, // Use URL instead of domain for __Host- cookies
+            expires: cookie.expires || -1,
+            httpOnly: cookie.httpOnly || false,
+            secure: true, // __Host- cookies must be secure
+            sameSite: cookie.sameSite || 'Lax',
+          } as PlaywrightCookie & { url?: string };
+          // Note: Do NOT set domain, path, or other fields when using url
+          return playwrightCookie as PlaywrightCookie;
+        }
+
+        // For all other cookies, use domain/path approach
+        const playwrightCookie: PlaywrightCookie = {
           name: cookie.name,
           value: cookie.value,
+          domain: cookie.domain || defaultDomain,
           path: cookie.path || '/',
           expires: cookie.expires || -1,
           httpOnly: cookie.httpOnly || false,
@@ -567,16 +615,7 @@ export class ScreenshotService {
           sameSite: cookie.sameSite || 'Lax',
         };
 
-        // Handle __Host- prefix requirements (RFC 6265bis)
-        if (cookie.name.startsWith('__Host-')) {
-          // __Host- cookies MUST:
-          // 1. Have secure flag set
-          // 2. Have path="/"
-          // 3. NOT have a domain attribute (use host-only)
-          playwrightCookie.secure = true;
-          playwrightCookie.path = '/';
-          // For __Host- cookies, don't set domain (host-only)
-        } else if (cookie.name.startsWith('__Secure-')) {
+        if (cookie.name.startsWith('__Secure-')) {
           // __Secure- cookies MUST:
           // 1. Have secure flag set
           // 2. Can have domain and path as specified

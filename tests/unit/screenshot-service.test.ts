@@ -310,27 +310,32 @@ describe('Domain Validation', () => {
     });
   });
 
-  test('should reject parent domain cookie on same domain', async () => {
+  test('should filter cookies with invalid domains and continue', async () => {
     const service = createDomainService();
     await service.initialize();
 
-    // This test checks the validation logic without network calls
+    // This test checks that mismatched cookies are filtered out but screenshot continues
     const cookies = [
       {
         name: 'session_id',
         value: 'test123',
         domain: 'invalid-domain.com',
       },
+      {
+        name: 'valid_cookie',
+        value: 'valid123',
+        domain: 'localhost',
+      },
     ];
 
-    // Should throw for domain mismatch
-    await assert.rejects(
-      service.takeScreenshot({
-        url: `http://localhost:${testServer.port}/simple.html`,
-        cookies,
-      }),
-      /Cookie injection failed.*domain mismatch/
-    );
+    // Should not throw - invalid cookies are filtered out, valid ones remain
+    const result = await service.takeScreenshot({
+      url: `http://localhost:${testServer.port}/simple.html`,
+      cookies,
+    });
+
+    assert.ok(result.data);
+    assert.strictEqual(result.mimeType, 'image/webp');
   });
 
   test('should allow localhost variations', async () => {
@@ -350,7 +355,7 @@ describe('Domain Validation', () => {
     });
   });
 
-  test('should reject invalid domain mismatches', async () => {
+  test('should filter out all invalid cookies and continue without any', async () => {
     const service = createDomainService();
     await service.initialize();
 
@@ -362,13 +367,14 @@ describe('Domain Validation', () => {
       },
     ];
 
-    await assert.rejects(
-      service.takeScreenshot({
-        url: `http://localhost:${testServer.port}/simple.html`,
-        cookies,
-      }),
-      /Cookie injection failed.*domain mismatch/
-    );
+    // Should not throw - all cookies are filtered out but screenshot continues
+    const result = await service.takeScreenshot({
+      url: `http://localhost:${testServer.port}/simple.html`,
+      cookies,
+    });
+
+    assert.ok(result.data);
+    assert.strictEqual(result.mimeType, 'image/webp');
   });
 
   test('should handle real-world authentication cookie scenarios', async () => {
@@ -443,7 +449,7 @@ describe('Domain Validation', () => {
       cookies: validCookies,
     });
 
-    // Invalid domain should fail
+    // Invalid domain cookies should be filtered out but screenshot continues
     const invalidCookies = [
       {
         name: 'invalid_session',
@@ -452,13 +458,14 @@ describe('Domain Validation', () => {
       },
     ];
 
-    await assert.rejects(
-      service.takeScreenshot({
-        url: `http://localhost:${testServer.port}/simple.html`,
-        cookies: invalidCookies,
-      }),
-      /Cookie injection failed.*domain mismatch/
-    );
+    // Should not throw - invalid cookies are filtered out
+    const result2 = await service.takeScreenshot({
+      url: `http://localhost:${testServer.port}/simple.html`,
+      cookies: invalidCookies,
+    });
+
+    assert.ok(result2.data);
+    assert.strictEqual(result2.mimeType, 'image/webp');
   });
 
   test('should handle __Host- and __Secure- cookie prefixes correctly', async () => {
