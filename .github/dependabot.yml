@@ -8,8 +8,6 @@ updates:
       time: "09:00"
       timezone: "Europe/Stockholm"
     open-pull-requests-limit: 10
-    reviewers:
-      - "mattiasw"
     assignees:
       - "mattiasw"
     commit-message:
