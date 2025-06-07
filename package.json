@@ -111,7 +111,7 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/assert": "^1.5.11",
-    "@types/node": "^22.10.2",
+    "@types/node": "^22.15.30",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.0",
     "typescript": "^5.7.2"
