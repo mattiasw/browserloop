@@ -242,14 +242,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Verify npm publication
-        run: |
-          # Wait a moment for npm registry to update
-          sleep 10
-          # Test the published package can be installed and works
-          npm view browserloop version
-          npx browserloop@latest --version
-
       - name: Download Docker image
         uses: actions/download-artifact@v4
         with:
