@@ -1,0 +1,43 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "thursday"
+      time: "09:00"
+      timezone: "Europe/Stockholm"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "mattiasw"
+    assignees:
+      - "mattiasw"
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "automated"
+    # Update all dependencies, not just security
+    versioning-strategy: increase
+    # Group related updates together
+    groups:
+      development-dependencies:
+        dependency-type: "development"
+        patterns:
+          - "@types/*"
+          - "@biomejs/*"
+          - "typescript"
+          - "lint-staged"
+          - "husky"
+      runtime-dependencies:
+        dependency-type: "production"
+        patterns:
+          - "@modelcontextprotocol/*"
+          - "playwright"
+          - "sharp"
+          - "zod"
+    # Allow both direct and indirect dependency updates
+    allow:
+      - dependency-type: "all"
