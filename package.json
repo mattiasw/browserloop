@@ -1,6 +1,6 @@
 {
   "name": "browserloop",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A Model Context Protocol server for taking screenshots of web pages using Playwright",
   "main": "dist/src/index.js",
   "type": "module",
