@@ -58,6 +58,19 @@ Add BrowserLoop to your MCP configuration file (e.g. `~/.cursor/mcp.json`):
 
 **💡 Using `@latest` ensures you always get the newest features and bug fixes automatically.**
 
+#### 🚀 One-Click Install for Cursor
+
+Add BrowserLoop to Cursor with a single click using this deeplink:
+
+**[🔗 Add BrowserLoop to Cursor](cursor://anysphere.cursor-deeplink/mcp/install?name=BrowserLoop&config=eyJjb21tYW5kIjoibnB4IC15IGJyb3dzZXJsb29wQGxhdGVzdCIsImRlc2NyaXB0aW9uIjoiU2NyZWVuc2hvdCBjYXB0dXJlIHNlcnZlciBmb3Igd2ViIHBhZ2VzIHVzaW5nIFBsYXl3cmlnaHQifQ==)**
+
+This deeplink will automatically configure BrowserLoop in your Cursor MCP settings with the optimal configuration using npx and the latest version.
+
+**Prerequisites:** Make sure you have Chromium installed first:
+```bash
+npx playwright install chromium
+```
+
 ### Browser Installation Requirements
 
 **🚨 Critical:** BrowserLoop requires Chromium to be installed via Playwright before it can take screenshots.
