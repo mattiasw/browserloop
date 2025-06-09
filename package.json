@@ -7,12 +7,7 @@
   "bin": {
     "browserloop": "dist/src/index.js"
   },
-  "files": [
-    "dist/src/**/*",
-    "README.md",
-    "LICENSE",
-    "NOTICE"
-  ],
+  "files": ["dist/src/**/*", "README.md", "LICENSE", "NOTICE"],
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"

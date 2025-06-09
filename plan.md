@@ -322,6 +322,32 @@
   - [x] **Removed BROWSERLOOP_SILENT environment variable**: No longer needed since file logging doesn't interfere with MCP protocol
   - [x] **COMPLETE**: Automatic file watching resolves MCP caching issues and works correctly in production MCP environments
 
+## Console Log Reading Tool Implementation
+
+- [x] **MCP Tool Setup**
+  - [x] Add `read_console` tool to MCP server schema
+  - [x] Define tool parameters (URL, timeout, sanitize option)
+  - [x] Create tool handler in MCP server
+
+- [x] **Console Log Service**
+  - [x] Create ConsoleLogService class following existing architecture
+  - [x] Implement Playwright console event listener (console.log, warn, error)
+  - [x] Collect logs from page creation until load complete + 2 second delay
+  - [x] Format logs as JSON with metadata (timestamp, level, message, args)
+
+- [x] **Security & Configuration**
+  - [x] Add BROWSERLOOP_SANITIZE_LOGS config option (default: true, opt-out)
+  - [x] Implement sensitive data masking (API keys, tokens, emails, URLs with auth)
+  - [x] Mask only sensitive parts, keep message structure intact
+  - [x] Add basic log size limits to prevent memory issues
+
+- [x] **Integration & Testing**
+  - [x] Integrate with existing authentication (cookie support)
+  - [x] Add unit tests for log collection and sanitization
+  - [x] Test with both screenshot and console tools together
+  - [x] Update documentation with console log examples
+  - [x] Update README with console log tool description and usage
+
 ## NPX Distribution Implementation
 
 - [x] Check npm package name availability (`browserloop` or scoped alternative)

@@ -82,6 +82,15 @@ const ConfigSchema = z.object({
     defaultTimeout: z.number().min(1000).max(120000),
     defaultWaitForNetworkIdle: z.boolean(),
   }),
+  console: z.object({
+    defaultTimeout: z.number().min(1000).max(120000),
+    defaultSanitize: z.boolean(),
+    defaultWaitForNetworkIdle: z.boolean(),
+    maxLogSize: z.number().min(1000).max(10000000), // 1KB to 10MB
+    defaultLogLevels: z.array(
+      z.enum(['log', 'info', 'warn', 'error', 'debug'])
+    ),
+  }),
   browser: z.object({
     userAgent: z.string().optional(),
     retryCount: z.number().min(0).max(10),
@@ -105,6 +114,7 @@ const ConfigSchema = z.object({
     debug: z.boolean(),
     logFile: z.string().optional(),
     enableMetrics: z.boolean(),
+    silent: z.boolean(),
   }),
   timeouts: z.object({
     browserInit: z.number().min(5000).max(60000),
@@ -186,6 +196,13 @@ export class ConfigManager {
    */
   getTimeoutConfig() {
     return this.config.timeouts;
+  }
+
+  /**
+   * Get console log configuration
+   */
+  getConsoleConfig() {
+    return this.config.console;
   }
 
   /**
@@ -607,6 +624,19 @@ export class ConfigManager {
           true
         ),
       },
+      console: {
+        defaultTimeout: this.parseNumber('BROWSERLOOP_CONSOLE_TIMEOUT', 30000),
+        defaultSanitize: this.parseBoolean('BROWSERLOOP_SANITIZE_LOGS', true),
+        defaultWaitForNetworkIdle: this.parseBoolean(
+          'BROWSERLOOP_CONSOLE_WAIT_NETWORK_IDLE',
+          true
+        ),
+        maxLogSize: this.parseNumber('BROWSERLOOP_MAX_LOG_SIZE', 1048576), // 1MB default
+        defaultLogLevels: this.parseLogLevels(
+          'BROWSERLOOP_CONSOLE_LOG_LEVELS',
+          ['log', 'info', 'warn', 'error', 'debug']
+        ),
+      },
       browser: {
         ...(process.env.BROWSERLOOP_USER_AGENT && {
           userAgent: process.env.BROWSERLOOP_USER_AGENT,
@@ -623,7 +653,7 @@ export class ConfigManager {
           logFile: process.env.BROWSERLOOP_LOG_FILE,
         }),
         enableMetrics: this.parseBoolean('BROWSERLOOP_ENABLE_METRICS', true),
-        // Note: silent field removed - file logging doesn't interfere with MCP protocol
+        silent: true, // Always silent for MCP protocol compatibility
       },
       timeouts: {
         browserInit: this.parseNumber(
@@ -674,6 +704,39 @@ export class ConfigManager {
     if (!value) return defaultValue;
 
     return validValues.includes(value) ? value : defaultValue;
+  }
+
+  private parseLogLevels(
+    envVar: string,
+    defaultValue: Array<'log' | 'info' | 'warn' | 'error' | 'debug'>
+  ): Array<'log' | 'info' | 'warn' | 'error' | 'debug'> {
+    const value = process.env[envVar];
+    if (!value) return defaultValue;
+
+    try {
+      // Support comma-separated string like "log,warn,error"
+      const levels = value
+        .split(',')
+        .map((level) => level.trim().toLowerCase());
+      const validLevels: Array<'log' | 'info' | 'warn' | 'error' | 'debug'> = [
+        'log',
+        'info',
+        'warn',
+        'error',
+        'debug',
+      ];
+
+      const filteredLevels = levels.filter(
+        (level): level is 'log' | 'info' | 'warn' | 'error' | 'debug' =>
+          validLevels.includes(
+            level as 'log' | 'info' | 'warn' | 'error' | 'debug'
+          )
+      );
+
+      return filteredLevels.length > 0 ? filteredLevels : defaultValue;
+    } catch (error) {
+      return defaultValue;
+    }
   }
 
   private parseDefaultCookies(envVar: string): Cookie[] {

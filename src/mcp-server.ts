@@ -19,10 +19,14 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { config } from './config.js';
+import { ConsoleLogService } from './console-service.js';
 import { validateAndSanitize } from './cookie-utils.js';
 import { fileLogger } from './file-logger.js';
 import { ScreenshotService } from './screenshot-service.js';
 import type {
+  ConsoleLogOptions,
+  ConsoleLogResult,
+  ConsoleLogServiceConfig,
   Cookie,
   ScreenshotOptions,
   ScreenshotResult,
@@ -38,6 +42,7 @@ interface McpScreenshotOptions extends ScreenshotOptions {
 export class McpScreenshotServer {
   private server: McpServer;
   private screenshotService: ScreenshotService;
+  private consoleLogService: ConsoleLogService;
 
   constructor() {
     // Log startup information to file
@@ -68,6 +73,11 @@ export class McpScreenshotServer {
       config.getConfig() as ScreenshotServiceConfig
     );
 
+    // Create console log service with configuration
+    this.consoleLogService = new ConsoleLogService(
+      config.getConfig() as ConsoleLogServiceConfig
+    );
+
     // Log configuration after creation
     const authConfig = config.getAuthenticationConfig();
     const watcherStatus = config.getFileWatcherStatus();
@@ -83,6 +93,7 @@ export class McpScreenshotServer {
     );
 
     this.setupScreenshotTool();
+    this.setupConsoleLogTool();
   }
 
   private setupScreenshotTool(): void {
@@ -290,11 +301,155 @@ export class McpScreenshotServer {
     );
   }
 
+  private setupConsoleLogTool(): void {
+    const consoleConfig = config.getConsoleConfig();
+    const browserConfig = config.getBrowserConfig();
+
+    // Parameter limits
+    const PARAMETER_LIMITS = {
+      TIMEOUT: { MIN: 1000, MAX: 120000 },
+    };
+
+    // Cookie validation schema (same as screenshot tool)
+    const CookieObjectSchema = z.object({
+      name: z.string().min(1),
+      value: z.string(),
+      domain: z.string().optional(),
+      path: z.string().optional(),
+      httpOnly: z.boolean().optional(),
+      secure: z.boolean().optional(),
+      expires: z.number().optional(),
+      sameSite: z.enum(['Strict', 'Lax', 'None']).optional(),
+    });
+
+    const CookiesSchema = z
+      .union([z.array(CookieObjectSchema), z.string().min(1)])
+      .optional();
+
+    // Register the console log reading tool
+    this.server.tool(
+      'read_console',
+      {
+        url: z.string().url('Invalid URL format'),
+        timeout: z
+          .number()
+          .min(
+            PARAMETER_LIMITS.TIMEOUT.MIN,
+            `Timeout must be at least ${PARAMETER_LIMITS.TIMEOUT.MIN}ms`
+          )
+          .max(
+            PARAMETER_LIMITS.TIMEOUT.MAX,
+            `Timeout must be at most ${PARAMETER_LIMITS.TIMEOUT.MAX}ms`
+          )
+          .optional(),
+        sanitize: z.boolean().optional(),
+        waitForNetworkIdle: z.boolean().optional(),
+        userAgent: z.string().optional(),
+        logLevels: z
+          .array(z.enum(['log', 'info', 'warn', 'error', 'debug']))
+          .optional(),
+        cookies: CookiesSchema,
+      },
+      async (request, extra) => {
+        const requestId = extra.requestId || 'unknown';
+        try {
+          // Set defaults from configuration
+          const baseOptions = {
+            url: request.url,
+            timeout: request.timeout ?? consoleConfig.defaultTimeout,
+            sanitize: request.sanitize ?? consoleConfig.defaultSanitize,
+            waitForNetworkIdle:
+              request.waitForNetworkIdle ??
+              consoleConfig.defaultWaitForNetworkIdle,
+            logLevels: request.logLevels ?? consoleConfig.defaultLogLevels,
+          };
+
+          // Only add userAgent if one is provided
+          const userAgent = request.userAgent ?? browserConfig.userAgent;
+          const options: ConsoleLogOptions = userAgent
+            ? { ...baseOptions, userAgent }
+            : baseOptions;
+
+          // Add cookies if provided
+          if (request.cookies) {
+            try {
+              const { cookies } = validateAndSanitize(request.cookies);
+              options.cookies = cookies;
+            } catch (cookieError) {
+              const cookieErrorMessage =
+                cookieError instanceof Error
+                  ? cookieError.message
+                  : 'Cookie validation failed';
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Cookie validation failed: ${cookieErrorMessage}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+          }
+
+          // Read console logs
+          const result: ConsoleLogResult =
+            await this.consoleLogService.readConsoleLogs(options);
+
+          // Format response for MCP
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    logs: result.logs,
+                    metadata: {
+                      url: result.url,
+                      startTimestamp: result.startTimestamp,
+                      endTimestamp: result.endTimestamp,
+                      totalLogs: result.totalLogs,
+                      duration: result.endTimestamp - result.startTimestamp,
+                      configuration: {
+                        sanitize: options.sanitize,
+                        timeout: options.timeout,
+                        waitForNetworkIdle: options.waitForNetworkIdle,
+                        retryCount: browserConfig.retryCount,
+                        userAgent: options.userAgent || 'default',
+                      },
+                    },
+                  },
+                  null,
+                  2
+                ),
+              },
+            ],
+            isError: false,
+          };
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : 'Unknown error';
+
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Console log reading failed: ${errorMessage}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+  }
+
   /**
    * Start the MCP server
    */
   async start(): Promise<void> {
     await this.screenshotService.initialize();
+    await this.consoleLogService.initialize();
 
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
@@ -305,6 +460,7 @@ export class McpScreenshotServer {
    */
   async initialize(): Promise<void> {
     await this.screenshotService.initialize();
+    await this.consoleLogService.initialize();
   }
 
   /**
@@ -313,6 +469,12 @@ export class McpScreenshotServer {
   async cleanup(): Promise<void> {
     try {
       await this.screenshotService.cleanup();
+    } catch (error) {
+      // Silent cleanup - don't interfere with stdio
+    }
+
+    try {
+      await this.consoleLogService.cleanup();
     } catch (error) {
       // Silent cleanup - don't interfere with stdio
     }
