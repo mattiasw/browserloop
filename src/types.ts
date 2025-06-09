@@ -438,3 +438,101 @@ export interface FileWatcherState {
   /** Global debounce delay for all watchers */
   defaultDebounceDelay: number;
 }
+
+/**
+ * Console log entry with metadata
+ */
+export interface ConsoleLogEntry {
+  /** Log timestamp in milliseconds since epoch */
+  timestamp: number;
+  /** Log level (log, info, warn, error, debug) */
+  level: 'log' | 'info' | 'warn' | 'error' | 'debug';
+  /** Main log message */
+  message: string;
+  /** Additional arguments passed to console method */
+  args: string[];
+}
+
+/**
+ * Console log reading options
+ */
+export interface ConsoleLogOptions {
+  /** URL to read console logs from */
+  url: string;
+  /** Timeout in milliseconds (default: 30000) */
+  timeout?: number;
+  /** Whether to sanitize sensitive data (default: true) */
+  sanitize?: boolean;
+  /** Cookies for authentication (optional) */
+  cookies?: Cookie[] | string;
+  /** User agent string (optional) */
+  userAgent?: string;
+  /** Wait for network idle before finishing collection (default: true) */
+  waitForNetworkIdle?: boolean;
+  /** Log levels to capture (default: ['log', 'info', 'warn', 'error', 'debug']) */
+  logLevels?: Array<'log' | 'info' | 'warn' | 'error' | 'debug'>;
+}
+
+/**
+ * Console log reading result
+ */
+export interface ConsoleLogResult {
+  /** Array of console log entries */
+  logs: ConsoleLogEntry[];
+  /** URL that was monitored */
+  url: string;
+  /** Timestamp when collection started */
+  startTimestamp: number;
+  /** Timestamp when collection ended */
+  endTimestamp: number;
+  /** Total number of logs collected */
+  totalLogs: number;
+}
+
+/**
+ * Internal console log configuration with all resolved properties
+ */
+export interface InternalConsoleLogConfig {
+  /** URL to monitor */
+  url: string;
+  /** Timeout in milliseconds (resolved from defaults) */
+  timeout: number;
+  /** Whether to sanitize sensitive data (resolved from defaults) */
+  sanitize: boolean;
+  /** Cookies for authentication (merged and resolved) */
+  cookies?: Cookie[] | string | undefined;
+  /** User agent string (resolved from defaults) */
+  userAgent?: string;
+  /** Wait for network idle before finishing collection (resolved from defaults) */
+  waitForNetworkIdle: boolean;
+  /** Log levels to capture (resolved from defaults) */
+  logLevels: Array<'log' | 'info' | 'warn' | 'error' | 'debug'>;
+}
+
+/**
+ * Console log service configuration
+ */
+export interface ConsoleLogServiceConfig {
+  /** Default console log settings */
+  console: {
+    defaultTimeout: number;
+    defaultSanitize: boolean;
+    defaultWaitForNetworkIdle: boolean;
+    maxLogSize: number;
+    defaultLogLevels: Array<'log' | 'info' | 'warn' | 'error' | 'debug'>;
+  };
+  /** Browser configuration (shared with screenshot service) */
+  browser: {
+    userAgent?: string;
+    retryCount: number;
+    retryDelay: number;
+  };
+  /** Authentication configuration (shared) */
+  authentication: {
+    defaultCookies: Cookie[];
+  };
+  /** Logging configuration (shared) */
+  logging: LoggingConfig;
+  /** Timeout configuration (shared) */
+  timeouts: TimeoutConfig;
+}

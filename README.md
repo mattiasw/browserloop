@@ -4,7 +4,7 @@
 [![npm version](https://badge.fury.io/js/browserloop.svg)](https://www.npmjs.com/package/browserloop)
 [![npm downloads](https://img.shields.io/npm/dm/browserloop.svg)](https://www.npmjs.com/package/browserloop)
 
-A Model Context Protocol (MCP) server for taking screenshots of web pages using Playwright. This tool allows AI agents to automatically capture and analyze screenshots for UI verification or other tasks.
+A Model Context Protocol (MCP) server for taking screenshots and reading console logs from web pages using Playwright. This tool allows AI agents to automatically capture screenshots and monitor browser console output for debugging, testing, and development tasks.
 
 **NOTE:** Almost all of the code in this repository has been auto-generated. That means you should probably not trust it too much. That being said, it does work and I'm using it myself.
 
@@ -13,6 +13,7 @@ A Model Context Protocol (MCP) server for taking screenshots of web pages using 
 ## Features
 
 - 📸 High-quality screenshot capture using Playwright
+- 📝 Console log monitoring and collection from web pages
 - 🌐 Support for localhost and remote URLs
 - 🍪 Cookie-based authentication for protected pages
 - 🐳 Docker containerization for consistent environments
@@ -21,6 +22,7 @@ A Model Context Protocol (MCP) server for taking screenshots of web pages using 
 - 🤖 Full MCP protocol integration with AI development tools
 - 🔧 Configurable viewport sizes and capture options
 - 📱 Full page and element-specific screenshot capture
+- ⚠️ Browser warning and error capture (Permissions-Policy, security warnings)
 - ⚡ TypeScript with Biome for fast development
 - 🧪 Comprehensive testing with Node.js built-in test runner
 
@@ -50,7 +52,7 @@ Add BrowserLoop to your MCP configuration file (e.g. `~/.cursor/mcp.json`):
     "browserloop": {
       "command": "npx",
       "args": ["-y", "browserloop@latest"],
-      "description": "Screenshot capture server for web pages using Playwright"
+      "description": "Screenshot and console log capture server for web pages using Playwright"
     }
   }
 }
@@ -138,7 +140,7 @@ npm run build
       "args": [
         "/absolute/path/to/browserloop/dist/src/index.js"
       ],
-      "description": "Screenshot capture server for web pages using Playwright"
+      "description": "Screenshot and console log capture server for web pages using Playwright"
     }
   }
 }
@@ -152,12 +154,22 @@ npm run build
 
 Once configured, you can use natural language commands in your AI tool:
 
+#### Screenshots
 ```
 Take a screenshot of https://example.com
 Take a screenshot of https://example.com with width 1920 and height 1080
 Take a screenshot of https://example.com in JPEG format with 95% quality
 Take a full page screenshot of https://example.com
 Take a screenshot of http://localhost:3000 to verify the UI changes
+```
+
+#### Console Log Reading
+```
+Read console logs from https://example.com
+Check for console errors on https://example.com
+Monitor console warnings from http://localhost:3000
+Read only error and warning logs from https://example.com
+Capture console output from https://example.com for debugging
 ```
 
 ### 🔐 Cookie Authentication
@@ -218,6 +230,38 @@ BrowserLoop can be configured using environment variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `BROWSERLOOP_DEFAULT_COOKIES` | - | Default cookies as file path or JSON string (see [Cookie Authentication Guide](docs/COOKIE_AUTHENTICATION.md)) |
+
+### Console Log Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BROWSERLOOP_CONSOLE_LOG_LEVELS` | `log,info,warn,error,debug` | Comma-separated list of log levels to capture |
+| `BROWSERLOOP_CONSOLE_TIMEOUT` | `30000` | Page navigation timeout in milliseconds (not log collection time) |
+| `BROWSERLOOP_SANITIZE_LOGS` | `true` | Enable/disable sensitive data sanitization in logs |
+| `BROWSERLOOP_CONSOLE_WAIT_NETWORK_IDLE` | `true` | Wait for network idle before finishing collection |
+| `BROWSERLOOP_MAX_LOG_SIZE` | `1048576` | Maximum total log size in bytes (1MB) |
+
+**Note:** Console log collection always waits exactly 3 seconds after page load to capture console messages. The timeout setting only affects how long the page has to initially load.
+
+#### Log Sanitization
+
+Console log sanitization is **enabled by default** (`BROWSERLOOP_SANITIZE_LOGS=true`) to protect sensitive information. When enabled, the following patterns are automatically masked:
+
+| Pattern Type | Example Input | Masked Output |
+|-------------|---------------|---------------|
+| **API Keys** | `sk_live_1234567890abcdef...` | `[API_KEY_MASKED]` |
+| **Email Addresses** | `user@example.com` | `[EMAIL_MASKED]` |
+| **JWT Tokens** | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` | `[JWT_TOKEN_MASKED]` |
+| **Auth Headers** | `Bearer abc123token...` | `[AUTH_HEADER_MASKED]` |
+| **URLs with Auth** | `https://api.com/data?token=secret123` | `[URL_WITH_AUTH_MASKED]` |
+| **Secret Variables** | `password: mySecretPass` | `password: [VALUE_MASKED]` |
+
+**To disable sanitization** (for debugging):
+```bash
+BROWSERLOOP_SANITIZE_LOGS=false
+```
+
+**Note**: Sanitization preserves log structure while masking sensitive content, making logs safe for sharing and analysis.
 
 ### Performance & Reliability
 
@@ -300,6 +344,18 @@ Reference in MCP config:
 }
 ```
 
+### Console Log Configuration Examples
+
+```bash
+# Only capture warnings and errors
+BROWSERLOOP_CONSOLE_LOG_LEVELS="warn,error"
+
+# Debug mode with all logs, no sanitization
+BROWSERLOOP_DEBUG="true"
+BROWSERLOOP_SANITIZE_LOGS="false"
+BROWSERLOOP_CONSOLE_LOG_LEVELS="log,info,warn,error,debug"
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -321,6 +377,17 @@ npx playwright install chromium
 **Screenshots Show Login Pages**
 - Use cookie authentication (see [Cookie Authentication Guide](docs/COOKIE_AUTHENTICATION.md))
 - Check cookie expiration and domain settings
+
+**Console Logs Are Empty**
+- Some production websites have no console output (this is normal)
+- Test with development sites that have console activity
+- Enable debug logging: `BROWSERLOOP_DEBUG=true` and check `/tmp/browserloop.log`
+- Check log level filtering: `BROWSERLOOP_CONSOLE_LOG_LEVELS=log,info,warn,error,debug`
+
+**Console Log Collection Timing**
+- Collection always waits exactly 3 seconds after page load
+- `BROWSERLOOP_CONSOLE_TIMEOUT` controls page loading timeout, not log collection time
+- Fast sites will still take ~3-4 seconds total (load + 3s collection + processing)
 
 **Network/Connection Issues**
 - Test with external URLs first: `https://example.com`
