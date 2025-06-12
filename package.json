@@ -104,9 +104,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
     "@types/sharp": "^0.31.1",
-    "playwright": "^1.48.2",
+    "playwright": "^1.53.0",
     "sharp": "^0.34.2",
-    "zod": "^3.25.56"
+    "zod": "^3.25.63"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
