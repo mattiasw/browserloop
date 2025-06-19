@@ -27,7 +27,7 @@ import { describe, it } from 'node:test';
 
 const BUILT_BINARY = join(process.cwd(), 'dist', 'src', 'index.js');
 
-function createTestPromise<T>(
+function createTestPromise<_T>(
   command: string,
   args: string[],
   options: {
@@ -37,7 +37,7 @@ function createTestPromise<T>(
   } = {}
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> {
   return new Promise((resolve, reject) => {
-    const { timeout = 5000, env = {}, expectedExitCode = 0 } = options;
+    const { timeout = 5000, env = {} } = options;
 
     const child = spawn(command, args, {
       env: { ...process.env, ...env },

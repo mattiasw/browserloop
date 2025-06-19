@@ -17,7 +17,7 @@
 
 import assert from 'node:assert';
 import { afterEach, beforeEach, describe, test } from 'node:test';
-import { Logger, categorizeError } from '../../src/logger.js';
+import { categorizeError, Logger } from '../../src/logger.js';
 import type { BrowserloopError, LoggingConfig } from '../../src/types.js';
 
 describe('Logger', () => {

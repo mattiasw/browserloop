@@ -15,7 +15,7 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import { appendFile, mkdir, writeFile } from 'node:fs/promises';
+import { appendFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import type {
   BrowserloopError,
@@ -177,7 +177,6 @@ export class Logger {
       this.metrics.errorsBySeverity[key as ErrorSeverity] = 0;
     }
     this.hourlyErrors = [];
-    // biome-ignore lint/performance/noDelete: Required for optional property cleanup
     delete this.metrics.lastError;
   }
 

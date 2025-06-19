@@ -256,7 +256,7 @@ For detailed troubleshooting: https://github.com/mattiasw/browserloop#readme
 async function gracefulShutdown() {
   try {
     await mcpServer.cleanup();
-  } catch (error) {
+  } catch (_error) {
     // Silent cleanup - don't spam console during shutdown
   }
   process.exit(0);
@@ -312,7 +312,7 @@ process.on('SIGINT', gracefulShutdown);
 process.on('SIGTERM', gracefulShutdown);
 
 // Handle unhandled rejections
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (_reason, _promise) => {
   gracefulShutdown();
 });
 
@@ -338,6 +338,6 @@ Error details: ${error.message}
 parseArguments();
 
 // Start the MCP server
-startMcpServer().catch((error) => {
+startMcpServer().catch((_error) => {
   process.exit(1);
 });

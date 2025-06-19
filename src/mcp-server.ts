@@ -97,7 +97,7 @@ export class McpScreenshotServer {
   }
 
   private setupScreenshotTool(): void {
-    const browserConfig = config.getBrowserConfig();
+    const _browserConfig = config.getBrowserConfig();
     const viewportConfig = config.getViewportConfig();
     const screenshotConfig = config.getScreenshotConfig();
 
@@ -182,7 +182,7 @@ export class McpScreenshotServer {
         cookies: CookiesSchema,
       },
       async (request, extra) => {
-        const requestId = extra.requestId || 'unknown';
+        const _requestId = extra.requestId || 'unknown';
         try {
           // Set defaults from configuration
           const baseOptions = {
@@ -351,7 +351,7 @@ export class McpScreenshotServer {
         cookies: CookiesSchema,
       },
       async (request, extra) => {
-        const requestId = extra.requestId || 'unknown';
+        const _requestId = extra.requestId || 'unknown';
         try {
           // Set defaults from configuration
           const baseOptions = {
@@ -469,19 +469,19 @@ export class McpScreenshotServer {
   async cleanup(): Promise<void> {
     try {
       await this.screenshotService.cleanup();
-    } catch (error) {
+    } catch (_error) {
       // Silent cleanup - don't interfere with stdio
     }
 
     try {
       await this.consoleLogService.cleanup();
-    } catch (error) {
+    } catch (_error) {
       // Silent cleanup - don't interfere with stdio
     }
 
     try {
       config.cleanup();
-    } catch (error) {
+    } catch (_error) {
       // Silent cleanup - don't interfere with stdio
     }
   }

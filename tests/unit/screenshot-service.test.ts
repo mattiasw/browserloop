@@ -16,21 +16,13 @@
  */
 
 import assert from 'node:assert';
-import {
-  after,
-  afterEach,
-  before,
-  beforeEach,
-  describe,
-  mock,
-  test,
-} from 'node:test';
+import { after, afterEach, before, describe, test } from 'node:test';
 import { ScreenshotService } from '../../src/screenshot-service.js';
 import {
   createTestScreenshotServiceConfig,
+  createTestServer,
   isValidBase64Image,
 } from '../../src/test-utils.js';
-import { createTestServer } from '../../src/test-utils.js';
 import type { ScreenshotServiceConfig } from '../../src/types.js';
 
 // Type for the test server returned by createTestServer

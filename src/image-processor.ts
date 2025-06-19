@@ -82,7 +82,7 @@ export function needsConversion(
  * Get the optimal Playwright capture format for conversion
  */
 export function getPlaywrightFormat(
-  requestedFormat: 'webp' | 'png' | 'jpeg'
+  _requestedFormat: 'webp' | 'png' | 'jpeg'
 ): 'png' | 'jpeg' {
   // For best quality conversion, always capture as PNG
   // PNG is lossless and supported by all browsers

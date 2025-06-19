@@ -19,8 +19,8 @@ import {
   type Browser,
   type CDPSession,
   type ConsoleMessage,
-  type Page,
   chromium,
+  type Page,
 } from 'playwright';
 import { config } from './config.js';
 import {
@@ -28,9 +28,8 @@ import {
   parseCookies,
   validateAndSanitize,
 } from './cookie-utils.js';
-import { Logger, categorizeError } from './logger.js';
+import { categorizeError, Logger } from './logger.js';
 import type {
-  BrowserloopError,
   ConsoleLogEntry,
   ConsoleLogOptions,
   ConsoleLogResult,
@@ -899,7 +898,7 @@ export class ConsoleLogService {
       if (this.browser) {
         await this.browser.close();
       }
-    } catch (error) {
+    } catch (_error) {
       // Ignore cleanup errors
     }
 
@@ -919,7 +918,7 @@ export class ConsoleLogService {
       if (!page.isClosed()) {
         await page.close();
       }
-    } catch (error) {
+    } catch (_error) {
       // Silent cleanup - don't interfere with main operation
     }
   }

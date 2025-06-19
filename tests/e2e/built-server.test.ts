@@ -92,7 +92,7 @@ describe('Built Server E2E', () => {
           reject(new Error('MCP protocol test timeout'));
         }, 10000);
 
-        const receivedOutput = false;
+        const _receivedOutput = false;
 
         const serverProcess = spawn('node', [builtServerPath], {
           stdio: ['pipe', 'pipe', 'pipe'],
