@@ -22,54 +22,8 @@
  * A Model Context Protocol server for taking screenshots of web pages
  */
 
-import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { getPackageInfo } from './package-info.js';
 import { mcpServer } from './mcp-server.js';
-
-// Dynamic version reading
-function getPackageInfo() {
-  try {
-    const currentDir = dirname(fileURLToPath(import.meta.url));
-    // Try multiple paths to find package.json (handles both dev and dist)
-    const possiblePaths = [
-      join(currentDir, '../../package.json'), // From dist/src/
-      join(currentDir, '../package.json'), // From src/
-      join(currentDir, 'package.json'), // Same directory
-    ];
-
-    for (const path of possiblePaths) {
-      try {
-        const packageJson = JSON.parse(readFileSync(path, 'utf8'));
-        return {
-          version: packageJson.version || '1.0.0',
-          homepage:
-            packageJson.homepage ||
-            'https://github.com/mattiasw/browserloop#readme',
-          repository:
-            packageJson.repository?.url
-              ?.replace('git+', '')
-              .replace('.git', '') || 'https://github.com/mattiasw/browserloop',
-        };
-      } catch {
-        // Silently ignore JSON parsing errors and use fallback
-      }
-    }
-
-    // Fallback if package.json not found
-    return {
-      version: '1.0.0',
-      homepage: 'https://github.com/mattiasw/browserloop#readme',
-      repository: 'https://github.com/mattiasw/browserloop',
-    };
-  } catch {
-    return {
-      version: '1.0.0',
-      homepage: 'https://github.com/mattiasw/browserloop#readme',
-      repository: 'https://github.com/mattiasw/browserloop',
-    };
-  }
-}
 
 function detectNpxUsage() {
   // Detect if running via NPX by checking environment and process arguments
