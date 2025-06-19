@@ -22,6 +22,7 @@ import { config } from './config.js';
 import { ConsoleLogService } from './console-service.js';
 import { validateAndSanitize } from './cookie-utils.js';
 import { fileLogger } from './file-logger.js';
+import { getPackageInfo } from './package-info.js';
 import { ScreenshotService } from './screenshot-service.js';
 import type {
   ConsoleLogOptions,
@@ -62,11 +63,19 @@ export class McpScreenshotServer {
     );
     fileLogger.debug(`[MCP-Server]   Working directory = "${process.cwd()}"`);
 
-    // Create the MCP server instance
-    this.server = new McpServer({
-      name: 'browserloop',
-      version: '1.0.0',
-    });
+    // Create the MCP server instance with proper capabilities
+    const packageInfo = getPackageInfo();
+    this.server = new McpServer(
+      {
+        name: 'browserloop',
+        version: packageInfo.version,
+      },
+      {
+        capabilities: {
+          tools: {},
+        },
+      }
+    );
 
     // Create screenshot service with configuration
     this.screenshotService = new ScreenshotService(
