@@ -461,7 +461,7 @@ export class ConfigManager {
         try {
           watcherConfig.watcher.close();
           globalWatcherRegistry.delete(filePath);
-        } catch (closeError) {
+        } catch (_closeError) {
           // Silent cleanup - don't log watcher close errors
         }
       }
@@ -554,7 +554,7 @@ export class ConfigManager {
           try {
             watcherConfig.watcher.close();
             globalWatcherRegistry.delete(filePath);
-          } catch (error) {
+          } catch (_error) {
             // Silent cleanup - don't log watcher close errors
           }
         }
@@ -734,7 +734,7 @@ export class ConfigManager {
       );
 
       return filteredLevels.length > 0 ? filteredLevels : defaultValue;
-    } catch (error) {
+    } catch (_error) {
       return defaultValue;
     }
   }

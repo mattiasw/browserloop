@@ -21,9 +21,9 @@
 
 import { readFile } from 'node:fs/promises';
 import {
+  createServer,
   type IncomingMessage,
   type ServerResponse,
-  createServer,
 } from 'node:http';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -116,7 +116,7 @@ export function createTestServer(port = 0) {
             res.writeHead(200, { 'Content-Type': 'text/html' });
             res.end(content);
             return;
-          } catch (error) {
+          } catch (_error) {
             // File not found, continue to 404
           }
         }
@@ -124,7 +124,7 @@ export function createTestServer(port = 0) {
         // 404 for other routes
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
-      } catch (error) {
+      } catch (_error) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Internal Server Error');
       }

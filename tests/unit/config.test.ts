@@ -16,7 +16,7 @@
  */
 
 import assert from 'node:assert';
-import { mkdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { unlinkSync, writeFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, test } from 'node:test';
 import {
   ConfigManager,
@@ -1065,7 +1065,7 @@ describe('ConfigManager - File Watching', () => {
 
       // Clean up
       config.cleanup();
-    } catch (error) {
+    } catch (_error) {
       // File was already deleted above
       try {
         const config = new ConfigManager();

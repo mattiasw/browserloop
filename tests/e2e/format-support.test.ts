@@ -16,9 +16,8 @@
  */
 
 import assert from 'node:assert';
-import { readFile } from 'node:fs/promises';
-import { type Server, createServer } from 'node:http';
-import { dirname, join } from 'node:path';
+import { createServer, type Server } from 'node:http';
+import { dirname } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { ScreenshotService } from '../../src/screenshot-service.js';
@@ -56,7 +55,7 @@ describe('Format Support E2E', () => {
     await screenshotService.initialize();
 
     // Start HTTP server for testing
-    server = createServer((req, res) => {
+    server = createServer((_req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(`
         <!DOCTYPE html>

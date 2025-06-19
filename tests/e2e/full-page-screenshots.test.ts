@@ -17,7 +17,7 @@
 
 import assert from 'node:assert';
 import { readFile } from 'node:fs/promises';
-import { type Server, createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { dirname, join } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -67,7 +67,7 @@ describe('Full Page Screenshots E2E', () => {
         const content = await readFile(filePath, 'utf-8');
         res.writeHead(200, { 'Content-Type': 'text/html' });
         res.end(content);
-      } catch (error) {
+      } catch (_error) {
         res.writeHead(500, { 'Content-Type': 'text/plain' });
         res.end('Server Error');
       }

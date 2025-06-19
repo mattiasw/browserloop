@@ -16,7 +16,7 @@
  */
 
 import assert from 'node:assert';
-import { exec, spawn } from 'node:child_process';
+import { exec } from 'node:child_process';
 import { test } from 'node:test';
 import { promisify } from 'node:util';
 

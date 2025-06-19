@@ -17,10 +17,10 @@
 
 import {
   type Browser,
+  chromium,
   type Locator,
   type Page,
   type Cookie as PlaywrightCookie,
-  chromium,
 } from 'playwright';
 import { config } from './config.js';
 import {
@@ -30,12 +30,11 @@ import {
   validateCookieSecurity,
 } from './cookie-utils.js';
 import {
-  type ImageConversionOptions,
   convertImage,
   getMimeType,
   needsConversion,
 } from './image-processor.js';
-import { Logger, categorizeError } from './logger.js';
+import { categorizeError, Logger } from './logger.js';
 import type {
   BrowserloopError,
   Cookie,
@@ -798,7 +797,7 @@ export class ScreenshotService {
         if (enhanced.path === undefined) enhanced.path = '/';
         // __Host- cookies must not have domain - remove it if present
         if (enhanced.domain !== undefined) {
-          const { domain, ...cookieWithoutDomain } = enhanced;
+          const { domain: _domain, ...cookieWithoutDomain } = enhanced;
           return cookieWithoutDomain as Cookie;
         }
       } else if (cookie.name.startsWith('__Secure-')) {
@@ -1000,7 +999,7 @@ export class ScreenshotService {
     // Wait for the element to be attached to the DOM before checking count
     try {
       await element.waitFor({ state: 'attached', timeout: 5000 });
-    } catch (error) {
+    } catch (_error) {
       throw new Error(`Element not found: ${selector}`);
     }
 
@@ -1010,7 +1009,7 @@ export class ScreenshotService {
   }
 
   private async captureElementScreenshot(
-    page: Page,
+    _page: Page,
     element: Locator,
     config: ReturnType<typeof this.createScreenshotConfig>
   ): Promise<Buffer> {
@@ -1224,7 +1223,7 @@ export class ScreenshotService {
       this.logger.debug('Page returned to pool', {
         poolSize: this.pagePool.length,
       });
-    } catch (error) {
+    } catch (_error) {
       // If page cleanup fails, close it instead of reusing
       await this.safeClosePage(page);
       this.activePages.delete(page);

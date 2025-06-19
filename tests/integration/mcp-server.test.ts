@@ -372,7 +372,7 @@ describe('MCP Server Integration', () => {
 
     it('should prioritize selector over fullPage when both are provided', () => {
       // Test that element screenshots take precedence over full page when selector is provided
-      const testCase = { selector: '#main-header', fullPage: true };
+      const _testCase = { selector: '#main-header', fullPage: true };
 
       // When both selector and fullPage are provided, selector should take precedence
       const expectedMethod = 'takeElementScreenshot';

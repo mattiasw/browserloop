@@ -16,7 +16,7 @@
  */
 
 import assert from 'node:assert';
-import { type Server, createServer } from 'node:http';
+import { createServer, type Server } from 'node:http';
 import { after, before, describe, test } from 'node:test';
 import { createPerformanceTester } from '../../src/performance.js';
 import { ScreenshotService } from '../../src/screenshot-service.js';
@@ -47,7 +47,7 @@ describe('Performance Benchmarks', () => {
 
   before(async () => {
     // Create test server
-    server = createServer((req, res) => {
+    server = createServer((_req, res) => {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(`
         <!DOCTYPE html>
