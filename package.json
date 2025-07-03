@@ -109,9 +109,9 @@
     "zod": "^3.25.67"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.0.5",
+    "@biomejs/biome": "^2.0.6",
     "@types/assert": "^1.5.11",
-    "@types/node": "^24.0.4",
+    "@types/node": "^24.0.10",
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "typescript": "^5.7.2"
