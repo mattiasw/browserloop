@@ -102,11 +102,11 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.13.3",
+    "@modelcontextprotocol/sdk": "^1.15.0",
     "@types/sharp": "^0.31.1",
     "playwright": "^1.53.2",
-    "sharp": "^0.34.2",
-    "zod": "^3.25.71"
+    "sharp": "^0.34.3",
+    "zod": "^4.0.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.1.1",
