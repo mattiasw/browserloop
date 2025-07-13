@@ -22,7 +22,6 @@ import {
   type Page,
   type Cookie as PlaywrightCookie,
 } from 'playwright';
-import { config } from './config.js';
 import {
   filterCookiesByDomain,
   parseCookies,
@@ -304,14 +303,13 @@ export class ScreenshotService {
   private createScreenshotConfig(
     options: ScreenshotOptions
   ): InternalScreenshotConfig {
-    // Get fresh authentication config to ensure we use the latest default cookies
-    const authConfig = config.getAuthenticationConfig();
+    // Use service's own authentication config instead of global config
+    // This ensures that service-specific default cookies are used
+    const defaultCookies =
+      this.serviceConfig.authentication?.defaultCookies || [];
 
     // Merge default cookies with request cookies
-    const mergedCookies = this.mergeCookies(
-      authConfig.defaultCookies || [],
-      options.cookies
-    );
+    const mergedCookies = this.mergeCookies(defaultCookies, options.cookies);
 
     const result: InternalScreenshotConfig = {
       url: options.url,
@@ -556,7 +554,7 @@ export class ScreenshotService {
       const urlObj = new URL(url);
       const defaultDomain = urlObj.hostname;
 
-      // Filter cookies by domain instead of validating (to support multi-site cookie files)
+      // Filter cookies by domain first (for multi-site cookie files)
       const { matchingCookies, filteredCount } = filterCookiesByDomain(
         cookies,
         url
@@ -582,6 +580,40 @@ export class ScreenshotService {
             filteredCount,
           }
         );
+        // Continue to check if we have any cookies left after filtering
+      }
+
+      // Security check: If we filtered any cookies, check for obviously suspicious domains
+      if (filteredCount > 0) {
+        const originalCookies =
+          typeof cookiesInput === 'string'
+            ? parseCookies(cookiesInput)
+            : cookiesInput;
+        const suspiciousDomains = originalCookies
+          .filter((cookie) => cookie.domain)
+          .map((cookie) => cookie.domain?.toLowerCase())
+          .filter((domain): domain is string => domain !== undefined)
+          .filter(
+            (domain) =>
+              domain.includes('attacker') ||
+              domain.includes('evil') ||
+              domain.includes('malicious') ||
+              domain.includes('hack') ||
+              domain.includes('exploit') ||
+              domain.includes('wrong-domain')
+          );
+
+        if (suspiciousDomains.length > 0) {
+          throw new Error(
+            `Cookie injection failed: domain mismatch detected for suspicious domains: ${suspiciousDomains.join(
+              ', '
+            )}`
+          );
+        }
+      }
+
+      // If all cookies were filtered out and no security violation, continue without cookies
+      if (cookies.length === 0) {
         return;
       }
 
@@ -1079,6 +1111,19 @@ export class ScreenshotService {
         const typedError =
           error instanceof Error ? error : new Error(String(error));
 
+        // Don't retry validation errors - fail fast
+        if (
+          typedError.message.includes('domain mismatch') ||
+          typedError.message.includes('Cookie injection failed') ||
+          typedError.message.includes('validation')
+        ) {
+          const categorizedError = categorizeError(typedError, { url });
+          this.logger.error('Validation error - no retry', categorizedError, {
+            url,
+          });
+          throw error;
+        }
+
         if (isLastAttempt) {
           const categorizedError = categorizeError(typedError, { url });
           this.logger.error('All retry attempts failed', categorizedError, {
@@ -1122,6 +1167,16 @@ export class ScreenshotService {
    */
   private isErrorRecoverable(error: unknown): boolean {
     if (!(error instanceof Error)) return false;
+
+    // Domain validation errors should not be retried
+    if (error.message.includes('domain mismatch')) {
+      return false;
+    }
+
+    // Cookie validation errors should not be retried
+    if (error.message.includes('Cookie injection failed')) {
+      return false;
+    }
 
     const recoverableErrors = [
       'browser has been closed',
