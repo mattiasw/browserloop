@@ -361,12 +361,12 @@ describe('Authentication Scenarios E2E', () => {
         await testServer.start();
         const port = testServer.port;
 
-        // Create cookies with wrong domain that should be rejected
+        // Create cookies with wrong domain that should be filtered out
         const invalidDomainCookies: Cookie[] = [
           {
             name: 'invalid_session',
             value: 'session_value_123',
-            domain: 'example.com', // Wrong domain
+            domain: 'example.com', // Wrong domain - will be filtered
             path: '/',
           },
         ];
@@ -376,11 +376,14 @@ describe('Authentication Scenarios E2E', () => {
           cookies: invalidDomainCookies,
         });
 
-        // Should throw error due to domain mismatch
-        await assert.rejects(
-          async () => await service.takeScreenshot(options),
-          /Cookie injection failed.*domain mismatch/,
-          'Should reject cookies with mismatched domains'
+        // Should succeed but cookies are filtered out due to domain mismatch
+        const result = await service.takeScreenshot(options);
+
+        assert.ok(result.data, 'Should return screenshot data');
+        assert.strictEqual(
+          result.mimeType,
+          'image/webp',
+          'Should return WebP format'
         );
 
         await testServer.stop();

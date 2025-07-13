@@ -583,33 +583,14 @@ export class ScreenshotService {
         // Continue to check if we have any cookies left after filtering
       }
 
-      // Security check: If we filtered any cookies, check for obviously suspicious domains
+      // Log filtered cookies for debugging but continue without throwing errors
       if (filteredCount > 0) {
-        const originalCookies =
-          typeof cookiesInput === 'string'
-            ? parseCookies(cookiesInput)
-            : cookiesInput;
-        const suspiciousDomains = originalCookies
-          .filter((cookie) => cookie.domain)
-          .map((cookie) => cookie.domain?.toLowerCase())
-          .filter((domain): domain is string => domain !== undefined)
-          .filter(
-            (domain) =>
-              domain.includes('attacker') ||
-              domain.includes('evil') ||
-              domain.includes('malicious') ||
-              domain.includes('hack') ||
-              domain.includes('exploit') ||
-              domain.includes('wrong-domain')
-          );
-
-        if (suspiciousDomains.length > 0) {
-          throw new Error(
-            `Cookie injection failed: domain mismatch detected for suspicious domains: ${suspiciousDomains.join(
-              ', '
-            )}`
-          );
-        }
+        this.logger.debug('Some cookies were filtered due to domain mismatch', {
+          url,
+          totalCookies: cookies.length + filteredCount,
+          matchingCookies: cookies.length,
+          filteredCount,
+        });
       }
 
       // If all cookies were filtered out and no security violation, continue without cookies
