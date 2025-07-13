@@ -50,37 +50,55 @@ const CookieSchema = z.object({
 });
 
 /**
- * Zod schema for validating arrays of cookies or JSON strings
- */
-const CookiesInputSchema = z.union([
-  z.array(CookieSchema).max(50, 'Too many cookies (maximum 50)'),
-  z
-    .string()
-    .min(1, 'Cookie JSON string cannot be empty')
-    .max(51200, 'Cookie JSON string too large (50KB limit)'),
-]);
-
-/**
  * Parse and validate cookies from input (array or JSON string)
  * Never logs cookie values for security
  */
 export function parseCookies(input: Cookie[] | string): Cookie[] {
   try {
-    // Validate input type first
-    const validatedInput = CookiesInputSchema.parse(input);
+    let cookieArray: unknown[];
 
-    if (typeof validatedInput === 'string') {
-      // Parse JSON string and validate
-      const parsed = JSON.parse(validatedInput);
+    // First, handle the input type and convert to array
+    if (typeof input === 'string') {
+      // Validate string constraints
+      z.string()
+        .min(1, 'Cookie JSON string cannot be empty')
+        .max(51200, 'Cookie JSON string too large (50KB limit)')
+        .parse(input);
+
+      // Parse JSON string
+      const parsed = JSON.parse(input);
       if (!Array.isArray(parsed)) {
-        throw new Error('Cookie JSON must be an array of cookie objects');
+        throw new Error(
+          'Cookie parsing failed: Cookie JSON must be an array of cookie objects'
+        );
       }
-      const validatedCookies = z.array(CookieSchema).parse(parsed);
-      return validatedCookies as Cookie[];
+      cookieArray = parsed;
+    } else if (Array.isArray(input)) {
+      cookieArray = input;
+    } else {
+      throw new Error('Invalid input: cookies must be an array or JSON string');
     }
 
-    // Input is already an array, just validate
-    const validatedCookies = z.array(CookieSchema).parse(validatedInput);
+    // Validate array length
+    if (cookieArray.length > 50) {
+      throw new Error('Too many cookies (maximum 50)');
+    }
+
+    // Validate each cookie individually to get specific error messages
+    const validatedCookies = cookieArray.map((cookie) => {
+      try {
+        return CookieSchema.parse(cookie);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          const issues = error.issues
+            .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+            .join(', ');
+          throw new Error(`Cookie validation failed: ${issues}`);
+        }
+        throw error;
+      }
+    });
+
     return validatedCookies as Cookie[];
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -94,9 +112,7 @@ export function parseCookies(input: Cookie[] | string): Cookie[] {
       throw new Error('Invalid JSON format in cookies parameter');
     }
 
-    throw new Error(
-      `Cookie parsing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
+    throw error;
   }
 }
 
@@ -137,7 +153,7 @@ export function validateAndSanitize(input: Cookie[] | string): {
  */
 export function isValidCookieInput(input: unknown): boolean {
   try {
-    CookiesInputSchema.parse(input);
+    parseCookies(input as Cookie[] | string);
     return true;
   } catch {
     return false;
