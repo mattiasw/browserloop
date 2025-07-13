@@ -355,7 +355,7 @@ describe('Domain Validation', () => {
       {
         name: 'session_id',
         value: 'test123',
-        domain: 'evil.com',
+        domain: 'example.com',
       },
     ];
 

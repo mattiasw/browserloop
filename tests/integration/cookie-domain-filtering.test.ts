@@ -18,12 +18,18 @@
 import * as assert from 'node:assert';
 import { test } from 'node:test';
 import { ScreenshotService } from '../../src/screenshot-service.js';
-import { createTestScreenshotServiceConfig } from '../../src/test-utils.js';
+import {
+  createTestScreenshotServiceConfig,
+  createTestServer,
+} from '../../src/test-utils.js';
 import type { Cookie } from '../../src/types.js';
 
 test('should filter cookies by domain and continue with matching ones', async () => {
   const service = new ScreenshotService(createTestScreenshotServiceConfig());
   await service.initialize();
+
+  const testServer = createTestServer();
+  await testServer.start();
 
   try {
     // Create a multi-site cookie collection
@@ -36,7 +42,7 @@ test('should filter cookies by domain and continue with matching ones', async ()
 
     // Take screenshot of localhost - should only use localhost and auto-derived cookies
     const result = await service.takeScreenshot({
-      url: 'http://localhost:3000',
+      url: `${testServer.url}/simple.html`,
       cookies: multiSiteCookies,
     });
 
@@ -44,6 +50,7 @@ test('should filter cookies by domain and continue with matching ones', async ()
     assert.ok(result.data);
     assert.strictEqual(result.mimeType, 'image/webp');
   } finally {
+    await testServer.stop();
     await service.cleanup();
   }
 });
@@ -51,6 +58,9 @@ test('should filter cookies by domain and continue with matching ones', async ()
 test('should continue with screenshot when all cookies are filtered', async () => {
   const service = new ScreenshotService(createTestScreenshotServiceConfig());
   await service.initialize();
+
+  const testServer = createTestServer();
+  await testServer.start();
 
   try {
     // Create cookies that don't match the target URL
@@ -62,7 +72,7 @@ test('should continue with screenshot when all cookies are filtered', async () =
 
     // Take screenshot of localhost - all cookies should be filtered
     const result = await service.takeScreenshot({
-      url: 'http://localhost:3000',
+      url: `${testServer.url}/simple.html`,
       cookies: mismatchedCookies,
     });
 
@@ -70,6 +80,7 @@ test('should continue with screenshot when all cookies are filtered', async () =
     assert.ok(result.data);
     assert.strictEqual(result.mimeType, 'image/webp');
   } finally {
+    await testServer.stop();
     await service.cleanup();
   }
 });
@@ -80,6 +91,9 @@ test('should handle special prefix cookies correctly regardless of domain', asyn
   debugConfig.logging.silent = false;
   const service = new ScreenshotService(debugConfig);
   await service.initialize();
+
+  const testServer = createTestServer();
+  await testServer.start();
 
   try {
     // Create cookies including special prefixed ones
@@ -93,7 +107,7 @@ test('should handle special prefix cookies correctly regardless of domain', asyn
 
     // Take screenshot of localhost
     const result = await service.takeScreenshot({
-      url: 'http://localhost:3000',
+      url: `${testServer.url}/simple.html`,
       cookies: cookiesWithPrefixes,
     });
 
@@ -101,6 +115,7 @@ test('should handle special prefix cookies correctly regardless of domain', asyn
     assert.ok(result.data);
     assert.strictEqual(result.mimeType, 'image/webp');
   } finally {
+    await testServer.stop();
     await service.cleanup();
   }
 });
@@ -108,6 +123,9 @@ test('should handle special prefix cookies correctly regardless of domain', asyn
 test('should filter parent domain cookies correctly', async () => {
   const service = new ScreenshotService(createTestScreenshotServiceConfig());
   await service.initialize();
+
+  const testServer = createTestServer();
+  await testServer.start();
 
   try {
     // Create cookies with various domain configurations
@@ -120,7 +138,7 @@ test('should filter parent domain cookies correctly', async () => {
 
     // Test with localhost URL - should only get localhost cookie
     const result = await service.takeScreenshot({
-      url: 'http://localhost:3000',
+      url: `${testServer.url}/simple.html`,
       cookies: parentDomainCookies,
     });
 
@@ -128,6 +146,7 @@ test('should filter parent domain cookies correctly', async () => {
     assert.ok(result.data);
     assert.strictEqual(result.mimeType, 'image/webp');
   } finally {
+    await testServer.stop();
     await service.cleanup();
   }
 });
@@ -138,6 +157,9 @@ test('should handle mixed cookie scenarios with debug logging', async () => {
 
   const service = new ScreenshotService(debugConfig);
   await service.initialize();
+
+  const testServer = createTestServer();
+  await testServer.start();
 
   try {
     // Create a realistic multi-site cookie scenario
@@ -156,7 +178,7 @@ test('should handle mixed cookie scenarios with debug logging', async () => {
     ];
 
     const result = await service.takeScreenshot({
-      url: 'http://localhost:3000',
+      url: `${testServer.url}/simple.html`,
       cookies: mixedCookies,
     });
 
@@ -164,6 +186,7 @@ test('should handle mixed cookie scenarios with debug logging', async () => {
     assert.ok(result.data);
     assert.strictEqual(result.mimeType, 'image/webp');
   } finally {
+    await testServer.stop();
     await service.cleanup();
   }
 });
@@ -171,6 +194,9 @@ test('should handle mixed cookie scenarios with debug logging', async () => {
 test('should work with empty cookie array after filtering', async () => {
   const service = new ScreenshotService(createTestScreenshotServiceConfig());
   await service.initialize();
+
+  const testServer = createTestServer();
+  await testServer.start();
 
   try {
     // All cookies will be filtered for localhost
@@ -181,7 +207,7 @@ test('should work with empty cookie array after filtering', async () => {
     ];
 
     const result = await service.takeScreenshot({
-      url: 'http://localhost:3000',
+      url: `${testServer.url}/simple.html`,
       cookies: allFilteredCookies,
     });
 
@@ -189,6 +215,7 @@ test('should work with empty cookie array after filtering', async () => {
     assert.ok(result.data);
     assert.strictEqual(result.mimeType, 'image/webp');
   } finally {
+    await testServer.stop();
     await service.cleanup();
   }
 });
