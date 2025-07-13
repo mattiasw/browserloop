@@ -671,8 +671,8 @@ export class ConfigManager {
       return ConfigSchema.parse(envConfig);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        const errorMessage = error.issues
-          .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+        const errorMessage = error.errors
+          .map((err) => `${err.path.join('.')}: ${err.message}`)
           .join(', ');
         throw new Error(`Configuration validation failed: ${errorMessage}`);
       }
