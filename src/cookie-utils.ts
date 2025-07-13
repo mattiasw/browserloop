@@ -90,7 +90,7 @@ export function parseCookies(input: Cookie[] | string): Cookie[] {
         return CookieSchema.parse(cookie);
       } catch (error) {
         if (error instanceof z.ZodError) {
-          const issues = error.issues
+          const issues = error.errors
             .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
             .join(', ');
           throw new Error(`Cookie validation failed: ${issues}`);
@@ -102,7 +102,7 @@ export function parseCookies(input: Cookie[] | string): Cookie[] {
     return validatedCookies as Cookie[];
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const issues = error.issues
+      const issues = error.errors
         .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
         .join(', ');
       throw new Error(`Cookie validation failed: ${issues}`);

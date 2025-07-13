@@ -22,6 +22,7 @@ import {
   type Page,
   type Cookie as PlaywrightCookie,
 } from 'playwright';
+import { config } from './config.js';
 import {
   filterCookiesByDomain,
   parseCookies,
@@ -303,10 +304,15 @@ export class ScreenshotService {
   private createScreenshotConfig(
     options: ScreenshotOptions
   ): InternalScreenshotConfig {
-    // Use service's own authentication config instead of global config
-    // This ensures that service-specific default cookies are used
+    // Get fresh authentication config to ensure we use the latest default cookies
+    const authConfig = config.getAuthenticationConfig();
+
+    // Use fresh file-watched config when available, otherwise fall back to service-specific config
+    // This ensures both production (file-watched) and test (service-specific) scenarios work
     const defaultCookies =
-      this.serviceConfig.authentication?.defaultCookies || [];
+      authConfig.defaultCookies.length > 0
+        ? authConfig.defaultCookies
+        : this.serviceConfig.authentication?.defaultCookies || [];
 
     // Merge default cookies with request cookies
     const mergedCookies = this.mergeCookies(defaultCookies, options.cookies);
