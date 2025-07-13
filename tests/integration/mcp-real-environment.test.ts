@@ -15,12 +15,18 @@
  * along with BrowserLoop. If not, see <https://www.gnu.org/licenses/>.
  */
 
-import assert from 'node:assert';
+import { strict as assert } from 'node:assert';
 import { writeFile, unlink } from 'node:fs/promises';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+
+// Error interface for MCP errors
+interface McpError extends Error {
+  code: number;
+  data?: unknown;
+}
 
 // Test-specific type definitions for MCP responses
 interface McpImageContent {
@@ -275,77 +281,92 @@ describe('MCP Real Environment Integration', () => {
     });
 
     it('should handle invalid URL errors gracefully', async () => {
-      // Test with invalid URL
-      const response = await mcpClient.callTool({
-        name: 'screenshot',
-        arguments: {
-          url: 'invalid-url-format',
-          width: 800,
-          height: 600,
-        },
-      });
-      const result = response as McpCallResult;
+      // Test with invalid URL - should throw MCP validation error
+      try {
+        await mcpClient.callTool({
+          name: 'screenshot',
+          arguments: {
+            url: 'invalid-url-format',
+            width: 800,
+            height: 600,
+          },
+        });
 
-      // Should return error response
-      assert.ok(result, 'Should receive a response');
-      assert.strictEqual(result.isError, true, 'Should be an error response');
-      assert.ok(result.content, 'Should have content array');
-
-      const textContent = result.content.find(
-        (c: McpContent) => c.type === 'text'
-      ) as McpTextContent;
-      assert.ok(textContent, 'Should have text content');
-      assert.ok(textContent.text, 'Text should have text field');
+        // Should not reach here - call should throw
+        assert.fail('Expected MCP validation error for invalid URL');
+      } catch (error: unknown) {
+        // Should throw McpError with code -32602 (Invalid Arguments)
+        const mcpError = error as McpError;
+        assert.ok(mcpError, 'Should throw an error');
+        assert.strictEqual(
+          mcpError.code,
+          -32602,
+          'Should be MCP Invalid Arguments error'
+        );
+        assert.ok(
+          mcpError.message.includes('Invalid URL format'),
+          'Error message should mention invalid URL format'
+        );
+      }
     });
 
     it('should handle invalid parameters gracefully', async () => {
-      // Test with invalid width parameter
-      const response = await mcpClient.callTool({
-        name: 'screenshot',
-        arguments: {
-          url: 'https://example.com',
-          width: 5000, // Exceeds maximum
-          height: 600,
-        },
-      });
-      const result = response as McpCallResult;
+      // Test with invalid width parameter - should throw MCP validation error
+      try {
+        await mcpClient.callTool({
+          name: 'screenshot',
+          arguments: {
+            url: 'https://example.com',
+            width: 5000, // Exceeds maximum
+            height: 600,
+          },
+        });
 
-      // Should return error response
-      assert.ok(result, 'Should receive a response');
-      assert.strictEqual(result.isError, true, 'Should be an error response');
-      assert.ok(result.content, 'Should have content array');
-
-      const textContent = result.content.find(
-        (c: McpContent) => c.type === 'text'
-      ) as McpTextContent;
-      assert.ok(textContent, 'Should have text content');
-      assert.ok(
-        textContent.text.includes('Width'),
-        'Error should mention width parameter'
-      );
+        // Should not reach here - call should throw
+        assert.fail('Expected MCP validation error for invalid width');
+      } catch (error: unknown) {
+        // Should throw McpError with code -32602 (Invalid Arguments)
+        const mcpError = error as McpError;
+        assert.ok(mcpError, 'Should throw an error');
+        assert.strictEqual(
+          mcpError.code,
+          -32602,
+          'Should be MCP Invalid Arguments error'
+        );
+        assert.ok(
+          mcpError.message.includes('Width must be at most 4000'),
+          'Error message should mention width limit'
+        );
+      }
     });
 
     it('should handle console tool with invalid URL', async () => {
-      // Test read_console with invalid URL
-      const response = await mcpClient.callTool({
-        name: 'read_console',
-        arguments: {
-          url: 'not-a-valid-url',
-          timeout: 5000,
-        },
-      });
-      const result = response as McpCallResult;
+      // Test read_console with invalid URL - should throw MCP validation error
+      try {
+        await mcpClient.callTool({
+          name: 'read_console',
+          arguments: {
+            url: 'not-a-valid-url',
+            timeout: 5000,
+          },
+        });
 
-      // Should return error response
-      assert.ok(result, 'Should receive a response');
-      assert.strictEqual(result.isError, true, 'Should be an error response');
-      assert.ok(result.content, 'Should have content array');
-
-      const textContent = result.content.find(
-        (c: McpContent) => c.type === 'text'
-      ) as McpTextContent;
-      assert.ok(textContent, 'Should have text content');
-      assert.ok(textContent.text, 'Text should have text field');
+        // Should not reach here - call should throw
+        assert.fail('Expected MCP validation error for invalid URL');
+      } catch (error: unknown) {
+        // Should throw McpError with code -32602 (Invalid Arguments)
+        const mcpError = error as McpError;
+        assert.ok(mcpError, 'Should throw an error');
+        assert.strictEqual(
+          mcpError.code,
+          -32602,
+          'Should be MCP Invalid Arguments error'
+        );
+        assert.ok(
+          mcpError.message.includes('Invalid URL format'),
+          'Error message should mention invalid URL format'
+        );
+      }
     });
   });
 
