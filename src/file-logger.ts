@@ -21,7 +21,6 @@ import { dirname } from 'node:path';
 export class FileLogger {
   private logPath: string;
   private debugEnabled: boolean;
-  private silentMode: boolean;
 
   constructor() {
     // Try different log paths in order of preference
@@ -34,8 +33,6 @@ export class FileLogger {
 
     this.logPath = this.findWritableLogPath(logPaths);
     this.debugEnabled = process.env.BROWSERLOOP_DEBUG === 'true';
-    // Note: silentMode is no longer used for file logging, only kept for backward compatibility
-    this.silentMode = process.env.BROWSERLOOP_SILENT !== 'false';
 
     // Initialize log file with startup message when debug is enabled
     if (this.debugEnabled) {
