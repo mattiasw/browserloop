@@ -78,7 +78,6 @@ export class ConsoleLogService {
   private isInitialized = false;
   private serviceConfig: ConsoleLogServiceConfig;
   private logger: Logger;
-  private lastSuccessfulOperation?: number;
   private initializationInProgress = false;
 
   constructor(config: ConsoleLogServiceConfig) {
@@ -454,7 +453,6 @@ export class ConsoleLogService {
           totalLogs: logs.length,
         };
 
-        this.lastSuccessfulOperation = Date.now();
         this.logger.debug('Console logs collected successfully', {
           url: options.url,
           logCount: logs.length,
