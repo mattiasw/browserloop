@@ -112,11 +112,11 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.1.3",
+    "@biomejs/biome": "^2.1.4",
     "@types/assert": "^1.5.11",
-    "@types/node": "^24.2.0",
+    "@types/node": "^24.2.1",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.4",
+    "lint-staged": "^16.1.5",
     "typescript": "^5.9.2"
   }
 }
