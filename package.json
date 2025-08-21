@@ -105,9 +105,9 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.2",
+    "@modelcontextprotocol/sdk": "^1.17.3",
     "@types/sharp": "^0.32.0",
-    "playwright": "^1.54.2",
+    "playwright": "^1.55.0",
     "sharp": "^0.34.3",
     "zod": "^3.25.76"
   },
