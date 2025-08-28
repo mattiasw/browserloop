@@ -112,7 +112,7 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.2.0",
+    "@biomejs/biome": "^2.2.2",
     "@types/assert": "^1.5.11",
     "@types/node": "^24.3.0",
     "husky": "^9.1.7",
