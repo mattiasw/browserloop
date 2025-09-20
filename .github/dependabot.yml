@@ -19,6 +19,8 @@ updates:
       - "automated"
     # Update all dependencies, not just security
     versioning-strategy: increase
+    cooldown:
+      default-days: 2
     # Group related updates together
     groups:
       development-dependencies:
