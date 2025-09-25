@@ -116,7 +116,7 @@
     "@types/assert": "^1.5.11",
     "@types/node": "^24.5.2",
     "husky": "^9.1.7",
-    "lint-staged": "^16.1.6",
+    "lint-staged": "^16.2.0",
     "typescript": "^5.9.2"
   }
 }
