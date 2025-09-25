@@ -38,6 +38,3 @@ updates:
           - "playwright"
           - "sharp"
           - "zod"
-    # Allow both direct and indirect dependency updates
-    allow:
-      - dependency-type: "all"
