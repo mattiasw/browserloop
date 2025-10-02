@@ -4,6 +4,8 @@
 [![npm version](https://badge.fury.io/js/browserloop.svg)](https://www.npmjs.com/package/browserloop)
 [![npm downloads](https://img.shields.io/npm/dm/browserloop.svg)](https://www.npmjs.com/package/browserloop)
 
+> **⚠️ ARCHIVED:** This project is archived and will not receive any further updates. With the release of [Chrome DevTools MCP](https://github.com/ChromeDevTools/chrome-devtools-mcp), a dedicated MCP server for browser automation is no longer necessary as that project provides more comprehensive browser interaction capabilities including screenshots, console monitoring, and much more.
+
 A Model Context Protocol (MCP) server for taking screenshots and reading console logs from web pages using Playwright. This tool allows AI agents to automatically capture screenshots and monitor browser console output for debugging, testing, and development tasks.
 
 **NOTE:** Almost all of the code in this repository has been auto-generated. That means you should probably not trust it too much. That being said, it does work and I'm using it myself.
